@@ -51,9 +51,96 @@ function prepareAgencyData($response, $post, $request)
   return $response;
 }
 
-//--------------- use fulllink--------------------------
+add_action( 'rest_api_init', function () {
+  register_rest_route( 'houzez-mobile-api/v1', '/contact-realtor', array(
+    'methods' => 'POST',
+    'callback' => 'contactRealtor',
+  ));
+  register_rest_route( 'houzez-mobile-api/v1', '/schedule-tour', array(
+    'methods' => 'POST',
+    'callback' => 'scheduleATour',
+  ));
+});
 
-// https://wordpress.stackexchange.com/questions/296440/filter-out-results-from-rest-api
-// https://developer.wordpress.org/reference/hooks/rest_prepare_this-post_type/
-// https://wordpress.stackexchange.com/questions/202362/unset-data-in-custom-post-type-wordpress-api-wp-
+function contactRealtor($request){
+  // agent_id
+  // target_email
+  // mobile
+  // name
+  // email
+  // message
+  // user_type - buyer, tennant, agent, other
 
+  //using the existing theme method.
+  
+  $nonce = wp_create_nonce('contact_realtor_nonce');
+  
+  $_POST['contact_realtor_ajax'] = $nonce;
+  $_POST['agent_type'] = 'agent_info';
+  $_POST['privacy_policy'] =  '1';
+
+  $enable_reCaptcha = houzez_option('enable_reCaptcha');
+  
+  global $houzez_options;
+  $houzez_options['enable_reCaptcha'] = 0;
+
+  houzez_contact_realtor();
+  
+  /*
+  for future use
+  $result = array(
+    'success' => true,
+    'message' => "Message sent successfully.",
+    'result' => $result,
+    'captcha_before' => $enable_reCaptcha,
+    'captcha_after' => $enable_reCaptcha2,
+  );
+  return new WP_REST_Response($result, 200);
+  */
+}
+
+function scheduleATour($request){
+  // listing_id
+  // property_title
+  // property_permalink
+
+  // target_email
+  
+  // schedule_tour_type
+  // schedule_date
+  // schedule_time
+
+  // name
+  // phone
+  // email
+  // message
+
+  //using the existing theme method.
+  
+  $nonce = wp_create_nonce('schedule-contact-form-nonce');
+  
+
+  $_POST['schedule_contact_form_ajax'] = $nonce;
+  $_POST['is_listing_form'] = 'yes';
+  $_POST['is_schedule_form'] = 'yes';
+  $_POST['privacy_policy'] =  '1';
+
+  $enable_reCaptcha = houzez_option('enable_reCaptcha');
+  
+  global $houzez_options;
+  $houzez_options['enable_reCaptcha'] = 0;
+
+  houzez_schedule_send_message();
+  
+  /*
+  for future use
+  $result = array(
+    'success' => true,
+    'message' => "Message sent successfully.",
+    'result' => $result,
+    'captcha_before' => $enable_reCaptcha,
+    'captcha_after' => $enable_reCaptcha2,
+  );
+  return new WP_REST_Response($result, 200);
+  */
+}

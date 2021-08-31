@@ -29,6 +29,7 @@ function getMetaData(){
     add_term_to_response($response, 'property_feature');
 
     
+    $response['schedule_time_slots'] = houzez_option('schedule_time_slots');
     echo json_encode($response);
 }
 function add_term_to_response(&$response, $key){
@@ -37,6 +38,18 @@ function add_term_to_response(&$response, $key){
         'taxonomy'   => $key,
         'hide_empty' => false,
     ) );
+    foreach($property_term as $term) {
+      $taxonomy_img_id = get_term_meta( $term->term_id, 'fave_taxonomy_img', true );
+      if(empty($taxonomy_img_id)) {
+        $taxonomy_img_id = get_term_meta( $term->term_id, 'fave_feature_img_icon', true );
+      }
+      if(!empty($taxonomy_img_id)) {
+        $term_img = wp_get_attachment_image_src( $taxonomy_img_id, 'full' )[0];
+        $term_img_thumb = wp_get_attachment_image_src($taxonomy_img_id, 'thumbnail', true )[0];
+        $term->thumbnail = $term_img_thumb;
+        $term->full = $term_img;
+      }
+    }
     $response[$key] = $property_term;
 }
 

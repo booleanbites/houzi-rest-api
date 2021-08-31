@@ -1,7 +1,7 @@
 <?php
 
 
-
+add_image_size( 'custom-size', 200, 200 );
 add_filter('rest_prepare_property', 'preparePropertyData', 10, 3);
 
 function preparePropertyData($response, $post, $request)
@@ -64,6 +64,7 @@ function hm_postImages(&$response)
 {
   foreach ($response->data['property_meta']['fave_property_images'] as $imgID) :
     $response->data['property_images'][] = wp_get_attachment_url($imgID);
+    $response->data['property_images_thumb'][] = wp_get_attachment_image_src($imgID, 'thumbnail', true )[0];
   endforeach;
 }
 

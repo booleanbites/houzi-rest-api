@@ -14,6 +14,16 @@ add_filter( 'rest_property_query', function( $args, $request ){
         $args['meta_key']   = 'fave_property_agency';
         $args['meta_value'] = $request->get_param( 'fave_property_agency' );
     }
+
+    if ( $request->get_param( 'property_city' ) ) {
+        $args['taxonomy_name']   = 'property_city';
+        $args['term'] = $request->get_param( 'property_city' );
+    }
+    if ( $request->get_param( 'property_type' ) ) {
+        $args['taxonomy_name']   = 'property_type';
+        $args['term'] = $request->get_param( 'property_type' );
+    }
+    
   return $args;
 }, 10, 2 );
 
