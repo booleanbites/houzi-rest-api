@@ -10,7 +10,7 @@ add_action( 'rest_api_init', function () {
 });
 
 
-function getMetaData(){
+function getMetaData() {
     
     $response = array();
     
@@ -30,6 +30,13 @@ function getMetaData(){
 
     
     $response['schedule_time_slots'] = houzez_option('schedule_time_slots');
+    $response['property_item_designs'] = array(
+      'home_item'   => 'design_2',
+      'result_item' => 'design_1',
+      'related_item' => 'design_1',
+      'agent_item' => 'design_1',
+  );
+
     echo json_encode($response);
 }
 function add_term_to_response(&$response, $key){

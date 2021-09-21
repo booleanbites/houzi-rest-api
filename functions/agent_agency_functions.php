@@ -76,7 +76,7 @@ function contactRealtor($request){
   $nonce = wp_create_nonce('contact_realtor_nonce');
   
   $_POST['contact_realtor_ajax'] = $nonce;
-  $_POST['agent_type'] = 'agent_info';
+  //$_POST['agent_type'] = 'agent_info';
   $_POST['privacy_policy'] =  '1';
 
   $enable_reCaptcha = houzez_option('enable_reCaptcha');
@@ -127,8 +127,8 @@ function scheduleATour($request){
 
   $enable_reCaptcha = houzez_option('enable_reCaptcha');
   
-  global $houzez_options;
-  $houzez_options['enable_reCaptcha'] = 0;
+  // global $houzez_options;
+  // $houzez_options['enable_reCaptcha'] = 0;
 
   houzez_schedule_send_message();
   

@@ -15,13 +15,13 @@ function preparePropertyData($response, $post, $request)
     hm_postImages($response);
     hm_postFeature($response);
     hm_postAddress($response);
-    hm_postAttr($response);
+    
 
     $response->data['property_meta']['agent_info'] = houzez20_property_contact_form();
   } else {
     $response->data['thumbnail']   = get_the_post_thumbnail_url( get_the_ID(), 'houzez-property-thumb-image' );
   }
-  
+  hm_postAttr($response);
   //$response->data['params'] = $params;
   $property_meta = $response->data['property_meta'];
   

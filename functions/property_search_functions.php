@@ -541,7 +541,7 @@ function propertyNode($property){
     $property->thumbnail    = get_the_post_thumbnail_url( $post_id, 'houzez-property-thumb-image' );
     // $prop->url          = get_permalink();
     $property->property_meta    = get_post_meta($post_id);
-    $property->type         = houzez_taxonomy_simple('property_type');
+    $property->property_type         = houzez_taxonomy_simple('property_type');
 
     // $prop->prop_images        = get_post_meta( $post_id, 'fave_property_images', false );
     // $prop->images_count = count( $prop->prop_images );
