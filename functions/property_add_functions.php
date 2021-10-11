@@ -1,6 +1,6 @@
 <?php
 function addProperty(){
-    $user_id  = 1; 
+    $user_id  = $_POST['user_id']; 
     // $user_id  = $request->get_header('user_id');
     // if($userID){
     //     wp_set_current_user($userID);
@@ -13,6 +13,7 @@ function addProperty(){
     }
     $new_property['post_status']    = 'publish';
     $new_property                   = apply_filters( 'houzez_submit_listing', $new_property );
+    houzez_update_property_from_draft( $new_property ); 
     wp_send_json(['prop_id' => $new_property ],200);
 }
 
