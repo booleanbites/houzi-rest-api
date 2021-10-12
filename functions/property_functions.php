@@ -39,16 +39,6 @@ add_action( 'rest_api_init', function () {
     'callback' => 'searchProperties',
   ));
 
-  register_rest_route( 'houzez-mobile-api/v1', '/add-property', array(
-    'methods' => 'POST',
-    'callback' => 'addProperty',
-  ));
-
-  register_rest_route( 'houzez-mobile-api/v1', '/update-property', array(
-    'methods' => 'POST',
-    'callback' => 'addProperty',
-  ));
-
   register_rest_route( 'houzez-mobile-api/v1', '/get-property-detail', array(
     'methods' => 'GET',
     'callback' => 'getPropertDetail',
