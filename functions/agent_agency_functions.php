@@ -60,6 +60,10 @@ add_action( 'rest_api_init', function () {
     'methods' => 'POST',
     'callback' => 'scheduleATour',
   ));
+  register_rest_route( 'houzez-mobile-api/v1', '/contact-property-agent', array(
+    'methods' => 'POST',
+    'callback' => 'contactPropertyRealtor',
+  ));
 });
 
 function contactRealtor($request){
@@ -143,4 +147,29 @@ function scheduleATour($request){
   );
   return new WP_REST_Response($result, 200);
   */
+}
+
+function contactPropertyRealtor($request){
+  // agent_id
+  // target_email
+  // mobile
+  // name
+  // email
+  // message
+  // user_type - buyer, tennant, agent, other
+
+  //using the existing theme method.
+  
+  $nonce = wp_create_nonce('property_agent_contact_nonce');
+  
+  $_POST['property_agent_contact_security'] = $nonce;
+  //$_POST['agent_type'] = 'agent_info';
+  $_POST['privacy_policy'] =  '1';
+
+  $enable_reCaptcha = houzez_option('enable_reCaptcha');
+  
+  global $houzez_options;
+  $houzez_options['enable_reCaptcha'] = 0;
+
+  houzez_property_agent_contact();
 }

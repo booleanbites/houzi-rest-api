@@ -1,11 +1,11 @@
 <?php
 /*
 Plugin Name: Houzez Mobile Api
-Plugin URI:  http://www.booleanbites.com/
-Description: Enhance Api for Mobile Api
+Plugin URI:  https://booleanbites.com/
+Description: Enhance Rest Api for mobiles
 Version:     1.0.1
 Author:      BooleanBites
-Author URI:  http://www.booleanbites.com/
+Author URI:  https://booleanbites.com/
 License:     GPL2
 */
 
@@ -54,6 +54,7 @@ class Houzez_mobile_api {
         require_once( HOUZEZ_MOBILE_FUNC_PATH . 'functions/touch_base_functions.php');
         
         require_once( HOUZEZ_MOBILE_FUNC_PATH . 'functions/agent_agency_functions.php');
+        require_once( HOUZEZ_MOBILE_FUNC_PATH . 'functions/dashboard.php');
         
     }
 

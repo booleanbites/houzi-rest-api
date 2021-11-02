@@ -44,6 +44,11 @@ add_action( 'rest_api_init', function () {
     'callback' => 'getPropertDetail',
   ));
 
+  register_rest_route( 'houzez-mobile-api/v1', '/similar-properties', array(
+    'methods' => 'GET',
+    'callback' => 'getSimilarProperties',
+  ));
+
 });
 
 
@@ -66,7 +71,7 @@ function getPropertDetail(){
     */
 /* ******************************************************************************************************** */
 
-function searchProperties(){
+function searchProperties() {
     $meta_query = array();
     $tax_query = array();
     $date_query = array();
@@ -496,14 +501,107 @@ function searchProperties(){
 
     wp_reset_postdata();
 
-    if( count($properties) > 0 ) {
-        echo json_encode( array( 'success' => true, 'count' => count($properties) , 'result' => $properties));
-        exit();
-    } else {
-        echo json_encode( array( 'success' => false ) );
-        exit();
+    
+    wp_send_json( array( 'success' => true, 'count' => count($properties) , 'result' => $properties), 200);
+    
+    
+}
+
+
+function getSimilarProperties()
+{
+    $property_id = $_GET['property_id'];
+    if( !isset( $_GET['property_id']) || empty($property_id)) {
+        $ajax_response = array( 'success' => false, 'reason' => 'Please provide property_id' );
+        wp_send_json($ajax_response, 400);
+        return;
     }
-    die();
+    
+    $show_similer = houzez_option( 'houzez_similer_properties' );
+    $similer_criteria = houzez_option( 'houzez_similer_properties_type', array( 'property_type', 'property_city' ) );
+    $similer_count = houzez_option( 'houzez_similer_properties_count' );
+
+
+
+    $properties_args = array(
+        'post_type'           => 'property',
+        'posts_per_page'      => intval( $similer_count ),
+        'post__not_in'        => array( $property_id ),
+        'post_parent__not_in' => array( $property_id ),
+        'post_status' => 'publish'
+    );
+
+    if ( ! empty( $similer_criteria ) && is_array( $similer_criteria ) ) {
+
+        $similar_taxonomies_count = count( $similer_criteria );
+        $tax_query                = array();
+
+        for ( $i = 0; $i < $similar_taxonomies_count; $i ++ ) {
+            
+            $similar_terms = get_the_terms( get_the_ID(), $similer_criteria[ $i ] );
+            if ( ! empty( $similar_terms ) && is_array( $similar_terms ) ) {
+                $terms_array = array();
+                foreach ( $similar_terms as $property_term ) {
+                    $terms_array[] = $property_term->term_id;
+                }
+                $tax_query[] = array(
+                    'taxonomy' => $similer_criteria[ $i ],
+                    'field'    => 'id',
+                    'terms'    => $terms_array,
+                );
+            }
+        }
+
+        $tax_count = count( $tax_query );  
+        if ( $tax_count > 1 ) {
+            $tax_query['relation'] = 'AND'; 
+        }
+        if ( $tax_count > 0 ) {
+            $properties_args['tax_query'] = $tax_query; 
+        }
+
+    }
+
+    $sort_by = houzez_option( 'similar_order', 'd_date' );
+    if ( $sort_by == 'a_price' ) {
+        $properties_args['orderby'] = 'meta_value_num';
+        $properties_args['meta_key'] = 'fave_property_price';
+        $properties_args['order'] = 'ASC';
+    } else if ( $sort_by == 'd_price' ) {
+        $properties_args['orderby'] = 'meta_value_num';
+        $properties_args['meta_key'] = 'fave_property_price';
+        $properties_args['order'] = 'DESC';
+    } else if ( $sort_by == 'a_date' ) {
+        $properties_args['orderby'] = 'date';
+        $properties_args['order'] = 'ASC';
+    } else if ( $sort_by == 'd_date' ) {
+        $properties_args['orderby'] = 'date';
+        $properties_args['order'] = 'DESC';
+    } else if ( $sort_by == 'featured_first' ) {
+        $properties_args['orderby'] = 'meta_value date';
+        $properties_args['meta_key'] = 'fave_featured';
+    } else if ( $sort_by == 'random' ) {
+        $properties_args['orderby'] = 'rand date';
+    }
+
+    $wp_query = new WP_Query($properties_args);
+    $properties = array();
+    
+    if ($wp_query->have_posts()) :
+        while ($wp_query->have_posts()) : $wp_query->the_post();
+        $property = $wp_query->post;
+        array_push($properties, propertyNode($property) );
+
+        endwhile;
+    endif;
+    wp_reset_query();
+    wp_reset_postdata();
+
+    
+    wp_send_json( array( 'success' => true, 'count' => count($properties) , 'result' => $properties), 200);
+        
+    
+    
 }
 
 function propertyNode($property){
