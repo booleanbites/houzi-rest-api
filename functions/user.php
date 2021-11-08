@@ -14,6 +14,19 @@ add_action( 'rest_api_init', function () {
     ));
   
   });
+  add_filter( 'jwt_auth_token_before_dispatch', 'add_user_info_to_login', 10, 2 );
+
+/**
+ * Adds a website parameter to the auth.
+ *
+ */
+function add_user_info_to_login( $data, $user ) {
+
+	$data['user_id'] = $user->ID;
+  $data['user_role'] = $user->roles;
+  $data['avatar'] = get_avatar_url( $user->ID, 32 );
+	return $data;
+}
 
   
   function signupUser(){
