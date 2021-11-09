@@ -35,7 +35,9 @@ function getMetaData() {
       'result_item' => 'design_1',
       'related_item' => 'design_1',
       'agent_item' => 'design_1',
-  );
+    );
+
+    add_roles_to_response($response);
 
     echo json_encode($response);
 }
@@ -58,5 +60,34 @@ function add_term_to_response(&$response, $key){
       }
     }
     $response[$key] = $property_term;
+}
+
+function add_roles_to_response(&$response){
+
+  $show_hide_roles = houzez_option('show_hide_roles');
+  $roles = array();
+
+  if( $show_hide_roles['agent'] != 1 ) {
+    array_push($roles, array( 'value' => 'houzez_agent', 'option' => houzez_option('agent_role') ) );
+  }
+  if( $show_hide_roles['agency'] != 1 ) {
+    array_push($roles, array( 'value' => 'houzez_agency', 'option' => houzez_option('agency_role') ) );
+  }
+  if( $show_hide_roles['owner'] != 1 ) {
+    array_push($roles, array( 'value' => 'houzez_owner', 'option' => houzez_option('owner_role') ) );
+  }
+  if( $show_hide_roles['buyer'] != 1 ) {
+    array_push($roles, array( 'value' => 'houzez_buyer', 'option' => houzez_option('buyer_role') ) );
+  }
+  if( $show_hide_roles['seller'] != 1 ) {
+    array_push($roles, array( 'value' => 'houzez_seller', 'option' => houzez_option('seller_role') ) );
+  }
+  if( $show_hide_roles['manager'] != 1 ) {
+    array_push($roles, array( 'value' => 'houzez_manager', 'option' => houzez_option('manager_role') ) );
+  }
+
+
+  $response['user_roles'] = $roles;
+  
 }
 
