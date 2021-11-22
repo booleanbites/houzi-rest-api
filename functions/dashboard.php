@@ -12,6 +12,11 @@ add_action( 'rest_api_init', function () {
       'methods' => 'GET',
       'callback' => 'allEnquiries',
     ));
+
+    register_rest_route( 'houzez-mobile-api/v1', '/deals', array(
+      'methods' => 'GET',
+      'callback' => 'allDeals',
+    ));
   
   });
 
@@ -41,7 +46,7 @@ add_action( 'rest_api_init', function () {
 
 function allActivities(){
     
-    doFakeLogin();
+    //doFakeLogin();
     
     $activities = Houzez_Activities::get_activities();
     $leads_count = Houzez_Leads::get_leads_stats();
@@ -87,7 +92,12 @@ function allActivities(){
     }
     $activities["data"]["results"] = $results;
 
-    
+    $deals = array(
+      'active_count' => Houzez_Deals::get_total_deals_by_group('active'),
+      'won_count' => Houzez_Deals::get_total_deals_by_group('won'),
+      'lost_count' => Houzez_Deals::get_total_deals_by_group('lost'),
+    );
+    $activities["data"]["deals"] = $deals;
 
     $activities["data"]["stats"] = $leads_count['leads_count'];
     
@@ -96,7 +106,7 @@ function allActivities(){
 
 
 function allEnquiries(){
-  doFakeLogin();
+  //doFakeLogin();
   
   $all_enquires = Houzez_Enquiry::get_enquires();
 
@@ -116,5 +126,33 @@ function allEnquiries(){
   $all_enquires["data"]["results"] = $results;
   
   wp_send_json($all_enquires["data"],200);
+}
+
+function allDeals() {
+  //doFakeLogin();
+  
+  $deals = Houzez_Deals::get_deals();
+
+  $results = array();
+  foreach ($deals['data']['results'] as $deal_data) {
+    $agent_id = $deal_data->agent_id;
+    $deal_data->agent_name = get_the_title($agent_id); 
+    $deal_data->lead = Houzez_Leads::get_lead($deal_data->lead_id);
+    
+    array_push($results, $deal_data);
+  }
+  $status_settings = hcrm_get_option('status', 'hcrm_deals_settings', esc_html__('New Lead, Meeting Scheduled, Qualified, Proposal Sent, Called, Negotiation, Email Sent', 'houzez'));
+  $next_action_settings = hcrm_get_option('next_action', 'hcrm_deals_settings', esc_html__('Qualification, Demo, Call, Send a Proposal, Send an Email, Follow Up, Meeting', 'houzez'));
+
+  $deals["data"]["status"] = $status_settings;
+  $deals["data"]["actions"] = $next_action_settings;
+  
+  $deals["data"]["active_count"] = Houzez_Deals::get_total_deals_by_group('active');
+  $deals["data"]["won_count"] = Houzez_Deals::get_total_deals_by_group('won');
+  $deals["data"]["lost_count"] = Houzez_Deals::get_total_deals_by_group('lost');
+
+  $deals["data"]["results"] = $results;
+  
+  wp_send_json($deals["data"],200);
 }
 
