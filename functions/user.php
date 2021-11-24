@@ -12,6 +12,31 @@ add_action( 'rest_api_init', function () {
       'methods' => 'POST',
       'callback' => 'resetUserPassword',
     ));
+
+    register_rest_route( 'contact-us/v1', 'send-message', array(
+      'methods'             => 'POST',
+      'callback'            => 'sendContactMail',
+      'permission_callback' => '__return_true',
+      'args'                => array(
+          'name'    => array(
+              'required'          => true,
+              'sanitize_callback' => 'sanitize_text_field',
+          ),
+          'email'   => array(
+              'required'          => true,
+              'validate_callback' => 'is_email',
+              'sanitize_callback' => 'sanitize_email',
+          ),
+          'message' => array(
+              'required'          => true,
+              'sanitize_callback' => 'sanitize_textarea_field',
+          ),
+          'source' => array(
+            'required'          => true,
+            'sanitize_callback' => 'sanitize_text_field',
+          ),
+      ),
+  ) );
   
   });
   add_filter( 'jwt_auth_token_before_dispatch', 'add_user_info_to_login', 10, 2 );
@@ -52,3 +77,38 @@ add_action( 'rest_api_init', function () {
     do_action("wp_ajax_nopriv_houzez_reset_password");//houzez_reset_password();
     
   }
+
+  function sendContactMail( WP_REST_Request $request ) {
+    $response = array(
+        'status'  => 304,
+        'message' => 'There was an error sending the form.'
+    );
+
+    $siteName = wp_strip_all_tags( trim( get_option( 'blogname' ) ) );
+    $source = $request['source'];
+    $contactName = $request['name'];
+    $contactEmail = $request['email'];
+    $contactMessage = $request['message'];
+
+    $subject = "[$source] New message from $contactName";
+
+    $body = "<p><b>Name:</b> $contactName</p>";
+    $body .= "<p><b>Email:</b> $contactEmail</p>";
+    $body .= "<p><b>Message:</b> $contactMessage</p>";
+
+    $to = get_option( 'admin_email' );
+    $headers = array(
+        'Content-Type: text/html; charset=UTF-8',
+        "Reply-To: $contactName <$contactEmail>",
+    );
+
+    if ( wp_mail( $to, $subject, $body, $headers ) ) {
+        $response['status'] = 200;
+        $response['message'] = 'Message sent successfully.';
+        //$response['test'] = $body;
+    }
+
+    return new WP_REST_Response( $response );
+  }
+
+

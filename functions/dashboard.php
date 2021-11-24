@@ -8,6 +8,11 @@ add_action( 'rest_api_init', function () {
       'callback' => 'allActivities',
     ));
 
+    register_rest_route( 'houzez-mobile-api/v1', '/leads', array(
+      'methods' => 'GET',
+      'callback' => 'allLeads',
+    ));
+
     register_rest_route( 'houzez-mobile-api/v1', '/enquiries', array(
       'methods' => 'GET',
       'callback' => 'allEnquiries',
@@ -16,6 +21,11 @@ add_action( 'rest_api_init', function () {
     register_rest_route( 'houzez-mobile-api/v1', '/deals', array(
       'methods' => 'GET',
       'callback' => 'allDeals',
+    ));
+
+    register_rest_route( 'houzez-mobile-api/v1', '/add-deal', array(
+      'methods' => 'POST',
+      'callback' => 'addDeal',
     ));
   
   });
@@ -43,7 +53,10 @@ add_action( 'rest_api_init', function () {
         do_action( 'wp_login', $user->user_login, $user );
     }
   }
-
+function allLeads() {
+  $all_leads = Houzez_leads::get_leads();
+  wp_send_json($all_leads,200);
+}
 function allActivities(){
     
     //doFakeLogin();
@@ -104,7 +117,6 @@ function allActivities(){
     wp_send_json($activities["data"],200);
 }
 
-
 function allEnquiries(){
   //doFakeLogin();
   
@@ -156,3 +168,12 @@ function allDeals() {
   wp_send_json($deals["data"],200);
 }
 
+function addDeal() {
+  //calls Houzez_Deals->add_new_deal();
+  do_action("wp_ajax_houzez_crm_add_deal");
+}
+
+function addDeal() {
+  //calls Houzez_Deals->add_new_deal();
+  do_action("wp_ajax_houzez_crm_add_deal");
+}
