@@ -173,7 +173,3 @@ function addDeal() {
   do_action("wp_ajax_houzez_crm_add_deal");
 }
 
-function addDeal() {
-  //calls Houzez_Deals->add_new_deal();
-  do_action("wp_ajax_houzez_crm_add_deal");
-}
