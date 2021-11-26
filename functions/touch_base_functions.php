@@ -38,6 +38,8 @@ function getMetaData() {
     );
 
     add_roles_to_response($response);
+    
+    $response['enquiry_type'] = hcrm_get_option('enquiry_type', 'hcrm_enquiry_settings', esc_html__('Purchase, Rent, Sell, Miss, Evaluation, Mortgage', 'houzez'));
 
     echo json_encode($response);
 }

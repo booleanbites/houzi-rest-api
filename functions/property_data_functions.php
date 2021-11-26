@@ -2,6 +2,14 @@
 
 
 add_image_size( 'custom-size', 200, 200 );
+// The filter callback function.
+function houzez_property_rest_base_name( $string) {
+  // rest_base property should always be properties.
+  return "properties";
+}
+add_filter( 'houzez_property_rest_base_', 'houzez_property_rest_base_name', 10, 1 );
+
+
 add_filter('rest_prepare_property', 'preparePropertyData', 10, 3);
 
 function preparePropertyData($response, $post, $request)
