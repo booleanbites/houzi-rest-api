@@ -28,11 +28,22 @@ add_action( 'rest_api_init', function () {
       'callback' => 'addDeal',
     ));
 
+    register_rest_route( 'houzez-mobile-api/v1', '/delete-deal', array(
+      'methods' => 'GET',
+      'callback' => 'deleteDeal',
+    ));
+
     register_rest_route( 'houzez-mobile-api/v1', '/add-crm-enquiry', array(
       'methods' => 'POST',
       'callback' => 'addCRMEnquiry',
     ));
-  
+
+    register_rest_route( 'houzez-mobile-api/v1', '/delete-crm-enquiry', array(
+      'methods' => 'GET',
+      'callback' => 'deleteCRMEnquiry',
+    ));
+    
+    
   });
 
   function doFakeLogin() {
@@ -177,9 +188,32 @@ function addDeal() {
   //calls Houzez_Deals->add_new_deal();
   do_action("wp_ajax_houzez_crm_add_deal");
 }
+function deleteDeal() {
+
+  if (! is_user_logged_in() ) {
+    $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+    wp_send_json($ajax_response, 403);
+    return; 
+  }
+  $nonce = wp_create_nonce('delete_deal_nonce');
+  $_REQUEST['security'] = $nonce;
+
+  //needs enquiry id in var deal_id
+  do_action("wp_ajax_houzez_delete_deal");
+}
 
 function addCRMEnquiry() {
   //calls Houzez_Deals->add_new_deal();
   do_action("wp_ajax_crm_add_new_enquiry");
 }
 
+function deleteCRMEnquiry() {
+
+  if (! is_user_logged_in() ) {
+    $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+    wp_send_json($ajax_response, 403);
+    return; 
+  }
+  //needs enquiry id in var ids
+  do_action("wp_ajax_houzez_delete_enquiry");
+}
