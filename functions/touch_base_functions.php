@@ -6,10 +6,29 @@ add_action( 'rest_api_init', function () {
     'methods' => 'GET',
     'callback' => 'getMetaData',
   ));
-
 });
 
+add_action( 'rest_api_init', function () {
+  register_rest_route( 'houzez-mobile-api/v1', '/get-terms', array(
+    'methods' => 'GET',
+    'callback' => 'getTerms',
+  ));
+});
+function getTerms() {
+  if( !isset( $_GET['term'])) {
+    $ajax_response = array( 'success' => false, 'reason' => 'Please provide term in GET' );
+    wp_send_json($ajax_response, 400);
+    return;
+  }
+  $response = array();
+  
+  $response['success'] = true;
+  $term = $_GET['term'];
 
+  add_term_to_response($response, $term);
+
+  wp_send_json($response, 200);
+}
 function getMetaData() {
     
     $response = array();
@@ -21,14 +40,14 @@ function getMetaData() {
     add_term_to_response($response, 'property_country');
     add_term_to_response($response, 'property_state');
     add_term_to_response($response, 'property_city');
-    add_term_to_response($response, 'property_area');
+    //add_term_to_response($response, 'property_area');
 
     add_term_to_response($response, 'property_type');
     add_term_to_response($response, 'property_label');
     add_term_to_response($response, 'property_status');
     add_term_to_response($response, 'property_feature');
 
-    
+    $response['property_area'] = [];
     $response['schedule_time_slots'] = houzez_option('schedule_time_slots');
     $response['property_item_designs'] = array(
       'home_item'   => 'design_2',
@@ -40,8 +59,8 @@ function getMetaData() {
     add_roles_to_response($response);
     
     $response['enquiry_type'] = hcrm_get_option('enquiry_type', 'hcrm_enquiry_settings', esc_html__('Purchase, Rent, Sell, Miss, Evaluation, Mortgage', 'houzez'));
-
-    echo json_encode($response);
+    wp_send_json($response, 200);
+    //echo json_encode($response);
 }
 function add_term_to_response(&$response, $key){
     
