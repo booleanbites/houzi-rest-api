@@ -27,10 +27,15 @@ add_action( 'rest_api_init', function () {
         'methods' => 'POST',
         'callback' => 'uploadPropertyImage',
       ));
-      register_rest_route( 'houzez-mobile-api/v1', '/save-property-image', array(
+    register_rest_route( 'houzez-mobile-api/v1', '/save-property-image', array(
         'methods' => 'POST',
         'callback' => 'uploadPropertyImageWithAuth',
-      ));
+    ));
+
+    register_rest_route( 'houzez-mobile-api/v1', '/like-property', array(
+        'methods' => 'POST',
+        'callback' => 'likeProperty',
+    ));
   
   });
 
@@ -133,4 +138,20 @@ function uploadPropertyImageWithAuth(){
     $_REQUEST['verify_nonce'] = $nonce;
     require_once(ABSPATH . "wp-admin" . '/includes/image.php');
     houzez_property_img_upload();
+}
+
+//like or unlike | favorite or un favorite a property.
+function likeProperty() {
+    
+    if ( !isset( $_POST['listing_id'] ) ) {
+        $ajax_response = array( 'success' => false , 'reason' => esc_html__( 'No Property ID found', 'houzez' ) );
+        wp_send_json($ajax_response,400);
+        return;
+    }
+    if (! is_user_logged_in() ) {
+        $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+    }
+    do_action('wp_ajax_houzez_add_to_favorite');
 }

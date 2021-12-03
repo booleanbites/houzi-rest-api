@@ -49,6 +49,11 @@ add_action( 'rest_api_init', function () {
     'callback' => 'getSimilarProperties',
   ));
 
+  register_rest_route( 'houzez-mobile-api/v1', '/favorite-properties', array(
+    'methods' => 'GET',
+    'callback' => 'getFavoriteProperties',
+  ));
+
 });
 
 
@@ -508,8 +513,7 @@ function searchProperties() {
 }
 
 
-function getSimilarProperties()
-{
+function getSimilarProperties() {
     $property_id = $_GET['property_id'];
     if( !isset( $_GET['property_id']) || empty($property_id)) {
         $ajax_response = array( 'success' => false, 'reason' => 'Please provide property_id' );
@@ -659,4 +663,34 @@ function propertyNode($property){
     $property->priceSimple = houzez_listing_price_map_pins();
 
     return $property;
+}
+
+
+function getFavoriteProperties() {
+    
+    if (! is_user_logged_in() ) {
+        $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+    }
+    $userID         = get_current_user_id();
+    $fav_ids = 'houzez_favorites-'.$userID;
+    $fav_ids = get_option( $fav_ids );
+    if( empty( $fav_ids ) ) { 
+        $ajax_response = array( 'success' => false, 'reason' => esc_html__("You don't have any favorite listings yet!", 'houzez') );
+         wp_send_json($ajax_response, 404);
+    } else {
+        $args = array('post_type' => 'property', 'post__in' => $fav_ids, 'numberposts' => -1 );
+        $myposts = get_posts($args);
+        
+        $properties = array();
+
+        foreach ($myposts as $post) : setup_postdata($post);
+            array_push($properties, propertyNode($post) );
+        endforeach;
+        wp_reset_postdata();
+
+        $ajax_response = array( 'success' => true, 'result' => $myposts );
+         wp_send_json($ajax_response, 200);
+    }
 }
