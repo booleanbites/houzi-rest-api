@@ -694,3 +694,15 @@ function getFavoriteProperties() {
          wp_send_json($ajax_response, 200);
     }
 }
+function isFavoriteProperty($prop_id) {
+    if (!is_user_logged_in() ) {
+        return false; 
+    }
+    $userID  = get_current_user_id();
+    $fav_ids = 'houzez_favorites-'.$userID;
+    $fav_ids = get_option( $fav_ids );
+    if( empty( $fav_ids ) ) {
+        return false;
+    }
+    return in_array($prop_id, $fav_ids);
+}

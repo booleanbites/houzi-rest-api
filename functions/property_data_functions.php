@@ -24,7 +24,7 @@ function preparePropertyData($response, $post, $request)
     hm_postFeature($response);
     hm_postAddress($response);
     
-
+    $response->data['is_fav'] = isFavoriteProperty($property_id_from_url);
     $response->data['property_meta']['agent_info'] = houzez20_property_contact_form();
   } else {
     $response->data['thumbnail']   = get_the_post_thumbnail_url( get_the_ID(), 'houzez-property-thumb-image' );

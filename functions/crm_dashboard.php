@@ -12,6 +12,10 @@ add_action( 'rest_api_init', function () {
       'methods' => 'GET',
       'callback' => 'allLeads',
     ));
+    register_rest_route( 'houzez-mobile-api/v1', '/delete-lead', array(
+      'methods' => 'GET',
+      'callback' => 'deleteLead',
+    ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/enquiries', array(
       'methods' => 'GET',
@@ -200,6 +204,29 @@ function deleteDeal() {
 
   //needs enquiry id in var deal_id
   do_action("wp_ajax_houzez_delete_deal");
+}
+
+
+function deleteLead() {
+
+  if (! is_user_logged_in() ) {
+    $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+    wp_send_json($ajax_response, 403);
+    return; 
+  }
+  if(!isset( $_REQUEST['lead_id']) ) {
+    $ajax_response = array( 'success' => false, 'reason' => 'Please provide lead_id' );
+    wp_send_json($ajax_response, 403);
+    return;
+  }
+  $nonce = wp_create_nonce('delete_lead_nonce');
+  $_REQUEST['security'] = $nonce;
+
+
+  //$_REQUEST['lead_id'] = $_POST['lead_id'];
+
+  //needs lead id in var lead_id
+  do_action("wp_ajax_houzez_delete_lead");
 }
 
 function addCRMEnquiry() {
