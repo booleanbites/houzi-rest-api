@@ -31,6 +31,12 @@ add_action( 'rest_api_init', function () {
         'methods' => 'POST',
         'callback' => 'uploadPropertyImageWithAuth',
     ));
+    register_rest_route( 'houzez-mobile-api/v1', '/delete-property-image', array(
+        'methods' => 'POST',
+        'callback' => 'deleteImageForProperty',
+    ));
+
+    
 
     register_rest_route( 'houzez-mobile-api/v1', '/like-property', array(
         'methods' => 'POST',
@@ -143,6 +149,29 @@ function uploadPropertyImageWithAuth(){
     $_REQUEST['verify_nonce'] = $nonce;
     require_once(ABSPATH . "wp-admin" . '/includes/image.php');
     houzez_property_img_upload();
+}
+
+function deleteImageForProperty() {
+    if (! is_user_logged_in() ) {
+        $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+    }
+    if(! isset( $_POST['thumb_id'] ) ) {
+        $ajax_response = array( 'success' => false, 'reason' => 'Please provide thumb_id' );
+        wp_send_json($ajax_response, 400);
+        return;
+    }
+    if(! isset( $_POST['prop_id'] ) ) {
+        $ajax_response = array( 'success' => false, 'reason' => 'Please provide prop_id' );
+        wp_send_json($ajax_response, 400);
+        return;
+    }
+    
+    $nonce = wp_create_nonce('verify_gallery_nonce');
+    $_POST['removeNonce'] = $nonce;
+    
+    do_action('wp_ajax_houzez_remove_property_thumbnail');
 }
 
 //like or unlike | favorite or un favorite a property.

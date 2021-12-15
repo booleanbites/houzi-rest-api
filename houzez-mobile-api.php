@@ -48,7 +48,7 @@ class Houzez_mobile_api {
     function houzez_mobile_inc_files() {
         
        
-        require_once( HOUZEZ_MOBILE_FUNC_PATH . 'functions/property_list_functions.php');
+        require_once( HOUZEZ_MOBILE_FUNC_PATH . 'functions/property_search_functions.php');
         require_once( HOUZEZ_MOBILE_FUNC_PATH . 'functions/property_functions.php');
         require_once( HOUZEZ_MOBILE_FUNC_PATH . 'functions/property_data_functions.php');
         require_once( HOUZEZ_MOBILE_FUNC_PATH . 'functions/touch_base_functions.php');

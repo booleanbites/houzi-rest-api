@@ -16,6 +16,7 @@ function preparePropertyData($response, $post, $request)
 {
   $params = $request->get_params();
   $property_id_from_url = $params["id"];
+  $isediting = $params["editing"];
   $should_append_extra_data = !empty( $property_id_from_url);
 
   //append extra data only when there's an id provided.
@@ -44,8 +45,9 @@ function preparePropertyData($response, $post, $request)
   $response->data['property_meta']['floor_plans'] = unserialize($floor_plans[0]);
   
 
-  
-  unset($response->data['property_meta']['fave_property_images']);
+  if(empty($isediting)) {
+    unset($response->data['property_meta']['fave_property_images']);
+  }
   unset($response->data['property_meta']['houzez_views_by_date']);
   unset($response->data['property_meta']['_vc_post_settings']);
   

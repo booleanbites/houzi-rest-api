@@ -54,6 +54,23 @@ add_action( 'rest_api_init', function () {
     'callback' => 'getFavoriteProperties',
   ));
 
+  register_rest_route( 'houzez-mobile-api/v1', '/save-search', array(
+    'methods' => 'POST',
+    'callback' => 'saveSearch',
+  ));
+  register_rest_route( 'houzez-mobile-api/v1', '/saved-searches', array(
+    'methods' => 'GET',
+    'callback' => 'listSavedSearches',
+  ));
+  register_rest_route( 'houzez-mobile-api/v1', '/view-saved-search', array(
+    'methods' => 'POST',
+    'callback' => 'viewSavedSearch',
+  ));
+  register_rest_route( 'houzez-mobile-api/v1', '/delete-saved-search', array(
+    'methods' => 'POST',
+    'callback' => 'deleteSearch',
+  ));
+
 });
 
 
@@ -77,6 +94,28 @@ function getPropertDetail(){
 /* ******************************************************************************************************** */
 
 function searchProperties() {
+    
+    $query_args = setupSearchQuery();
+    
+    queryPropertiesAndSendJSON($query_args);
+}
+function queryPropertiesAndSendJSON($query_actual) {
+    $query_args = new WP_Query( $query_actual );
+    $properties = array();
+    
+
+    while( $query_args->have_posts() ):
+        $query_args->the_post();
+        $property = $query_args->post;
+        array_push($properties, propertyNode($property) );
+        
+    endwhile;
+
+    wp_reset_postdata();
+    wp_send_json( array( 'success' => true ,'count' => count($properties) , 'result' => $properties), 200);
+    //wp_send_json( array( 'success' => true, 'query' => $query_actual), 200);
+}
+function setupSearchQuery() {
     $meta_query = array();
     $tax_query = array();
     $date_query = array();
@@ -490,28 +529,8 @@ function searchProperties() {
     if( $per_page > 0 ) {
         $query_args['posts_per_page']  = $per_page;
     }
-
-    $query_args = new WP_Query( $query_args );
-
-
-    $properties = array();
-    
-
-    while( $query_args->have_posts() ):
-        $query_args->the_post();
-        $property = $query_args->post;
-        array_push($properties, propertyNode($property) );
-        
-    endwhile;
-
-    wp_reset_postdata();
-
-    
-    wp_send_json( array( 'success' => true, 'count' => count($properties) , 'result' => $properties), 200);
-    
-    
+    return $query_args;
 }
-
 
 function getSimilarProperties() {
     $property_id = $_GET['property_id'];
@@ -665,7 +684,6 @@ function propertyNode($property){
     return $property;
 }
 
-
 function getFavoriteProperties() {
     
     if (! is_user_logged_in() ) {
@@ -694,6 +712,7 @@ function getFavoriteProperties() {
          wp_send_json($ajax_response, 200);
     }
 }
+
 function isFavoriteProperty($prop_id) {
     if (!is_user_logged_in() ) {
         return false; 
@@ -705,4 +724,230 @@ function isFavoriteProperty($prop_id) {
         return false;
     }
     return in_array($prop_id, $fav_ids);
+}
+
+function saveSearch() {
+    if (! is_user_logged_in() ) {
+        $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+    }
+
+    $query_args_orig = setupSearchQuery();
+    $search_args = base64_encode( serialize( $query_args_orig ));
+    $nonce = wp_create_nonce('houzez-save-search-nounce');
+    $_REQUEST['houzez_save_search_ajax'] = $nonce;
+    $_REQUEST['search_args'] = $search_args;
+    $_REQUEST['search_URI'] = http_build_query($_POST);
+
+    do_action('wp_ajax_houzez_save_search');
+    // wp_send_json(['success' => true, 
+                    // 'query' => $query_args_orig
+                    // ],200);
+}
+
+function listSavedSearches() {
+    if (! is_user_logged_in() ) {
+        $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+    }
+    global $wpdb, $houzez_local;
+
+    $userID = get_current_user_id();
+
+    $table_name = $wpdb->prefix . 'houzez_search';
+    $results    = $wpdb->get_results( 'SELECT * FROM ' . $table_name . ' WHERE auther_id = '.$userID.' ORDER BY id DESC', OBJECT );
+
+    $saved_searches = array();
+
+    foreach ( $results as $houzez_search_data ) :
+
+        $search_args = $houzez_search_data->query;
+        $search_args_decoded = unserialize( base64_decode( $search_args ) );
+        $search_as_text = decodeParamsUtil($search_args_decoded);
+        $houzez_search_data->query = $search_as_text;
+        array_push($saved_searches, $houzez_search_data );
+    endforeach;
+
+    wp_send_json(['sucess' => true,
+    'results' => $saved_searches],200);
+}
+
+function viewSavedSearch() {
+    if (! is_user_logged_in() ) {
+        $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+    }
+    if(! isset( $_POST['id'] ) ) {
+        $ajax_response = array( 'success' => false, 'reason' => 'Please provide saved search id' );
+        wp_send_json($ajax_response, 400);
+        return;
+    }
+    global $wpdb, $houzez_local;
+
+    $id = $_POST['id'];
+
+    $table_name = $wpdb->prefix . 'houzez_search';
+    $result    = $wpdb->get_row( 'SELECT * FROM ' . $table_name . ' WHERE id = '.$id.' ORDER BY id DESC', OBJECT );
+    
+    $search_args = $result->query;
+    $query_args = unserialize( base64_decode( $search_args ) );
+
+    // wp_send_json(['sucess' => true,
+    // 'results' => $query_args], 200);
+
+    queryPropertiesAndSendJSON($query_args);
+}
+
+function deleteSearch() {
+    if (! is_user_logged_in() ) {
+        $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+    }
+    if(! isset( $_POST['id'] ) ) {
+        $ajax_response = array( 'success' => false, 'reason' => 'Please provide saved search id' );
+        wp_send_json($ajax_response, 400);
+        return;
+    }
+    $id = $_POST['id'];
+    //houzez need id in property_id
+    $_POST['property_id']  = $id;
+    do_action('wp_ajax_houzez_delete_search');
+}
+
+function decodeParamsUtil($search_args_decoded) {
+    $meta_query     = array();
+
+    if ( isset( $search_args_decoded['meta_query'] ) ) :
+
+        foreach ( $search_args_decoded['meta_query'] as $key => $value ) :
+
+            if ( is_array( $value ) ) :
+
+                if ( isset( $value['key'] ) ) :
+
+                    $meta_query[] = $value;
+
+                else :
+
+                    foreach ( $value as $key => $value ) :
+
+                        if ( is_array( $value ) ) :
+
+                            foreach ( $value as $key => $value ) :
+
+                                if ( isset( $value['key'] ) ) :
+
+                                    $meta_query[]     = $value;
+
+                                endif;
+
+                            endforeach;
+
+                        endif;
+
+                    endforeach;
+
+                endif;
+
+            endif;
+
+        endforeach;
+
+    endif;
+
+    $search_as_text = '';
+
+    if( isset( $search_args_decoded['s'] ) && !empty( $search_args_decoded['s'] ) ) {
+        $search_as_text =  esc_html__('Keyword', 'houzez') . ': ' . esc_attr( $search_args_decoded['s'] ). ' / ';
+    }
+
+    if( isset( $search_args_decoded['tax_query'] ) ) {
+        foreach ($search_args_decoded['tax_query'] as $key => $val):
+
+            if (isset($val['taxonomy']) && isset($val['terms']) && $val['taxonomy'] == 'property_status') {
+                $status = hz_saved_search_term($val['terms'], 'property_status');
+                if (!empty($status)) {
+                    $search_as_text =  $search_as_text . esc_html__('Status', 'houzez') . ': ' . esc_attr( $status ). ' / ';
+                }
+            }
+            if (isset($val['taxonomy']) && isset($val['terms']) && $val['taxonomy'] == 'property_type') {
+                $types = hz_saved_search_term($val['terms'], 'property_type');
+                if (!empty($types)) {
+                    $search_as_text =  $search_as_text  . esc_html__('Type', 'houzez') . ': ' . esc_attr( $types ). ' / ';
+                }
+            }
+            if (isset($val['taxonomy']) && isset($val['terms']) && $val['taxonomy'] == 'property_city') {
+                $cities = hz_saved_search_term($val['terms'], 'property_city');
+                if (!empty($cities)) {
+                    $search_as_text =  $search_as_text  . esc_html__('City', 'houzez') . ': ' . esc_attr( $cities ). ' / ';
+                }
+            }
+
+            if (isset($val['taxonomy']) && isset($val['terms']) && $val['taxonomy'] == 'property_state') {
+                $state = hz_saved_search_term($val['terms'], 'property_state');
+                if (!empty($state)) {
+                    $search_as_text =  $search_as_text  . esc_html__('State', 'houzez') . ': ' . esc_attr( $state ). ' / ';
+                }
+            }
+
+            if (isset($val['taxonomy']) && isset($val['terms']) && $val['taxonomy'] == 'property_area') {
+                $area = hz_saved_search_term($val['terms'], 'property_area');
+                if (!empty($area)) {
+                    $search_as_text =  $search_as_text  . esc_html__('Area', 'houzez') . ': ' . esc_attr( $area ). ' / ';
+                }
+            }
+
+            if (isset($val['taxonomy']) && isset($val['terms']) && $val['taxonomy'] == 'property_label') {
+                $label = hz_saved_search_term($val['terms'], 'property_label');
+                if (!empty($label)) {
+                    $search_as_text =  $search_as_text  . esc_html__('Label', 'houzez') . ': ' . esc_attr( $area ). ' / ';
+                }
+            }
+
+        endforeach;
+    }
+
+    if( isset( $meta_query ) && sizeof( $meta_query ) !== 0 ) {
+        foreach ( $meta_query as $key => $val ) :
+
+            if (isset($val['key']) && $val['key'] == 'fave_property_bedrooms') {
+                
+                $search_as_text =  $search_as_text  . esc_html__('Bedrooms', 'houzez') . ': ' . esc_attr( $val['value'] ). ' / ';
+            }
+
+            if (isset($val['key']) && $val['key'] == 'fave_property_bathrooms') {
+                
+                $search_as_text =  $search_as_text  . esc_html__('Bathrooms', 'houzez') . ': ' . esc_attr( $val['value'] ). ' / ';
+            }
+
+            if (isset($val['key']) && $val['key'] == 'fave_property_price') {
+                if ( isset( $val['value'] ) && is_array( $val['value'] ) ) :
+                    $user_args['min-price'] = $val['value'][0];
+                    $user_args['max-price'] = $val['value'][1];
+                    $search_as_text =  $search_as_text  . esc_html__('Price', 'houzez') . ': ' . esc_attr( $val['value'][0] ).' - '.esc_attr( $val['value'][1]). ' / ';
+                else :
+                    $user_args['max-price'] = $val['value'];
+                    $search_as_text =  $search_as_text  . esc_html__('Price', 'houzez') . ': ' . esc_attr( $val['value'] ).' / ';
+                endif;
+            }
+
+            if (isset($val['key']) && $val['key'] == 'fave_property_size') {
+                if ( isset( $val['value'] ) && is_array( $val['value'] ) ) :
+                    $user_args['min-area'] = $val['value'][0];
+                    $user_args['max-area'] = $val['value'][1];
+                    $search_as_text =  $search_as_text  . esc_html__('Size', 'houzez') . ': ' . esc_attr( $val['value'][0] ).' - '.esc_attr( $val['value'][1]). ' / ';
+                else :
+                    $user_args['max-area'] = $val['value'];
+                    $search_as_text =  $search_as_text  . esc_html__('Size', 'houzez') . ': ' . esc_attr( $val['value'] ).' / ';
+                endif;
+            }
+
+
+        endforeach;
+    }
+    return $search_as_text;
 }
