@@ -14,6 +14,8 @@ add_filter('rest_prepare_property', 'preparePropertyData', 10, 3);
 
 function preparePropertyData($response, $post, $request)
 {
+
+  //TODO: add context params to only modify this result when its coming from app context.
   $params = $request->get_params();
   $property_id_from_url = $params["id"];
   $isediting = $params["editing"];

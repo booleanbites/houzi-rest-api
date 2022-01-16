@@ -111,4 +111,31 @@ add_action( 'rest_api_init', function () {
     return new WP_REST_Response( $response );
   }
 
+  if(!function_exists('houzez_get_profile_thumb')) {
+    function houzez_get_profile_thumb($user_id = null) {
+
+        if(empty($user_id)) {
+            $user_id = get_the_author_meta( 'ID' );
+        }
+        
+        $author_picture_id   =   get_the_author_meta( 'fave_author_picture_id' , $user_id );
+        $user_custom_picture =   get_the_author_meta( 'fave_author_custom_picture', $user_id );
+
+        if( !empty( $author_picture_id ) ) {
+            $author_picture_id = intval( $author_picture_id );
+            if ( $author_picture_id ) {
+                $img = wp_get_attachment_image_src( $author_picture_id, 'thumbnail' );
+                $user_custom_picture = $img[0];
+
+            }
+        }
+
+        if($user_custom_picture =='' ) {
+            $user_custom_picture = HOUZEZ_IMAGE. 'profile-avatar.png';
+        }
+
+        return $user_custom_picture;
+    }
+}
+
 

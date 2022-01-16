@@ -56,6 +56,7 @@ class Houzez_mobile_api {
         require_once( HOUZEZ_MOBILE_FUNC_PATH . 'functions/agent_agency_functions.php');
         require_once( HOUZEZ_MOBILE_FUNC_PATH . 'functions/crm_dashboard.php');
         require_once( HOUZEZ_MOBILE_FUNC_PATH . 'functions/user.php');
+        require_once( HOUZEZ_MOBILE_FUNC_PATH . 'functions/property_review_functions.php');
         
     }
 
