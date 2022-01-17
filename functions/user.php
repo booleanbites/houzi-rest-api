@@ -13,6 +13,21 @@ add_action( 'rest_api_init', function () {
       'callback' => 'resetUserPassword',
     ));
 
+    register_rest_route( 'houzez-mobile-api/v1', '/profile', array(
+      'methods' => 'GET',
+      'callback' => 'fetchProfile',
+    ));
+
+    register_rest_route( 'houzez-mobile-api/v1', '/update-profile', array(
+      'methods' => 'POST',
+      'callback' => 'editProfile',
+    ));
+
+    register_rest_route( 'houzez-mobile-api/v1', '/update-profile-photo', array(
+      'methods' => 'POST',
+      'callback' => 'editProfilePhoto',
+    ));
+
     register_rest_route( 'contact-us/v1', 'send-message', array(
       'methods'             => 'POST',
       'callback'            => 'sendContactMail',
@@ -138,4 +153,126 @@ add_action( 'rest_api_init', function () {
     }
 }
 
+function fetchProfile() {
+  
+  
+  if (!is_user_logged_in() ) {
+    $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+    wp_send_json($ajax_response, 403);
+    return; 
+  }
+  $userID = get_current_user_id();
+  if(isset($_GET["user_id"]) && !empty($_GET["user_id"])) {
+    $userID = $_GET["user_id"];
+  }
+  $response = array();
+    
+  $response['success'] = true;
+  
+  $user = get_user_by('id', $userID);
 
+  $user_custom_picture    =   get_the_author_meta( 'fave_author_custom_picture' , $userID );
+  $author_picture_id      =   get_the_author_meta( 'fave_author_picture_id' , $userID );
+  if( !empty( $author_picture_id ) ) {
+    $author_picture_id = intval( $author_picture_id );
+    if ( $author_picture_id ) {
+      $user->profile = wp_get_attachment_image_url( $author_picture_id, 'large');
+    }
+  } else {
+    $user->profile = esc_url( $user_custom_picture );
+
+  }
+
+  $user->username               =   get_the_author_meta( 'user_login' , $userID );
+  $user->user_title             =   get_the_author_meta( 'fave_author_title' , $userID );
+  $user->first_name             =   get_the_author_meta( 'first_name' , $userID );
+  $user->last_name              =   get_the_author_meta( 'last_name' , $userID );
+  $user->user_email             =   get_the_author_meta( 'user_email' , $userID );
+  $user->user_mobile            =   get_the_author_meta( 'fave_author_mobile' , $userID );
+  $user->user_whatsapp          =   get_the_author_meta( 'fave_author_whatsapp' , $userID );
+  $user->user_phone             =   get_the_author_meta( 'fave_author_phone' , $userID );
+  $user->description            =   get_the_author_meta( 'description' , $userID );
+  $user->userlangs              =   get_the_author_meta( 'fave_author_language' , $userID );
+  $user->user_company           =   get_the_author_meta( 'fave_author_company' , $userID );
+  $user->tax_number             =   get_the_author_meta( 'fave_author_tax_no' , $userID );
+  $user->fax_number             =   get_the_author_meta( 'fave_author_fax' , $userID );
+  $user->user_address           =   get_the_author_meta( 'fave_author_address' , $userID );
+  $user->service_areas          =   get_the_author_meta( 'fave_author_service_areas' , $userID );
+  $user->specialties            =   get_the_author_meta( 'fave_author_specialties' , $userID );
+  $user->license                =   get_the_author_meta( 'fave_author_license' , $userID );
+  $user->gdpr_agreement         =   get_the_author_meta( 'gdpr_agreement' , $userID );
+  
+  unset($user->user_pass);
+  unset($user->user_activation_key);
+  unset($user->allcaps);
+
+
+
+  $public_display = array();
+  $public_display[]  = $user->user_login;
+  $public_display[]  = $user->nickname;
+  
+  if(!empty($user->first_name)) {
+      $public_display[] = $user->first_name;
+  }
+  
+  if(!empty($user->last_name)) {
+      $public_display[] = $user->last_name;
+  }
+  
+  if(!empty($user->first_name) && !empty($user->last_name) ) {
+      $public_display[] = $user->first_name . ' ' . $user->last_name;
+      $public_display[] = $user->last_name . ' ' . $user->first_name;
+  }
+  
+  if(!in_array( $user->display_name, $public_display)) {
+      $public_display = array( 'display_displayname' => $user->display_name ) + $public_display;
+      $public_display = array_map( 'trim', $public_display );
+      $public_display = array_unique( $public_display );
+  }
+  $user->display_name_options = $public_display;
+
+  $response["user"] = $user;
+  
+  
+
+  wp_send_json($response, 200);
+}
+
+function editProfile() {
+  if (!is_user_logged_in() ) {
+    $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+    wp_send_json($ajax_response, 403);
+    return; 
+  }
+  $userID = get_current_user_id();
+  
+  $nonce = wp_create_nonce('houzez_profile_ajax_nonce');
+  $_REQUEST['houzez-security-profile'] = $nonce;
+
+  do_action("wp_ajax_houzez_ajax_update_profile");
+}
+
+function editProfilePhoto() {
+  if (!is_user_logged_in() ) {
+    $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+    wp_send_json($ajax_response, 403);
+    return; 
+  }
+  if(!isset( $_FILES['houzez_file_data_name']) ) {
+    $ajax_response = array( 'success' => false, 'reason' => 'Please provide photo houzez_file_data_name' );
+    
+    wp_send_json($ajax_response, 400);
+    return;
+  }
+  $userID = get_current_user_id();
+  
+  $nonce = wp_create_nonce('houzez_upload_nonce');
+  $_REQUEST['verify_nonce'] = $nonce;
+  $_REQUEST['user_id'] = $userID;
+
+  require_once(ABSPATH . "wp-admin" . '/includes/image.php');
+
+  do_action("wp_ajax_houzez_user_picture_upload");
+
+}
