@@ -221,7 +221,7 @@ function getMyProperties() {
     $userID         = get_current_user_id();
     $qry_status = 'any';
 
-    if( isset( $_GET['status'] ) && empty( $_GET['status'] )) {
+    if( isset( $_GET['status'] ) && !empty( $_GET['status'] )) {
         $qry_status = $_GET['status'];
     }
 
