@@ -36,8 +36,6 @@ add_action( 'rest_api_init', function () {
         'callback' => 'deleteImageForProperty',
     ));
 
-    
-
     register_rest_route( 'houzez-mobile-api/v1', '/like-property', array(
         'methods' => 'POST',
         'callback' => 'likeProperty',
@@ -46,6 +44,11 @@ add_action( 'rest_api_init', function () {
     register_rest_route( 'houzez-mobile-api/v1', '/is-fav-property', array(
         'methods' => 'GET',
         'callback' => 'isFavProperty',
+    ));
+
+    register_rest_route( 'houzez-mobile-api/v1', '/my-properties', array(
+        'methods' => 'GET',
+        'callback' => 'getMyProperties',
     ));
   
   });
@@ -206,4 +209,56 @@ function isFavProperty() {
     $ajax_response = array( 'success' => true, 'is_fav' => isFavoriteProperty($_REQUEST['listing_id']) );
     wp_send_json($ajax_response, 200);
 
+}
+
+function getMyProperties() {
+    if (! is_user_logged_in() ) {
+        $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+    }
+
+    $userID         = get_current_user_id();
+    $qry_status = 'any';
+
+    if( isset( $_GET['status'] ) && empty( $_GET['status'] )) {
+        $qry_status = $_GET['status'];
+    }
+
+    $sortby = '';
+    if( isset( $_GET['sortby'] ) ) {
+        $sortby = $_GET['sortby'];
+    }
+    $no_of_prop   =  5;
+    $paged = 1;
+
+    if( isset( $_GET['per_page'] ) ) {
+        $no_of_prop = $_GET['per_page'];
+    }
+    if( isset( $_GET['page'] ) ) {
+        $paged = $_GET['page'];
+    }
+
+    if ( get_query_var( 'paged' ) ) {
+        $paged = get_query_var( 'paged' );
+    } elseif ( get_query_var( 'page' ) ) { // if is static front page
+        $paged = get_query_var( 'page' );
+    }
+    
+    $args = array(
+        'post_type'        =>  'property',
+        'author'           =>  $userID,
+        'paged'             => $paged,
+        'posts_per_page'    => $no_of_prop,
+        'post_status'      =>  array( $qry_status ),
+        'suppress_filters' => false
+    );
+    if( isset ( $_GET['keyword'] ) ) {
+        $keyword = trim( $_GET['keyword'] );
+        if ( ! empty( $keyword ) ) {
+            $args['s'] = $keyword;
+        }
+    }
+    $args = houzez_prop_sort ( $args );
+    queryPropertiesAndSendJSON($args);
 }
