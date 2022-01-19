@@ -286,7 +286,7 @@ function getProperty($request) {
     $response = rest_do_request( $request );
     //$response = $this->server->dispatch($request);
     // $data = $response->get_data();
-    wp_send_json( $response["data"] , 200);
+    wp_send_json( $response , 200);
     return;
     // $userID         = get_current_user_id();
     
