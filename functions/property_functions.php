@@ -51,7 +51,7 @@ add_action( 'rest_api_init', function () {
         'callback' => 'getMyProperties',
     ));
 
-    register_rest_route( 'houzez-mobile-api/v1', '/my-property', array(
+    register_rest_route( 'houzez-mobile-api/v1', '/property', array(
         'methods' => 'GET',
         'callback' => 'getProperty',
     ));
@@ -269,53 +269,112 @@ function getMyProperties() {
 }
 
 function getProperty($request) {
-    if (! is_user_logged_in() ) {
-        $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
-        wp_send_json($ajax_response, 403);
-        return; 
-    }
     if ( !isset( $_GET['id']) || empty( $_GET['id']) ) {
         $ajax_response = array( 'success' => false , 'reason' => esc_html__( 'No Property ID found', 'houzez' ) );
         wp_send_json($ajax_response,400);
         return;
     }
+    if (isset( $_GET['editing']) && !empty( $_GET['editing'] && $_GET['editing'] == "true") && ! is_user_logged_in() ) {
+        $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+    }
+
 	$propertyId     = $_GET['id'];
-    $request = new WP_REST_Request( 'GET', sprintf('/wp/v2/properties/%d', $propertyId) );
-    $request->set_param('editing', 'true');
-    $request->set_param('status', 'any');
-    $response = rest_do_request( $request );
-    //$response = $this->server->dispatch($request);
-    $data = $response->get_data();
-    wp_send_json( $data , 200);
-    return;
-    // $userID         = get_current_user_id();
     
-    // $status = 'publish';
-    // if( isset( $_GET['status'] ) && !empty( $_GET['status'] )) {
-    //     $status = $_GET['status'];
-    // }
     
-    // $args = array(
-    //     'post_type'        =>  'property',
-    //     'author'           =>  $userID,
-    //     'id'               =>  $propertyId,
-    //     'posts_per_page'   =>  1,
-    //     'post_status'      =>  $status,
-    //     'suppress_filters' =>  false
-    // );
+    $args = array(
+        'post_type'        =>  'property',
+        'p'               =>  $propertyId,    
+        'posts_per_page'   =>  1,
+        'suppress_filters' =>  false
+    );
     
-    // $query_args = new WP_Query( $args );
-    // $properties = array();
-    // $response = array();
+    $query_args = new WP_Query( $args );
+    $properties = array();
     
-    // while( $query_args->have_posts() ):
-    //     $query_args->the_post();
-    //     $property = $query_args->post;
-    //     //preparePropertyData($response, $property, $request);
-    //     array_push($properties, $property );
-    //     //break;
-    // endwhile;
-    // wp_reset_postdata();
-    // $params = $request->get_params();
-    // wp_send_json( array("prop" => $response, "params" => $params), 200);
+    
+    
+    while( $query_args->have_posts() ):
+        $query_args->the_post();
+        $property = $query_args->post;
+        $post_id = $property->ID;
+        
+        $property->is_fav = isFavoriteProperty($post_id);
+
+        $property_meta = get_post_meta($post_id);;
+        
+        
+        $property_meta['agent_info'] = houzez20_property_contact_form();
+
+        $additional_features = $property_meta["additional_features"];
+        $floor_plans = $property_meta["floor_plans"];
+
+        unset($property_meta['additional_features']);
+        unset($property_meta['floor_plans']);
+
+  
+        $property_meta['additional_features'] = unserialize($additional_features[0]);
+        $property_meta['floor_plans'] = unserialize($floor_plans[0]);
+  
+        $property->property_meta    = $property_meta;
+
+        appendPostImages($property);
+        appendPostFeature($property);
+        appendPostAddress($property);
+
+
+        array_push($properties, $property );
+        //break;
+    endwhile;
+    
+    wp_send_json($properties[0] , 200);
+}
+
+function appendPostImages(&$property)
+{
+    $property->property_images = array();
+    $property->property_images_thumb = array();
+  foreach ($property->property_meta['fave_property_images'] as $imgID) :
+    $property->property_images[] = wp_get_attachment_url($imgID);
+    $property->property_images_thumb[] = wp_get_attachment_image_src($imgID, 'thumbnail', true )[0];
+  endforeach;
+}
+function appendPostFeature(&$property)
+{
+  // $response->data['property_features'] = get_the_terms( $response->data['id'], 'property_feature' );
+
+  $property->property_features = wp_get_post_terms( $property->ID,
+    ['property_feature'],
+    array('fields' => 'names')
+  );
+}
+
+function appendPostAddress(&$response)
+{
+
+  $address_array = wp_get_post_terms(
+    $response->ID,
+    ['property_country', 'property_state', 'property_city', 'property_area']
+  );
+  $property_address = array();
+  foreach ($address_array as $address) :
+    $property_address[$address->taxonomy] = $address->name;
+  endforeach;
+  $response->property_address = $property_address;
+}
+function appendPostAttr(&$response)
+{
+  $property_attr = wp_get_post_terms(
+    $response->ID,
+    ['property_type', 'property_status', 'property_label']
+
+  );
+
+  $property_attributes = array();
+  foreach ($property_attr as $attribute) :
+    $property_attributes[$attribute->taxonomy] = $attribute->name;
+  endforeach;
+  $response->property_attr = $property_attributes;
+  
 }

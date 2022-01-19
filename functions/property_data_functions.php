@@ -62,10 +62,10 @@ function preparePropertyData($response, $post, $request)
   unset($response->data['property_city']);
 
   unset($response->data['property_area']);
-  unset($response->data['guid']);
+  // unset($response->data['guid']);
   
-  unset($response->data['modified_gmt']);
-  unset($response->data['menu_order']);
+  // unset($response->data['modified_gmt']);
+  // unset($response->data['menu_order']);
   //$response->data->remove_link($_linkKey);
 
 
