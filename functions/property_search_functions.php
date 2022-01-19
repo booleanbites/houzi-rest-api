@@ -102,8 +102,7 @@ function searchProperties() {
 function queryPropertiesAndSendJSON($query_actual) {
     $query_args = new WP_Query( $query_actual );
     $properties = array();
-    
-
+    $found_posts = $query_args->found_posts;
     while( $query_args->have_posts() ):
         $query_args->the_post();
         $property = $query_args->post;
@@ -112,7 +111,7 @@ function queryPropertiesAndSendJSON($query_actual) {
     endwhile;
 
     wp_reset_postdata();
-    wp_send_json( array( 'success' => true ,'count' => count($properties) , 'result' => $properties), 200);
+    wp_send_json( array( 'success' => true ,'count' => $found_posts , 'result' => $properties), 200);
     //wp_send_json( array( 'success' => true, 'query' => $query_actual), 200);
 }
 function setupSearchQuery() {

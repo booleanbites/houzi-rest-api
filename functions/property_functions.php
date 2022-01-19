@@ -50,6 +50,11 @@ add_action( 'rest_api_init', function () {
         'methods' => 'GET',
         'callback' => 'getMyProperties',
     ));
+
+    register_rest_route( 'houzez-mobile-api/v1', '/my-property', array(
+        'methods' => 'GET',
+        'callback' => 'getProperty',
+    ));
   
   });
 
@@ -261,4 +266,56 @@ function getMyProperties() {
     }
     $args = houzez_prop_sort ( $args );
     queryPropertiesAndSendJSON($args);
+}
+
+function getProperty($request) {
+    if (! is_user_logged_in() ) {
+        $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+    }
+    if ( !isset( $_GET['id']) || empty( $_GET['id']) ) {
+        $ajax_response = array( 'success' => false , 'reason' => esc_html__( 'No Property ID found', 'houzez' ) );
+        wp_send_json($ajax_response,400);
+        return;
+    }
+	$propertyId     = $_GET['id'];
+    $request = new WP_REST_Request( 'GET', sprintf('/wp/v2/properties/%d', $propertyId) );
+    $request->set_param('editing', 'true');
+    $request->set_param('status', 'any');
+    $response = rest_do_request( $request );
+    //$response = $this->server->dispatch($request);
+    // $data = $response->get_data();
+    wp_send_json( $response , 200);
+    return;
+    // $userID         = get_current_user_id();
+    
+    // $status = 'publish';
+    // if( isset( $_GET['status'] ) && !empty( $_GET['status'] )) {
+    //     $status = $_GET['status'];
+    // }
+    
+    // $args = array(
+    //     'post_type'        =>  'property',
+    //     'author'           =>  $userID,
+    //     'id'               =>  $propertyId,
+    //     'posts_per_page'   =>  1,
+    //     'post_status'      =>  $status,
+    //     'suppress_filters' =>  false
+    // );
+    
+    // $query_args = new WP_Query( $args );
+    // $properties = array();
+    // $response = array();
+    
+    // while( $query_args->have_posts() ):
+    //     $query_args->the_post();
+    //     $property = $query_args->post;
+    //     //preparePropertyData($response, $property, $request);
+    //     array_push($properties, $property );
+    //     //break;
+    // endwhile;
+    // wp_reset_postdata();
+    // $params = $request->get_params();
+    // wp_send_json( array("prop" => $response, "params" => $params), 200);
 }

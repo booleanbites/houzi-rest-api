@@ -64,7 +64,17 @@ add_action( 'rest_api_init', function () {
 
     $data['user_id'] = $user->ID;
     $data['user_role'] = $user->roles;
-    $data['avatar'] = get_avatar_url( $user->ID, 32 );
+    $user_custom_picture    =   get_the_author_meta( 'fave_author_custom_picture' , $user->ID );
+    $author_picture_id      =   get_the_author_meta( 'fave_author_picture_id' , $user->ID );
+    if( !empty( $author_picture_id ) ) {
+      $author_picture_id = intval( $author_picture_id );
+      if ( $author_picture_id ) {
+        $data['avatar'] = wp_get_attachment_image_url( $author_picture_id, 'large');
+      }
+    } else {
+      $data['avatar'] = esc_url( $user_custom_picture );
+    }
+    //$data['avatar'] = get_avatar_url( $user->ID, 32 );
     return $data;
   }
 
