@@ -322,7 +322,7 @@ function getProperty($request) {
         appendPostImages($property);
         appendPostFeature($property);
         appendPostAddress($property);
-
+        appendPostAttr($property);
 
         array_push($properties, $property );
         //break;
