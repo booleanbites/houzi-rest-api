@@ -1,5 +1,7 @@
 <?php
 
+
+
 // houzez-mobile-api/v1/search-properties
 add_action( 'rest_api_init', function () {
 
@@ -21,6 +23,11 @@ add_action( 'rest_api_init', function () {
     register_rest_route( 'houzez-mobile-api/v1', '/update-profile', array(
       'methods' => 'POST',
       'callback' => 'editProfile',
+    ));
+
+    register_rest_route( 'houzez-mobile-api/v1', '/fix-profile-pic', array(
+      'methods' => 'POST',
+      'callback' => 'fixProfilePicture',
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/update-profile-photo', array(
@@ -211,12 +218,21 @@ function fetchProfile() {
   $user->specialties            =   get_the_author_meta( 'fave_author_specialties' , $userID );
   $user->license                =   get_the_author_meta( 'fave_author_license' , $userID );
   $user->gdpr_agreement         =   get_the_author_meta( 'gdpr_agreement' , $userID );
+  $user->author_picture_id         =   $author_picture_id;
   
   unset($user->user_pass);
   unset($user->user_activation_key);
   unset($user->allcaps);
 
+  $user_agent_id = get_the_author_meta('fave_author_agent_id', $userID);
+  $user_agency_id = get_the_author_meta('fave_author_agency_id', $userID);
+  
+  if( !empty($user_agent_id) ) {
+    $user->fave_author_agent_id = $user_agent_id;
 
+  } else if( !empty($user_agency_id) ) {
+    $user->user_agency_id = $user_agency_id;
+  }
 
   $public_display = array();
   $public_display[]  = $user->user_login;
@@ -261,6 +277,33 @@ function editProfile() {
   $_REQUEST['houzez-security-profile'] = $nonce;
 
   do_action("wp_ajax_houzez_ajax_update_profile");
+}
+
+function fixProfilePicture() {
+  if (!is_user_logged_in() ) {
+    $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+    wp_send_json($ajax_response, 403);
+    return; 
+  }
+  $userID = get_current_user_id();
+  
+  $profile_attach_id    =   get_the_author_meta( 'fave_author_picture_id' , $userID );
+  $thumbnail_url = wp_get_attachment_image_src( $profile_attach_id, 'large' );
+
+  update_user_meta( $userID, 'fave_author_picture_id', $profile_attach_id );
+  update_user_meta( $userID, 'fave_author_custom_picture', $thumbnail_url[0] );
+
+  $user_agent_id = get_the_author_meta('fave_author_agent_id', $userID);
+  $user_agency_id = get_the_author_meta('fave_author_agency_id', $userID);
+  
+  if( !empty($user_agent_id) ) {
+      update_post_meta( $user_agent_id, '_thumbnail_id', $profile_attach_id );
+
+  } else if( !empty($user_agency_id) ) {
+      update_post_meta( $user_agency_id, '_thumbnail_id', $profile_attach_id );
+  }
+  $ajax_response = array( 'success' => true, 'data' => array("pic_id"=>$profile_attach_id, "url"=>$thumbnail_url[0]) );
+  wp_send_json($ajax_response, 200);
 }
 
 function editProfilePhoto() {

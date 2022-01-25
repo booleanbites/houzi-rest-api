@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: Houzez Mobile Api
-Plugin URI:  https://booleanbites.com/
+Plugin URI:  https://github.com/adilSoomro/houzez-mobile-api
 Description: Enhance Rest Api for mobiles
 Version:     1.0.1
 Author:      BooleanBites
