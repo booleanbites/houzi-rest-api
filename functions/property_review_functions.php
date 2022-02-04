@@ -35,6 +35,12 @@ add_filter('rest_prepare_houzez_reviews', 'prepareReviewsData', 10, 3);
 function prepareReviewsData($response, $post, $request) {
     $response->data['thumbnail']   = houzez_get_profile_pic();
     $response->data['meta'] = get_post_meta(get_the_ID()); 
+
+    $user = get_user_by('id', get_the_author_meta( 'ID' ));
+
+    $response->data['username'] = $user->user_login;
+    $response->data['user_display_name'] = $user->display_name;
+
     // $response->data['review_likes'] = get_post_meta(get_the_ID(), 'review_likes', true); 
     // $response->data['review_dislikes'] = get_post_meta(get_the_ID(), 'review_dislikes', true);
     //$response->data['review_stars'] = houzez_get_stars(get_post_meta(get_the_ID(), 'review_stars', true), false);
