@@ -252,9 +252,9 @@ function fetchProfile() {
   }
   
   if(!in_array( $user->display_name, $public_display)) {
-      $public_display = array( 'display_displayname' => $user->display_name ) + $public_display;
-      $public_display = array_map( 'trim', $public_display );
-      $public_display = array_unique( $public_display );
+      $public_display[] = $user->display_name;
+      
+      //$public_display = array_unique( $public_display );
   }
   $user->display_name_options = $public_display;
 
