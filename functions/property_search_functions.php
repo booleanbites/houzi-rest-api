@@ -690,14 +690,36 @@ function getFavoriteProperties() {
         wp_send_json($ajax_response, 403);
         return; 
     }
-    $userID         = get_current_user_id();
+    $per_page = -1;
+    $pagination = isset($_GET['cpage']);
+    
+    $page = isset($_GET['cpage']) ? (int) $_GET['cpage'] : 1; 
+    $per_page = isset($_GET['per_page']) ? (int) $_GET['per_page'] : 10;
+
+    $postOffset = ($page-1) * $per_page; //subtracting 1 from page, because api is sending 1 as first page.
+    
+
+
+    
+    $userID  = get_current_user_id();
     $fav_ids = 'houzez_favorites-'.$userID;
     $fav_ids = get_option( $fav_ids );
     if( empty( $fav_ids ) ) { 
         $ajax_response = array( 'success' => false, 'reason' => esc_html__("You don't have any favorite listings yet!", 'houzez') );
          wp_send_json($ajax_response, 404);
     } else {
-        $args = array('post_type' => 'property', 'post__in' => $fav_ids, 'numberposts' => -1 );
+        $args = array('post_type' => 'property',
+                'post__in' => $fav_ids,
+                'numberposts' => -1
+                );
+        if ($pagination) {
+            
+            $args = array('post_type' => 'property',
+                    'post__in' => $fav_ids,
+                    'offset' => $postOffset,
+                    'posts_per_page' => $per_page
+                    );
+        }  
         $myposts = get_posts($args);
         
         $properties = array();
