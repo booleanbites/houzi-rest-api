@@ -768,6 +768,8 @@ function saveSearch() {
 }
 
 function listSavedSearches() {
+    do_action( 'litespeed_control_set_nocache', 'nocache due to logged in' );
+    
     if (! is_user_logged_in() ) {
         $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
         wp_send_json($ajax_response, 403);

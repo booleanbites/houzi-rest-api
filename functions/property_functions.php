@@ -80,13 +80,14 @@ function addProperty(){
 function addPropertyWithAuth() {
     
     $new_property['post_status']    = 'publish';
+    
     $new_property                   = apply_filters( 'houzez_submit_listing', $new_property );
     houzez_update_property_from_draft( $new_property ); 
     wp_send_json(['prop_id' => $new_property ],200);
 }
 
 function deleteProperty() {
-    
+    do_action( 'litespeed_control_set_nocache', 'nocache due to logged in' );
     if ( !isset( $_REQUEST['prop_id'] ) ) {
         $ajax_response = array( 'success' => false , 'reason' => esc_html__( 'No Property ID found', 'houzez' ) );
         echo json_encode( $ajax_response );
@@ -94,6 +95,7 @@ function deleteProperty() {
     }
 
     $propID = $_REQUEST['prop_id'];
+
     $post_author = get_post_field( 'post_author', $propID );
 
     global $current_user;
@@ -175,7 +177,9 @@ function deleteImageForProperty() {
         wp_send_json($ajax_response, 400);
         return;
     }
-    
+    //purge light-speed cache for this property post type.
+    do_action( 'litespeed_purge_post', $_POST['prop_id'] );
+
     $nonce = wp_create_nonce('verify_gallery_nonce');
     $_POST['removeNonce'] = $nonce;
     

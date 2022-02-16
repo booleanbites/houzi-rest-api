@@ -3,7 +3,7 @@
 Plugin Name: Houzez Mobile Api
 Plugin URI:  https://github.com/adilSoomro/houzez-mobile-api
 Description: Enhance Rest Api for mobiles
-Version:     1.0.1
+Version:     1.1.1
 Author:      BooleanBites
 Author URI:  https://booleanbites.com/
 License:     GPL2

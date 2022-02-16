@@ -171,7 +171,7 @@ add_action( 'rest_api_init', function () {
 }
 
 function fetchProfile() {
-  
+  do_action( 'litespeed_control_set_nocache', 'nocache due to logged in' );
   
   if (!is_user_logged_in() ) {
     $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
@@ -183,7 +183,7 @@ function fetchProfile() {
     $userID = $_GET["user_id"];
   }
   $response = array();
-    
+  
   $response['success'] = true;
   
   $user = get_user_by('id', $userID);
@@ -273,6 +273,18 @@ function editProfile() {
   }
   $userID = get_current_user_id();
   
+  $user_agent_id = get_the_author_meta('fave_author_agent_id', $userID);
+  $user_agency_id = get_the_author_meta('fave_author_agency_id', $userID);
+  
+  if( !empty($user_agent_id) ) {
+      //purge light-speed cache for this agent post type.
+      do_action( 'litespeed_purge_post', $user_agent_id );
+  } else if( !empty($user_agency_id) ) {
+      //purge light-speed cache for this agency post type.
+      do_action( 'litespeed_purge_post', $user_agency_id );
+  }
+  
+
   $nonce = wp_create_nonce('houzez_profile_ajax_nonce');
   $_REQUEST['houzez-security-profile'] = $nonce;
 
@@ -312,6 +324,7 @@ function editProfilePhoto() {
     wp_send_json($ajax_response, 403);
     return; 
   }
+  
   if(!isset( $_FILES['houzez_file_data_name']) ) {
     $ajax_response = array( 'success' => false, 'reason' => 'Please provide photo houzez_file_data_name' );
     
@@ -320,6 +333,17 @@ function editProfilePhoto() {
   }
   $userID = get_current_user_id();
   
+  $user_agent_id = get_the_author_meta('fave_author_agent_id', $userID);
+  $user_agency_id = get_the_author_meta('fave_author_agency_id', $userID);
+  
+  if( !empty($user_agent_id) ) {
+      //purge light-speed cache for this agent post type.
+      do_action( 'litespeed_purge_post', $user_agent_id );
+  } else if( !empty($user_agency_id) ) {
+      //purge light-speed cache for this agency post type.
+      do_action( 'litespeed_purge_post', $user_agency_id );
+  }
+
   $nonce = wp_create_nonce('houzez_upload_nonce');
   $_REQUEST['verify_nonce'] = $nonce;
   $_REQUEST['user_id'] = $userID;

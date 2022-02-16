@@ -74,13 +74,33 @@ add_action( 'rest_api_init', function () {
     }
   }
 function allLeads() {
+  do_action( 'litespeed_control_set_nocache', 'nocache due to logged in' );
+    if (! is_user_logged_in() ) {
+      $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+      wp_send_json($ajax_response, 403);
+      return; 
+    }
+    //a fix for pagination
+    if(isset($_GET["per_page"]) && !empty($_GET["per_page"])) {
+      $_GET["records"] = $_GET["per_page"];
+    }
+
   $all_leads = Houzez_leads::get_leads();
   wp_send_json($all_leads["data"],200);
 }
 function allActivities(){
-    
-    //doFakeLogin();
-    
+  //disable lightspeed caching
+    do_action( 'litespeed_control_set_nocache', 'nocache due to logged in' );
+    if (! is_user_logged_in() ) {
+      $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+      wp_send_json($ajax_response, 403);
+      return; 
+    }
+    //a fix for pagination
+    if(isset($_GET["per_page"]) && !empty($_GET["per_page"])) {
+      $_GET["records"] = $_GET["per_page"];
+    }
+
     $activities = Houzez_Activities::get_activities();
     $leads_count = Houzez_Leads::get_leads_stats();
     $resultsold = $activities["data"]["results"];
@@ -138,8 +158,17 @@ function allActivities(){
 }
 
 function allEnquiries(){
-  //doFakeLogin();
-  
+  //disable lightspeed caching
+  do_action( 'litespeed_control_set_nocache', 'nocache due to logged in' );
+  if (! is_user_logged_in() ) {
+    $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+    wp_send_json($ajax_response, 403);
+    return; 
+  }
+  //a fix for pagination
+  if(isset($_GET["per_page"]) && !empty($_GET["per_page"])) {
+    $_GET["records"] = $_GET["per_page"];
+  }
   $all_enquires = Houzez_Enquiry::get_enquires();
 
   $results = array();
@@ -161,7 +190,17 @@ function allEnquiries(){
 }
 
 function allDeals() {
-  //doFakeLogin();
+  //disable lightspeed caching
+  do_action( 'litespeed_control_set_nocache', 'nocache due to logged in' );
+  if (! is_user_logged_in() ) {
+    $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+    wp_send_json($ajax_response, 403);
+    return; 
+  }
+  //a fix for pagination
+  if(isset($_GET["per_page"]) && !empty($_GET["per_page"])) {
+    $_GET["records"] = $_GET["per_page"];
+  }
   
   $deals = Houzez_Deals::get_deals();
 
