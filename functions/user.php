@@ -290,7 +290,9 @@ function editProfile() {
 
   do_action("wp_ajax_houzez_ajax_update_profile");
 }
-
+// on some houzez instances, post type agent or agency photo get cleared after profile fields update (eg, name phone etc).
+// not sure about the reason, too complex to edit theme, so fix on app side.
+// so after editing profile via editProfile(), call this web service from app.
 function fixProfilePicture() {
   if (!is_user_logged_in() ) {
     $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
