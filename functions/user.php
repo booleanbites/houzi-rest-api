@@ -88,7 +88,8 @@ add_action( 'rest_api_init', function () {
   
   function signupUser(){
     if( !class_exists('Houzez_login_register') ) {
-      wp_send_json(array('error'=>'class dont exist'), 403); 
+      wp_send_json(array('error'=>'Houzez_login_register plugin dont exist'), 403); 
+      return;
     }
     //create nonce for this request.
     $nonce = wp_create_nonce('houzez_register_nonce');
