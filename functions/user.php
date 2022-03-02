@@ -9,6 +9,15 @@ add_action( 'rest_api_init', function () {
       'methods' => 'POST',
       'callback' => 'signupUser',
     ));
+    register_rest_route( 'houzez-mobile-api/v1', '/signin', array(
+      'methods' => 'POST',
+      'callback' => 'signInUser',
+    ));
+
+    register_rest_route( 'houzez-mobile-api/v1', '/social-sign-on', array(
+      'methods' => 'POST',
+      'callback' => 'socialSignOn',
+    ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/reset-password', array(
       'methods' => 'POST',
@@ -85,7 +94,118 @@ add_action( 'rest_api_init', function () {
     return $data;
   }
 
-  
+  function signInUser(){
+    if ( !isset( $_POST['username'] ) ) {
+      $ajax_response = array( 'success' => false , 'reason' => "username not provided" );
+      wp_send_json($ajax_response, 403);
+    }
+    if ( !isset( $_POST['password'] ) ) {
+      $ajax_response = array( 'success' => false , 'reason' => "password not provided" );
+      wp_send_json($ajax_response, 403);
+    }
+
+      $request = new WP_REST_Request( 'POST', '/jwt-auth/v1/token' );
+      $request->set_body_params( [ 'username' => $_POST['username'], 'password' => $_POST['password'] ] );
+      $response = rest_do_request( $request );
+      $server = rest_get_server();
+      $data = $server->response_to_data( $response, false );
+      $json = wp_json_encode( $data );
+      echo $json;
+      die;
+  }
+  function socialSignOn(){
+    if ( !isset( $_POST['source'] ) ) {
+      $ajax_response = array( 'success' => false , 'reason' => "source not provided" );
+      wp_send_json($ajax_response, 403);
+      return;
+    }
+    if ( !isset( $_POST['email'] ) ) {
+      $ajax_response = array( 'success' => false , 'reason' => "email not provided" );
+      wp_send_json($ajax_response, 403);
+      return;
+    }
+    $email = $_POST['email'];
+    $username = $_POST['username'];
+    if ( !isset( $_POST['username'] ) ) {
+      $username = explode( '@', $email )[0];
+    }
+    if ( !isset( $_POST['display_name'] ) ) {
+      $ajax_response = array( 'success' => false , 'reason' => "display_name not provided" );
+      wp_send_json($ajax_response, 403);
+      return;
+    }
+    if ( !isset( $_POST['user_id'] ) ) {
+      $ajax_response = array( 'success' => false , 'reason' => "user_id not provided" );
+      wp_send_json($ajax_response, 403);
+      return;
+    }
+
+    $source = $_POST['source'];
+    $display_name = $_POST['display_name'];
+    $user_id_social = $_POST['user_id'];
+    $profile_image_url = $_POST['profile_url'];
+
+    if ( email_exists($email) ) {
+      $user = get_user_by( 'email', $email );
+      
+      if ( $user && wp_check_password( $user_id_social, $user->data->user_pass, $user->ID ) ) {
+          //for social login, $user_id_social is the password
+          doJWTAuth($email, $user_id_social);
+          return;
+      } else {
+        //looking for better approach
+        
+        //this is houzez approach
+        $wordpress_user_id = username_exists($username);
+        wp_set_password( $user_id_social, $wordpress_user_id ) ;
+
+        doJWTAuth($email, $user_id_social);
+      }
+      
+      return;
+    }
+    if (username_exists($username) ) {
+      $user = get_user_by( 'login', $username );
+      //for social login, $user_id_social is the password
+      if ( $user && wp_check_password( $user_id_social, $user->data->user_pass, $user->ID ) ) {
+        //for social login, $user_id_social is the password
+        doJWTAuth($username, $user_id_social);
+        return;
+      } else {
+        //looking for better approach
+
+        //this is houzez approach
+        $wordpress_user_id = username_exists($username);
+        wp_set_password( $user_id_social, $wordpress_user_id ) ;
+
+        doJWTAuth($email, $user_id_social);
+        return;
+      }
+      
+    }
+
+    houzez_register_user_social( $email, $username, $display_name, $user_id_social, $profile_image_url );
+
+    $wordpress_user_id = username_exists($username);
+    wp_set_password( $user_id_social, $wordpress_user_id ) ;
+
+    doJWTAuth($email, $user_id_social);
+    return;
+
+    $ajax_response = array( 'success' => true , 'email' => $email, 'username' => $username, 'user_id' => $user_id,  );
+    wp_send_json($ajax_response, 200);    
+    
+  }
+  function doJWTAuth($username, $password) {
+    $request = new WP_REST_Request( 'POST', '/jwt-auth/v1/token' );
+    $request->set_body_params( [ 'username' => $username, 'password' => $password ] );
+    $response = rest_do_request( $request );
+    $server = rest_get_server();
+    $data = $server->response_to_data( $response, false );
+    $json = wp_json_encode( $data );
+    echo $json;
+    die;
+  }
   function signupUser(){
     if( !class_exists('Houzez_login_register') ) {
       wp_send_json(array('error'=>'Houzez_login_register plugin dont exist'), 403); 
