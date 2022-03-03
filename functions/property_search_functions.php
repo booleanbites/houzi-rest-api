@@ -706,7 +706,7 @@ function propertyNode($property){
     // endforeach;
 
     
-
+    appendPostAttr($property);
     $priceHTML = houzez_listing_price_v1($post_id);
     $property->htmlPrice = $priceHTML;
     $property->price = strip_tags($priceHTML);

@@ -153,13 +153,17 @@ add_action( 'rest_api_init', function () {
           doJWTAuth($email, $user_id_social);
           return;
       } else {
-        //looking for better approach
-        
-        //this is houzez approach
-        $wordpress_user_id = username_exists($username);
-        wp_set_password( $user_id_social, $wordpress_user_id ) ;
 
-        doJWTAuth($email, $user_id_social);
+        //we want to authenticate user with hashed password.
+        //For that we append a secrte, to check only when the secret has been appended
+        //with the password.
+        //so when the password contains our secret, this means, we're trying to 
+        //authenticate with hashed password.
+        //in that case, only compare password with hashed wordpress password.
+        //looking for better approach
+        $secret = '<6Bk-l1hPHr*?}V?v6~!-[cxvmjm4@9emdY+jezhH5z;5{rZiUFo|$W8X6llE_Hm';
+        
+        doJWTAuth($email, $secret.$user->data->user_pass);
       }
       
       return;
@@ -172,13 +176,16 @@ add_action( 'rest_api_init', function () {
         doJWTAuth($username, $user_id_social);
         return;
       } else {
+        //we want to authenticate user with hashed password.
+        //For that we append a secrte, to check only when the secret has been appended
+        //with the password.
+        //so when the password contains our secret, this means, we're trying to 
+        //authenticate with hashed password.
+        //in that case, only compare password with hashed wordpress password.
         //looking for better approach
-
-        //this is houzez approach
-        $wordpress_user_id = username_exists($username);
-        wp_set_password( $user_id_social, $wordpress_user_id ) ;
-
-        doJWTAuth($email, $user_id_social);
+        $secret = '<6Bk-l1hPHr*?}V?v6~!-[cxvmjm4@9emdY+jezhH5z;5{rZiUFo|$W8X6llE_Hm';
+        
+        doJWTAuth($username, $secret.$user->data->user_pass);
         return;
       }
       
@@ -475,4 +482,60 @@ function editProfilePhoto() {
 
   do_action("wp_ajax_houzez_user_picture_upload");
 
+}
+
+
+
+
+// Used when doing social login.
+add_filter( 'check_password', 'check_with_hashed_password', 10, 4 );
+
+/** 
+ *      we want to authenticate user with hashed password, 
+ *      For that we append a secrte, to check only when the secret has been appended
+ *      with the password.
+ *      so when the password contains our secret, this means, we're trying to 
+ *      authenticate with hashed password.
+ *      in that case, only compare password (already hashed) with wordpress hashed password.
+ *      looking for better approach
+ * 
+ * Hooks into check_password filter, mostly copied from md5 upgrade function with pluggable.php/wp_check_password
+ *
+ * @param string $check
+ * @param string $password
+ * @param string $hash
+ * @param string $user_id
+ * @return results of sha1 hash comparison, or $check if $password is not a SHA1 hash
+ */
+
+function check_with_hashed_password( $check, $password, $hash, $user_id ) {
+  $secret = '<6Bk-l1hPHr*?}V?v6~!-[cxvmjm4@9emdY+jezhH5z;5{rZiUFo|$W8X6llE_Hm';
+
+    //check if password contains our secret.
+	if (strpos($password, $secret) !== FALSE) {
+    //remove our secret from password.
+    $password = str_replace($secret,"", $password);
+
+    //compare wordpress provided hash with (already hashed) password.
+		$check = ( $hash == $password );
+
+		if ( $check && $user_id ) {
+			// Allow login
+			return true;
+		} else {
+
+			//provided hash doesn't meet wordpress hash pass.
+			return false;
+		}
+	}
+  //echo 'is not hash';
+	//not appended with our hash, so bailing.
+	return $check;
+}
+
+/**
+* Check if provided string is a SHA1 hash
+*/
+function is_sha1( $str ) {
+	return ( bool ) preg_match( '/^[0-9a-f]{40}$/i', $str );
 }
