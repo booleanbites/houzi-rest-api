@@ -334,7 +334,7 @@ function getProperty($request) {
         $post_id = $property->ID;
         
         $property->is_fav = isFavoriteProperty($post_id);
-
+        $property->link = get_permalink();
         $property_meta = get_post_meta($post_id);;
         
         
