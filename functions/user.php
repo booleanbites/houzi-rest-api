@@ -114,23 +114,9 @@ add_action( 'rest_api_init', function () {
       die;
   }
   function socialSignOn(){
+
     if ( !isset( $_POST['source'] ) ) {
       $ajax_response = array( 'success' => false , 'reason' => "source not provided" );
-      wp_send_json($ajax_response, 403);
-      return;
-    }
-    if ( !isset( $_POST['email'] ) ) {
-      $ajax_response = array( 'success' => false , 'reason' => "email not provided" );
-      wp_send_json($ajax_response, 403);
-      return;
-    }
-    $email = $_POST['email'];
-    $username = $_POST['username'];
-    if ( !isset( $_POST['username'] ) ) {
-      $username = explode( '@', $email )[0];
-    }
-    if ( !isset( $_POST['display_name'] ) ) {
-      $ajax_response = array( 'success' => false , 'reason' => "display_name not provided" );
       wp_send_json($ajax_response, 403);
       return;
     }
@@ -139,62 +125,96 @@ add_action( 'rest_api_init', function () {
       wp_send_json($ajax_response, 403);
       return;
     }
+    
 
     $source = $_POST['source'];
-    $display_name = $_POST['display_name'];
     $user_id_social = $_POST['user_id'];
-    $profile_image_url = $_POST['profile_url'];
+    
+    //if source is apple, we need to first check if any user exist with the user_id
+    //then we need to fetch the user based on apple user id
+    //and try login with that.
+    if ( strtolower($source) == 'apple' ) {
+        $user = reset(
+          get_users(
+            array(
+              'meta_key' => 'user_id_social',
+              'meta_value' => $user_id_social,
+              'count' => 1,
+            )
+          )
+        );
+        if ( $user ) {
+          doJWTAuthWithSecret($user->user_email, $user->data->user_pass);
+          //we logged in, return from here.
+          return;
+        }
+    }
+    $email = $_POST['email'];
+    //source wasn't apple, we need email or username.
+    if ( !isset( $_POST['email'] ) || empty($email)) {
+      $ajax_response = array( 'success' => false , 'reason' => "email not provided" );
+      wp_send_json($ajax_response, 403);
+      return;
+    }
 
     if ( email_exists($email) ) {
       $user = get_user_by( 'email', $email );
+
+
+      //if there does exist a user with this email, we need to update its apple social id for future logins.
+      if ( strtolower($source) == 'apple' ) {
+        update_user_meta( $user->ID, "user_id_social", $user_id_social );
+      }
       
       if ( $user && wp_check_password( $user_id_social, $user->data->user_pass, $user->ID ) ) {
-          //for social login, $user_id_social is the password
+          //in existing houzez, for social login, $user_id_social is the password
           doJWTAuth($email, $user_id_social);
           return;
       } else {
-
-        //we want to authenticate user with hashed password.
-        //For that we append a secrte, to check only when the secret has been appended
-        //with the password.
-        //so when the password contains our secret, this means, we're trying to 
-        //authenticate with hashed password.
-        //in that case, only compare password with hashed wordpress password.
-        //looking for better approach
-        $secret = '<6Bk-l1hPHr*?}V?v6~!-[cxvmjm4@9emdY+jezhH5z;5{rZiUFo|$W8X6llE_Hm';
-        
-        doJWTAuth($email, $secret.$user->data->user_pass);
+        doJWTAuthWithSecret($email, $user->data->user_pass);
       }
       
       return;
     }
+
+    $username = $_POST['username'];
+    if ( !isset( $_POST['username'] ) || empty($username) ) {
+      $username = explode( '@', $email )[0];
+    }
+
     if (username_exists($username) ) {
       $user = get_user_by( 'login', $username );
+
+      //if there does exist a user with this email, we need to update its apple social id for future logins.
+      if ( strtolower($source) == 'apple' ) {
+        update_user_meta( $user->ID, "user_id_social", $user_id_social );
+      }
+
       //for social login, $user_id_social is the password
       if ( $user && wp_check_password( $user_id_social, $user->data->user_pass, $user->ID ) ) {
-        //for social login, $user_id_social is the password
+        //in existing houzez, for social login, $user_id_social is the password
         doJWTAuth($username, $user_id_social);
         return;
       } else {
-        //we want to authenticate user with hashed password.
-        //For that we append a secrte, to check only when the secret has been appended
-        //with the password.
-        //so when the password contains our secret, this means, we're trying to 
-        //authenticate with hashed password.
-        //in that case, only compare password with hashed wordpress password.
-        //looking for better approach
-        $secret = '<6Bk-l1hPHr*?}V?v6~!-[cxvmjm4@9emdY+jezhH5z;5{rZiUFo|$W8X6llE_Hm';
-        
-        doJWTAuth($username, $secret.$user->data->user_pass);
+        doJWTAuthWithSecret($username, $secret.$user->data->user_pass);
         return;
       }
       
     }
+    if ( !isset( $_POST['display_name'] ) ) {
+      $ajax_response = array( 'success' => false , 'reason' => "display_name not provided" );
+      wp_send_json($ajax_response, 403);
+      return;
+    }
+    $profile_image_url = $_POST['profile_url'];
+    $display_name = $_POST['display_name'];
 
     houzez_register_user_social( $email, $username, $display_name, $user_id_social, $profile_image_url );
 
     $wordpress_user_id = username_exists($username);
     wp_set_password( $user_id_social, $wordpress_user_id ) ;
+    
+    update_user_meta( $wordpress_user_id, "user_id_social", $user_id_social );
 
     doJWTAuth($email, $user_id_social);
     return;
@@ -202,6 +222,30 @@ add_action( 'rest_api_init', function () {
     $ajax_response = array( 'success' => true , 'email' => $email, 'username' => $username, 'user_id' => $user_id,  );
     wp_send_json($ajax_response, 200);    
     
+  }
+  function checkPassWithSecret($user_id, $candidate_password, $hashedpass) {
+    //we want to check password with hashed password.
+    //For that we append a secrte, to check only when the secret has been appended
+    //with the password.
+    //so when the password contains our secret, this means, we're trying to 
+    //authenticate with hashed password.
+    //in that case, only compare password with hashed wordpress password.
+    //looking for better approach
+    $secret = '<6Bk-l1hPHr*?}V?v6~!-[cxvmjm4@9emdY+jezhH5z;5{rZiUFo|$W8X6llE_Hm';
+    
+    return wp_check_password( $secret.$candidate_password, $hashedpass, $user_id );
+  }
+  function doJWTAuthWithSecret($username, $password) {
+    //we want to authenticate user with hashed password.
+    //For that we append a secrte, to check only when the secret has been appended
+    //with the password.
+    //so when the password contains our secret, this means, we're trying to 
+    //authenticate with hashed password.
+    //in that case, only compare password with hashed wordpress password.
+    //looking for better approach
+    $secret = '<6Bk-l1hPHr*?}V?v6~!-[cxvmjm4@9emdY+jezhH5z;5{rZiUFo|$W8X6llE_Hm';
+    
+    doJWTAuth($username, $secret.$password);
   }
   function doJWTAuth($username, $password) {
     $request = new WP_REST_Request( 'POST', '/jwt-auth/v1/token' );
