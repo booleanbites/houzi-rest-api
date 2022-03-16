@@ -4,10 +4,15 @@
 add_image_size( 'custom-size', 200, 200 );
 // The filter callback function.
 function houzez_property_rest_base_name( $string) {
-  // rest_base property should always be properties.
-  return "properties";
+  $options = get_option( 'houzez_mobile_api_options' ); // Array of All Options
+  
+  if ($options != null && isset($options['fix_property_type_in_translation_0']) && $options['fix_property_type_in_translation_0'] === 'fix_property_type_in_translation_0' ) {
+    // rest_base property should always be properties.
+    return "properties";
+  }
+  return $string;
 }
-add_filter( 'houzez_property_rest_base_', 'houzez_property_rest_base_name', 10, 1 );
+add_filter( 'houzez_property_rest_base', 'houzez_property_rest_base_name', 10, 1 );
 
 
 add_filter('rest_prepare_property', 'preparePropertyData', 10, 3);

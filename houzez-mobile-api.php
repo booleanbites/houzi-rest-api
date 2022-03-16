@@ -3,7 +3,7 @@
 Plugin Name: Houzez Mobile Api
 Plugin URI:  https://github.com/adilSoomro/houzez-mobile-api
 Description: Enhance Rest Api for mobiles
-Version:     1.1.2
+Version:     1.1.2.1
 Author:      BooleanBites
 Author URI:  https://booleanbites.com/
 License:     GPL2
@@ -47,7 +47,7 @@ class Houzez_mobile_api {
     */
     function houzez_mobile_inc_files() {
         
-       
+        require_once( HOUZEZ_MOBILE_FUNC_PATH . 'functions/settings.php');
         require_once( HOUZEZ_MOBILE_FUNC_PATH . 'functions/property_search_functions.php');
         require_once( HOUZEZ_MOBILE_FUNC_PATH . 'functions/property_functions.php');
         require_once( HOUZEZ_MOBILE_FUNC_PATH . 'functions/property_data_functions.php');
@@ -78,3 +78,6 @@ class Houzez_mobile_api {
  * @global    object
  */
 $Houzez_mobile_api = new Houzez_mobile_api();
+
+
+
