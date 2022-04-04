@@ -43,14 +43,15 @@ function preparePropertyData($response, $post, $request)
   
   $additional_features = $property_meta["additional_features"];
   $floor_plans = $property_meta["floor_plans"];
+  $fave_multi_units = $property_meta["fave_multi_units"];
 
   unset($response->data['property_meta']['additional_features']);
   unset($response->data['property_meta']['floor_plans']);
-
+  unset($response->data['property_meta']['fave_multi_units']);
   
   $response->data['property_meta']['additional_features'] = unserialize($additional_features[0]);
   $response->data['property_meta']['floor_plans'] = unserialize($floor_plans[0]);
-  
+  $response->data['property_meta']['fave_multi_units'] = unserialize($fave_multi_units[0]);
 
   if(empty($isediting)) {
     unset($response->data['property_meta']['fave_property_images']);

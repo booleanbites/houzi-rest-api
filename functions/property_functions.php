@@ -137,6 +137,10 @@ function deleteProperty() {
             houzez_delete_property_attachments_frontend($propID);
         }
         wp_delete_post( $propID );
+
+        //purge light-speed cache for this property post type.
+        do_action( 'litespeed_purge_post', $propID );
+
         $ajax_response = array( 'success' => true , 'mesg' => esc_html__( 'Property Deleted', 'houzez' ) );
         wp_send_json( $ajax_response );
         
