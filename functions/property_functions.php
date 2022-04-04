@@ -110,6 +110,19 @@ function addPropertyWithAuth() {
     
     $new_property['post_status']    = 'publish';
     
+    $floor_plans_post = $_POST['floor_plans'];
+    if( ! empty( $floor_plans_post ) ) {
+        $_POST['floor_plans'] = serialize($floor_plans_post);
+    }
+    $floor_plans_post = $_POST['additional_features'];
+    if( ! empty( $floor_plans_post ) ) {
+        $_POST['additional_features'] = serialize($floor_plans_post);
+    }
+    $floor_plans_post = $_POST['fave_multi_units'];
+    if( ! empty( $floor_plans_post ) ) {
+        $_POST['fave_multi_units'] = serialize($floor_plans_post);
+    }
+
     $new_property                   = apply_filters( 'houzez_submit_listing', $new_property );
     houzez_update_property_from_draft( $new_property ); 
     wp_send_json(['prop_id' => $new_property ],200);
