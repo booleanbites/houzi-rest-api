@@ -359,14 +359,17 @@ function getProperty($request) {
 
         $additional_features = $property_meta["additional_features"];
         $floor_plans = $property_meta["floor_plans"];
+        $fave_multi_units = $property_meta["fave_multi_units"];
 
         unset($property_meta['additional_features']);
-        unset($property_meta['floor_plans']);
-
+        unset($property_meta['floor_plans']);    
+        unset($property_meta['fave_multi_units']);
+        
   
         $property_meta['additional_features'] = unserialize($additional_features[0]);
         $property_meta['floor_plans'] = unserialize($floor_plans[0]);
-  
+        $property_meta['fave_multi_units'] = unserialize($fave_multi_units[0]);
+
         $property->property_meta    = $property_meta;
 
         appendPostImages($property);
