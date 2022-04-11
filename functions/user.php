@@ -44,6 +44,18 @@ add_action( 'rest_api_init', function () {
       'callback' => 'editProfilePhoto',
     ));
 
+    register_rest_route( 'houzez-mobile-api/v1', '/update-password', array(
+      'methods' => 'POST',
+      'callback' => 'updatePassword',
+    ));
+
+    register_rest_route( 'houzez-mobile-api/v1', '/delete-user-account', array(
+      'methods' => 'POST',
+      'callback' => 'deleteUserAccount',
+    ));
+
+    
+
     register_rest_route( 'contact-us/v1', 'send-message', array(
       'methods'             => 'POST',
       'callback'            => 'sendContactMail',
@@ -110,7 +122,9 @@ add_action( 'rest_api_init', function () {
       $server = rest_get_server();
       $data = $server->response_to_data( $response, false );
       $json = wp_json_encode( $data );
-      echo $json;
+      
+      //echo $json;
+      wp_send_json($data, $response->get_status());
       die;
   }
   function socialSignOn(){
@@ -273,12 +287,27 @@ add_action( 'rest_api_init', function () {
     do_action("wp_ajax_nopriv_houzez_register");//houzez_register();
   }
 
-  function resetUserPassword(){
+  function resetUserPassword() {
     //create nonce for this request.
     $nonce = wp_create_nonce('fave_resetpassword_nonce');
     $_REQUEST['security'] = $nonce;
     
     do_action("wp_ajax_nopriv_houzez_reset_password");//houzez_reset_password();
+    
+  }
+
+  function updatePassword() {
+    //create nonce for this request.
+    // $nonce = wp_create_nonce('fave_resetpassword_nonce');
+    // $_REQUEST['security'] = $nonce;
+    //newpass, confirmpass
+    do_action("wp_ajax_houzez_ajax_password_reset");//houzez_reset_password();
+    
+  }
+
+  function deleteUserAccount() {
+    
+    do_action("wp_ajax_houzez_delete_account");//houzez_reset_password();
     
   }
 

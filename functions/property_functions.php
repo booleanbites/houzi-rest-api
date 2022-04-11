@@ -32,10 +32,10 @@ add_action( 'litespeed_init', function() {
 // houzez-mobile-api/v1/search-properties
 add_action( 'rest_api_init', function () {
     
-    register_rest_route( 'houzez-mobile-api/v1', '/add-property', array(
-      'methods' => 'POST',
-      'callback' => 'addProperty',
-    ));
+    // register_rest_route( 'houzez-mobile-api/v1', '/add-property', array(
+    //   'methods' => 'POST',
+    //   'callback' => 'addProperty',
+    // ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/save-property', array(
         'methods' => 'POST',
@@ -52,10 +52,10 @@ add_action( 'rest_api_init', function () {
       'callback' => 'addPropertyWithAuth',
     ));
 
-    register_rest_route( 'houzez-mobile-api/v1', '/upload-property-image', array(
-        'methods' => 'POST',
-        'callback' => 'uploadPropertyImage',
-      ));
+    // register_rest_route( 'houzez-mobile-api/v1', '/upload-property-image', array(
+    //     'methods' => 'POST',
+    //     'callback' => 'uploadPropertyImage',
+    //   ));
     register_rest_route( 'houzez-mobile-api/v1', '/save-property-image', array(
         'methods' => 'POST',
         'callback' => 'uploadPropertyImageWithAuth',
@@ -110,18 +110,18 @@ function addPropertyWithAuth() {
     
     $new_property['post_status']    = 'publish';
     
-    $floor_plans_post = $_POST['floor_plans'];
-    if( ! empty( $floor_plans_post ) ) {
-        $_POST['floor_plans'] = serialize($floor_plans_post);
-    }
-    $floor_plans_post = $_POST['additional_features'];
-    if( ! empty( $floor_plans_post ) ) {
-        $_POST['additional_features'] = serialize($floor_plans_post);
-    }
-    $floor_plans_post = $_POST['fave_multi_units'];
-    if( ! empty( $floor_plans_post ) ) {
-        $_POST['fave_multi_units'] = serialize($floor_plans_post);
-    }
+    // $floor_plans_post = $_POST['floor_plans'];
+    // if( ! empty( $floor_plans_post ) ) {
+    //     $_POST['floor_plans'] = serialize($floor_plans_post);
+    // }
+    // $floor_plans_post = $_POST['additional_features'];
+    // if( ! empty( $floor_plans_post ) ) {
+    //     $_POST['additional_features'] = serialize($floor_plans_post);
+    // }
+    // $floor_plans_post = $_POST['fave_multi_units'];
+    // if( ! empty( $floor_plans_post ) ) {
+    //     $_POST['fave_multi_units'] = serialize($floor_plans_post);
+    // }
 
     $new_property                   = apply_filters( 'houzez_submit_listing', $new_property );
     houzez_update_property_from_draft( $new_property ); 
