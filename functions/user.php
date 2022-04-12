@@ -300,6 +300,8 @@ add_action( 'rest_api_init', function () {
     //create nonce for this request.
     // $nonce = wp_create_nonce('fave_resetpassword_nonce');
     // $_REQUEST['security'] = $nonce;
+    $nonce = wp_create_nonce('houzez_pass_ajax_nonce');
+    $_REQUEST['houzez-security-pass'] = $nonce;
     //newpass, confirmpass
     do_action("wp_ajax_houzez_ajax_password_reset");//houzez_reset_password();
     
