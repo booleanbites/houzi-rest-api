@@ -308,7 +308,7 @@ add_action( 'rest_api_init', function () {
   }
 
   function deleteUserAccount() {
-    
+    require_once(ABSPATH.'wp-admin/includes/user.php' );
     do_action("wp_ajax_houzez_delete_account");//houzez_reset_password();
     
   }
