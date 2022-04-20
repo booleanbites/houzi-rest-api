@@ -176,6 +176,7 @@ function setupSearchQuery() {
     $label = isset($_POST['label']) ? ($_POST['label']) : '';
     $property_id = isset($_POST['property_id']) ? ($_POST['property_id']) : '';
     $bedrooms = isset($_POST['bedrooms']) ? ($_POST['bedrooms']) : '';
+    $rooms = isset($_POST['rooms']) ? ($_POST['rooms']) : '';
     $bathrooms = isset($_POST['bathrooms']) ? ($_POST['bathrooms']) : '';
     $min_price = isset($_POST['min_price']) ? ($_POST['min_price']) : '';
     $max_price = isset($_POST['max_price']) ? ($_POST['max_price']) : '';
@@ -445,6 +446,17 @@ function setupSearchQuery() {
         $meta_query[] = array(
             'key' => 'fave_property_bedrooms',
             'value'   => $bedrooms,
+            'type'    => 'CHAR',
+            'compare' => $search_criteria,
+        );
+    }
+
+    // bedrooms logic
+    if( !empty( $rooms ) && $rooms != 'any'  ) {
+        $rooms = sanitize_text_field($rooms);
+        $meta_query[] = array(
+            'key' => 'fave_property_rooms',
+            'value'   => $rooms,
             'type'    => 'CHAR',
             'compare' => $search_criteria,
         );
