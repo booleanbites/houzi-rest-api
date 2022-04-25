@@ -1,6 +1,30 @@
 <?php
 
+//-----------------------------Lightspeed exclude URLs-------------------------------------
+// By default all POST URLs aren't cached
+add_action( 'litespeed_init', function() {
 
+  //these URLs need to be excluded from lightspeed caches
+  $exclude_url_list = array(
+      "/profile",
+  );
+  foreach ($exclude_url_list as $exclude_url) {
+      if (strpos($_SERVER['REQUEST_URI'], $exclude_url) !== FALSE) {
+          do_action( 'litespeed_control_set_nocache', 'no-cache for rest api' );
+      }
+  }
+
+  //add these URLs to cache if required (even POSTs)
+  $include_url_list = array(
+      "sample-url",
+  );
+  foreach ($include_url_list as $include_url) {
+      if (strpos($_SERVER['REQUEST_URI'], $exclude_url) !== FALSE) {
+          do_action( 'litespeed_control_set_cacheable', 'cache for rest api' );
+      }
+  }
+
+});
 
 // houzez-mobile-api/v1/search-properties
 add_action( 'rest_api_init', function () {
@@ -233,8 +257,8 @@ add_action( 'rest_api_init', function () {
     doJWTAuth($email, $user_id_social);
     return;
 
-    $ajax_response = array( 'success' => true , 'email' => $email, 'username' => $username, 'user_id' => $user_id,  );
-    wp_send_json($ajax_response, 200);    
+    // $ajax_response = array( 'success' => true , 'email' => $email, 'username' => $username, 'user_id' => $user_id,  );
+    // wp_send_json($ajax_response, 200);    
     
   }
   function checkPassWithSecret($user_id, $candidate_password, $hashedpass) {
