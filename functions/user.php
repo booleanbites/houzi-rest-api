@@ -7,6 +7,7 @@ add_action( 'litespeed_init', function() {
   //these URLs need to be excluded from lightspeed caches
   $exclude_url_list = array(
       "profile",
+      "user-profile",
   );
   foreach ($exclude_url_list as $exclude_url) {
       if (strpos($_SERVER['REQUEST_URI'], $exclude_url) !== FALSE) {
@@ -49,6 +50,10 @@ add_action( 'rest_api_init', function () {
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/profile', array(
+      'methods' => 'GET',
+      'callback' => 'fetchProfile',
+    ));
+    register_rest_route( 'houzez-mobile-api/v1', '/user-profile', array(
       'methods' => 'GET',
       'callback' => 'fetchProfile',
     ));
