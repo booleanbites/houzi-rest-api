@@ -46,8 +46,8 @@ function getMetaData() {
     add_term_to_response($response, 'property_label');
     add_term_to_response($response, 'property_status');
     add_term_to_response($response, 'property_feature');
-
     
+    $response['property_reviews'] = houzez_option( 'property_reviews' );
     $response['property_area'] = [];
     $response['schedule_time_slots'] = houzez_option('schedule_time_slots');
     $response['property_item_designs'] = array(
