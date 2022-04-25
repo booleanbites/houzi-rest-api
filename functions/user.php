@@ -6,7 +6,7 @@ add_action( 'litespeed_init', function() {
 
   //these URLs need to be excluded from lightspeed caches
   $exclude_url_list = array(
-      "/profile",
+      "profile",
   );
   foreach ($exclude_url_list as $exclude_url) {
       if (strpos($_SERVER['REQUEST_URI'], $exclude_url) !== FALSE) {
