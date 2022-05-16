@@ -44,6 +44,10 @@ add_action( 'rest_api_init', function () {
       'methods' => 'GET',
       'callback' => 'allLeads',
     ));
+    register_rest_route( 'houzez-mobile-api/v1', '/add-lead', array(
+      'methods' => 'POST',
+      'callback' => 'addLead',
+    ));
     register_rest_route( 'houzez-mobile-api/v1', '/delete-lead', array(
       'methods' => 'GET',
       'callback' => 'deleteLead',
@@ -277,7 +281,10 @@ function deleteDeal() {
   do_action("wp_ajax_houzez_delete_deal");
 }
 
-
+function addLead() {
+  //calls Houzez_Lead->add_lead();
+  do_action("wp_ajax_houzez_crm_add_lead");
+}
 function deleteLead() {
 
   if (! is_user_logged_in() ) {

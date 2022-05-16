@@ -84,6 +84,10 @@ add_action( 'rest_api_init', function () {
         'methods' => 'GET',
         'callback' => 'getProperty',
     ));
+    register_rest_route( 'houzez-mobile-api/v1', '/property-by-permalink', array(
+        'methods' => 'GET',
+        'callback' => 'getPropertyByPermalink',
+    ));
   
   });
 
@@ -317,7 +321,17 @@ function getMyProperties() {
     $args = houzez_prop_sort ( $args );
     queryPropertiesAndSendJSON($args);
 }
+function getPropertyByPermalink($request) {
+    if ( !isset( $_GET['perm']) || empty( $_GET['perm']) ) {
+        $ajax_response = array( 'success' => false , 'reason' => esc_html__( 'No permalink found', 'houzez' ) );
+        wp_send_json($ajax_response,400);
+        return;
+    }
+    $permalink     = $_GET['perm'];
+    $propertyId = url_to_postid( $permalink );
+    queryPropertyById($propertyId);
 
+}
 function getProperty($request) {
     if ( !isset( $_GET['id']) || empty( $_GET['id']) ) {
         $ajax_response = array( 'success' => false , 'reason' => esc_html__( 'No Property ID found', 'houzez' ) );
@@ -331,8 +345,9 @@ function getProperty($request) {
     }
 
 	$propertyId     = $_GET['id'];
-    
-    
+    queryPropertyById($propertyId);
+}
+function queryPropertyById($propertyId) {   
     $args = array(
         'post_type'        =>  'property',
         'p'               =>  $propertyId,    
