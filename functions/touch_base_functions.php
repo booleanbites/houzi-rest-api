@@ -57,13 +57,41 @@ function getMetaData() {
       'agent_item' => 'design_1',
     );
 
-    
-    $response['custom_fields'] = Houzez_Fields_Builder::get_form_fields();
+    add_custom_fields_to_response($response);
     add_roles_to_response($response);
     
     $response['enquiry_type'] = hcrm_get_option('enquiry_type', 'hcrm_enquiry_settings', esc_html__('Purchase, Rent, Sell, Miss, Evaluation, Mortgage', 'houzez'));
     wp_send_json($response, 200);
     //echo json_encode($response);
+}
+function add_custom_fields_to_response(&$response){
+  $fields_array = Houzez_Fields_Builder::get_form_fields();
+  $custom_fields = array();
+  if( !empty($fields_array) ) {
+    foreach ($fields_array as $field) {
+      $field_type = $field->type;
+      if($field_type == 'select' || $field_type == 'multiselect') { 
+        $options = unserialize($field->fvalues);
+        $options_array = array();
+        if(!empty($options)) {
+        	foreach ($options as $key => $val) {
+				    $select_options = houzez_wpml_translate_single_string($val);
+				    $options_array[$key] = $select_options;
+        	}
+        }
+        $field->fvalues = $options_array;
+      } elseif( $field_type == 'checkbox_list' || $field_type == 'radio' ) {
+        $options = unserialize($field->fvalues);
+        $options    = explode( ',', $options );
+        $options    = array_filter( array_map( 'trim', $options ) );
+        $field->fvalues = $options;
+      }
+    
+      array_push($custom_fields,$field);
+    }
+  }
+  
+  $response['custom_fields'] = $custom_fields;
 }
 function add_term_to_response(&$response, $key){
     
