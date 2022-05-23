@@ -178,11 +178,12 @@ function setupSearchQuery() {
     $bedrooms = isset($_POST['bedrooms']) ? ($_POST['bedrooms']) : '';
     $rooms = isset($_POST['rooms']) ? ($_POST['rooms']) : '';
     $bathrooms = isset($_POST['bathrooms']) ? ($_POST['bathrooms']) : '';
-    $min_price = isset($_POST['min_price']) ? ($_POST['min_price']) : '';
-    $max_price = isset($_POST['max_price']) ? ($_POST['max_price']) : '';
+    $beds_baths_criteria = isset($_POST['beds_baths_criteria']) ? ($_POST['beds_baths_criteria']) : '';
+    $min_price = isset($_POST['min_price']) ? ($_POST['min_price']) : (isset($_POST['min-price']) ? ($_POST['min-price']) : '');
+    $max_price = isset($_POST['max_price']) ? ($_POST['max_price']) : (isset($_POST['max-price']) ? ($_POST['max-price']) : '');
     $currency = isset($_POST['currency']) ? ($_POST['currency']) : '';
-    $min_area = isset($_POST['min_area']) ? ($_POST['min_area']) : '';
-    $max_area = isset($_POST['max_area']) ? ($_POST['max_area']) : '';
+	$min_area = isset($_POST['min_area']) ? ($_POST['min_area']) : (isset($_POST['min-area']) ? ($_POST['min-area']) : '');
+    $max_area = isset($_POST['max_area']) ? ($_POST['max_area']) : (isset($_POST['max-area']) ? ($_POST['max-area']) : '');
     $publish_date = isset($_POST['publish_date']) ? ($_POST['publish_date']) : '';
 
     $search_location = isset( $_POST[ 'search_location' ] ) ? esc_attr( $_POST[ 'search_location' ] ) : false;
@@ -203,9 +204,18 @@ function setupSearchQuery() {
 
     $property_id = str_replace($property_id_prefix, "", $property_id);
 
-    $search_criteria = '=';
-    if( $beds_baths_search == 'greater') {
-        $search_criteria = '>=';
+    $search_criteria = 'IN';
+    if (!empty($beds_baths_criteria)) {
+        $search_criteria = $beds_baths_criteria;
+    } else {
+        $search_criteria = '=';
+        if( $beds_baths_search == 'greater') {
+            $search_criteria = '>=';
+        } else if( $beds_baths_search == 'like' ) {
+            $search_criteria = 'LIKE';
+        } else if( $beds_baths_search == 'equal' ) {
+            $search_criteria = '=';
+        }
     }
 
     $query_args = array(
