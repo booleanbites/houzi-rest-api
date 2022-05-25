@@ -70,6 +70,13 @@ function add_custom_fields_to_response(&$response){
   if( !empty($fields_array) ) {
     foreach ($fields_array as $field) {
       $field_type = $field->type;
+      
+      $field_title = $field->label;
+      $field_placeholder = $field->placeholder;
+
+      $field->field_title = houzez_wpml_translate_single_string($field_title);
+      $field->field_placeholder = houzez_wpml_translate_single_string($field_placeholder);
+
       if($field_type == 'select' || $field_type == 'multiselect') { 
         $options = unserialize($field->fvalues);
         $options_array = array();
