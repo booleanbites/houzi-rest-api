@@ -78,6 +78,11 @@ add_action( 'rest_api_init', function () {
       'callback' => 'addCRMEnquiry',
     ));
 
+    register_rest_route( 'houzez-mobile-api/v1', '/add-property-request', array(
+      'methods' => 'POST',
+      'callback' => 'addPropertyRequest',
+    ));
+
     register_rest_route( 'houzez-mobile-api/v1', '/delete-crm-enquiry', array(
       'methods' => 'GET',
       'callback' => 'deleteCRMEnquiry',
@@ -310,6 +315,18 @@ function deleteLead() {
 function addCRMEnquiry() {
   //calls Houzez_Deals->add_new_deal();
   do_action("wp_ajax_crm_add_new_enquiry");
+  
+}
+function addPropertyRequest() {
+
+  $_POST['is_estimation'] = 'yes';
+  $_POST['email_to'] = get_option( 'admin_email' );
+
+  global $houzez_options;
+  $houzez_options['enable_reCaptcha'] = 0;
+
+  do_action("wp_ajax_houzez_ele_inquiry_form");
+  
 }
 
 function deleteCRMEnquiry() {

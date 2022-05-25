@@ -36,6 +36,20 @@ function getMetaData() {
     $response['success'] = true;
     $response['version'] = 1;
     $response['default_currency'] = houzez_get_currency();
+    $response['currency_position'] = houzez_option( 'currency_position', '$' );
+    $response['thousands_separator'] = houzez_option( 'thousands_separator', ',' );
+    $response['decimal_point_separator'] = houzez_option( 'decimal_point_separator', '.' );
+    $response['add-prop-gdpr-enabled'] = houzez_option('add-prop-gdpr-enabled');
+    
+    $response['measurement_unit_global']  = houzez_option('measurement_unit_global');
+    
+    $prop_size_prefix = houzez_option('measurement_unit');
+    $response['measurement_unit_global']  = $prop_size_prefix;
+    if( $prop_size_prefix == 'sqft' ) {
+      $response['measurement_unit_text'] = houzez_option('measurement_unit_sqft_text');
+    } elseif( $prop_size_prefix == 'sq_meter' ) {
+      $response['measurement_unit_text'] = houzez_option('measurement_unit_square_meter_text');
+    }
 
     add_term_to_response($response, 'property_country');
     add_term_to_response($response, 'property_state');
