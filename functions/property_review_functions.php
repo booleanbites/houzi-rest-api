@@ -1,4 +1,12 @@
 <?php
+/**
+ * Extends api for review. Exposes api to add review via rest api.
+ *
+ *
+ * @package Houzez Mobile Api
+ * @since Houzi 1.0
+ * @author Adil Soomro
+ */
 
 add_filter( 'rest_houzez_reviews_query', function( $args, $request ){
     //featured property

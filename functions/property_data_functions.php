@@ -1,5 +1,12 @@
 <?php
-
+/**
+ * Extends api for property post type, it appends many data that's not available in default wp-rest-api.
+ *
+ *
+ * @package Houzez Mobile Api
+ * @since Houzi 1.0
+ * @author Adil Soomro
+ */
 
 add_image_size( 'custom-size', 200, 200 );
 // The filter callback function.

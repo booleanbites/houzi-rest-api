@@ -1,5 +1,12 @@
 <?php
-
+/**
+ * Functions to handle property search related apis, save searches.
+ *
+ *
+ * @package Houzez Mobile Api
+ * @since Houzi 1.0
+ * @author Adil Soomro
+ */
 add_filter( 'rest_property_query', function( $args, $request ){
     //featured property
     if ( $request->get_param( 'fave_featured' ) ) {
@@ -981,7 +988,7 @@ function decodeParamsUtil($search_args_decoded) {
             if (isset($val['taxonomy']) && isset($val['terms']) && $val['taxonomy'] == 'property_label') {
                 $label = hz_saved_search_term($val['terms'], 'property_label');
                 if (!empty($label)) {
-                    $search_as_text =  $search_as_text  . esc_html__('Label', 'houzez') . ': ' . esc_attr( $area ). ' / ';
+                    $search_as_text =  $search_as_text  . esc_html__('Label', 'houzez') . ': ' . esc_attr( $label ). ' / ';
                 }
             }
 

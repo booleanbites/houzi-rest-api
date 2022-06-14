@@ -1,4 +1,12 @@
 <?php
+/**
+ * Extends api for agency and agents.
+ *
+ *
+ * @package Houzez Mobile Api
+ * @since Houzi 1.0
+ * @author Adil Soomro
+ */
 
 add_filter( 'rest_houzez_agent_query', function( $args, $request ){
   //featured property

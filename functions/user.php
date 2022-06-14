@@ -1,5 +1,12 @@
 <?php
-
+/**
+ * Functions to entertain user profile related apis. singin, signup, social login, forgot or update pass and profile.
+ *
+ *
+ * @package Houzez Mobile Api
+ * @since Houzi 1.0
+ * @author Adil Soomro
+ */
 //-----------------------------Lightspeed exclude URLs-------------------------------------
 // By default all POST URLs aren't cached
 add_action( 'litespeed_init', function() {

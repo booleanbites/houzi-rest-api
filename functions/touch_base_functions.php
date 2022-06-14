@@ -50,6 +50,9 @@ function getMetaData() {
     } elseif( $prop_size_prefix == 'sq_meter' ) {
       $response['measurement_unit_text'] = houzez_option('measurement_unit_square_meter_text');
     }
+    $options = get_option( 'houzez_mobile_api_options' ); // Array of All Options
+    $houzi_config = html_entity_decode( $options['mobile_app_config']);
+    $response['mobile_app_config'] = json_decode($houzi_config, true, JSON_UNESCAPED_SLASHES);
 
     add_term_to_response($response, 'property_country');
     add_term_to_response($response, 'property_state');
@@ -64,13 +67,7 @@ function getMetaData() {
     $response['property_reviews'] = houzez_option( 'property_reviews' );
     $response['property_area'] = [];
     $response['schedule_time_slots'] = houzez_option('schedule_time_slots');
-    $response['property_item_designs'] = array(
-      'home_item'   => 'design_2',
-      'result_item' => 'design_1',
-      'related_item' => 'design_1',
-      'agent_item' => 'design_1',
-    );
-
+      
     add_custom_fields_to_response($response);
     add_roles_to_response($response);
     

@@ -1,5 +1,12 @@
 <?php
-
+/**
+ * Functions to add delete update favorite properties.
+ *
+ *
+ * @package Houzez Mobile Api
+ * @since Houzi 1.0
+ * @author Adil Soomro
+ */
 
 //-----------------------------Lightspeed exclude URLs-------------------------------------
 // By default all POST URLs aren't cached

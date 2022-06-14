@@ -3,7 +3,7 @@
 Plugin Name: Houzez Mobile Api
 Plugin URI:  https://github.com/adilSoomro/houzez-mobile-api
 Description: Enhance Rest Api for mobiles
-Version:     1.1.2.2
+Version:     1.1.2.3
 Author:      BooleanBites
 Author URI:  https://booleanbites.com/
 License:     GPL2
@@ -37,6 +37,7 @@ class Houzez_mobile_api {
          * Plugin Path
          */
         define( 'HOUZEZ_MOBILE_FUNC_PATH', plugin_dir_path( __FILE__ ) );
+        define( 'HOUZI_IMAGE', plugins_url('/img/', __FILE__) );
     }
 
     /**
