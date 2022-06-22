@@ -66,15 +66,15 @@ function preparePropertyData($response, $post, $request)
   unset($response->data['property_meta']['houzez_views_by_date']);
   unset($response->data['property_meta']['_vc_post_settings']);
   
-  unset($response->data['property_feature']);
-  unset($response->data['property_type']);
-  unset($response->data['property_status']);
-  unset($response->data['property_label']);
-  unset($response->data['property_country']);
-  unset($response->data['property_state']);
-  unset($response->data['property_city']);
+  // unset($response->data['property_feature']);
+  // unset($response->data['property_type']);
+  // unset($response->data['property_status']);
+  // unset($response->data['property_label']);
+  // unset($response->data['property_country']);
+  // unset($response->data['property_state']);
+  // unset($response->data['property_city']);
 
-  unset($response->data['property_area']);
+  // unset($response->data['property_area']);
   // unset($response->data['guid']);
   
   // unset($response->data['modified_gmt']);
