@@ -27,20 +27,6 @@ function prepareAgentData($response, $post, $request)
   $should_append_extra_data = !empty( $agent_id_from_url);
   $imgID = $response->data['agent_meta']['_thumbnail_id'][0];
   $response->data['thumbnail'] = wp_get_attachment_url($imgID);
-
-  /*if($should_append_extra_data) {
-    //
-    $agent_properties = Houzez_Query::loop_agent_properties();
-    
-    $properties = array();
-    while( $agent_properties->have_posts() ):
-        $agent_properties->the_post();
-        $property = $agent_properties->post;
-        array_push($properties, propertyNode($property));
-    endwhile;
-    $response->data['properties'] = $properties;
-    wp_reset_postdata();  
-  }*/
   return $response;
 }
 

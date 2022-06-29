@@ -691,49 +691,13 @@ function propertyNode($property){
 
     $post_id = $property->ID;
 
-    // $property_location = get_post_meta( $post_id,'fave_property_location',true);
-    // $lat_lng = explode(',', $property_location);
-    
-    // $prop_featured = get_post_meta( $post_id, 'fave_featured', true );
-    // $prop_type = wp_get_post_terms( $post_id, 'property_type', array("fields" => "ids") );
-
-    
-
-    //$prop = new stdClass();
-
-    // $prop->id           = $post_id;
-    // $prop->title        = get_the_title();
-    // $prop->sanitizetitle = sanitize_title(get_the_title());
-    // $prop->lat          = $lat_lng[0];
-    // $prop->lng          = $lat_lng[1];
-    // $prop->bedrooms     = get_post_meta( $post_id, 'fave_property_bedrooms', true );
-    // $prop->bathrooms    = get_post_meta( $post_id, 'fave_property_bathrooms', true );
-    // $prop->address      = get_post_meta( $post_id, 'fave_property_map_address', true );
     $property->thumbnail    = get_the_post_thumbnail_url( $post_id, 'houzez-property-thumb-image' );
-    // $prop->url          = get_permalink();
+    
     $property->property_meta    = get_post_meta($post_id);
     $property->property_type         = houzez_taxonomy_simple('property_type');
 
-    // $prop->prop_images        = get_post_meta( $post_id, 'fave_property_images', false );
-    // $prop->images_count = count( $prop->prop_images );
-
-    // $prop->prop_meta = get_post_meta($post_id);
-
-
     
     $property->property_features = wp_get_post_terms(  $post_id,   ['property_feature'], array( 'fields' => 'names') );
-    
-
-    // $prop->property_images =  ;
-    //$prop->property_images = [];
-    // foreach(get_attached_media( '', $post_id ) as $row):
-    //     $prop->property_images[] = $row->guid;
-    // endforeach;
-
-    // foreach(get_post_meta( $post_id, 'fave_property_images', false ) as $imgID):
-    //     $prop->property_images[] = wp_get_attachment_url($imgID);
-    // endforeach;
-
     
     appendPostAttr($property);
     $priceHTML = houzez_listing_price_v1($post_id);
@@ -741,6 +705,12 @@ function propertyNode($property){
     $property->price = strip_tags($priceHTML);
     $property->priceSimple = houzez_listing_price_map_pins();
 
+
+    $should_add_agent_agency_info = isset($_REQUEST['agent_agency_info']) ? $_REQUEST['agent_agency_info'] : '';
+    
+    if (!empty($should_add_agent_agency_info) && $should_add_agent_agency_info == 'yes') {
+        $property->property_meta['agent_agency_info'] = property_agency_agent_info();
+    }
     return $property;
 }
 

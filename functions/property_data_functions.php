@@ -31,6 +31,8 @@ function preparePropertyData($response, $post, $request)
   $params = $request->get_params();
   $property_id_from_url = $params["id"];
   $isediting = $params["editing"];
+  
+
   $should_append_extra_data = !empty( $property_id_from_url);
 
   //append extra data only when there's an id provided.
@@ -45,7 +47,7 @@ function preparePropertyData($response, $post, $request)
     $response->data['thumbnail']   = get_the_post_thumbnail_url( get_the_ID(), 'houzez-property-thumb-image' );
   }
   hm_postAttr($response);
-  //$response->data['params'] = $params;
+  
   $property_meta = $response->data['property_meta'];
   
   $additional_features = $property_meta["additional_features"];
@@ -66,20 +68,12 @@ function preparePropertyData($response, $post, $request)
   unset($response->data['property_meta']['houzez_views_by_date']);
   unset($response->data['property_meta']['_vc_post_settings']);
   
-  // unset($response->data['property_feature']);
-  // unset($response->data['property_type']);
-  // unset($response->data['property_status']);
-  // unset($response->data['property_label']);
-  // unset($response->data['property_country']);
-  // unset($response->data['property_state']);
-  // unset($response->data['property_city']);
-
-  // unset($response->data['property_area']);
-  // unset($response->data['guid']);
+  $should_add_agent_agency_info = $params["agent_agency_info"];
+  if (!empty($should_add_agent_agency_info) && $should_add_agent_agency_info == 'yes') {
+    $response->data['property_meta']['agent_agency_info'] = property_agency_agent_info();
+  }
   
-  // unset($response->data['modified_gmt']);
-  // unset($response->data['menu_order']);
-  //$response->data->remove_link($_linkKey);
+  
 
 
   return $response;
@@ -133,6 +127,93 @@ function hm_postAttr(&$response)
   endforeach;
   $response->data['property_attr'] = $property_attributes;
   
+}
+
+if(!function_exists('property_agency_agent_info')) {
+  function property_agency_agent_info($is_top = true, $luxury = false) {
+      
+      $prop_agent = $picture = $agent_id = '';
+      
+      $return_array = array();
+      $listing_agent_info = array();
+
+      $agent_display = houzez_get_listing_data('agent_display_option');
+      $is_single_agent = true;
+
+      if( $agent_display != 'none' ) {
+          if( $agent_display == 'agent_info' ) {
+
+              $agents_ids = houzez_get_listing_data('agents', false);
+
+              $agents_ids = array_filter( $agents_ids, function($hz){
+                  return ( $hz > 0 );
+              });
+
+              $agents_ids = array_unique( $agents_ids );
+
+              if ( ! empty( $agents_ids ) ) {
+                  $agents_count = count( $agents_ids );
+                  if ( $agents_count > 1 ) :
+                      $is_single_agent = false;
+                  endif;
+                  $listing_agent = '';
+                  foreach ( $agents_ids as $agent ) {
+                      if ( 0 < intval( $agent ) ) {
+
+                          $agent_id = intval( $agent );
+                          
+                          $prop_agent = get_the_title( $agent_id );
+                          $thumb_id = get_post_thumbnail_id( $agent_id );
+                          $thumb_url_array = wp_get_attachment_image_src( $thumb_id, array(150,150), true );
+                          $prop_agent_photo_url = $thumb_url_array[0];
+                          
+                          if( empty( $prop_agent_photo_url )) {
+                              
+                              $picture = HOUZEZ_IMAGE. 'profile-avatar.png';
+                          } else {
+                              
+                              $picture = $prop_agent_photo_url;
+                          }
+
+                      }
+                  }
+              }
+
+          } elseif( $agent_display == 'agency_info' ) {
+              $agent_id = get_post_meta( get_the_ID(), 'fave_property_agency', true );
+
+              $prop_agent = get_the_title( $agent_id );
+              $thumb_id = get_post_thumbnail_id( $agent_id );
+              $thumb_url_array = wp_get_attachment_image_src( $thumb_id, array(150,150), true );
+              $prop_agent_photo_url = $thumb_url_array[0];
+              
+
+              if( empty( $prop_agent_photo_url )) {
+                  $picture = HOUZEZ_IMAGE. 'profile-avatar.png';
+              } else {
+                  $picture = $prop_agent_photo_url;
+              }
+              
+          } else {
+              $prop_agent = get_the_author();
+              $prop_agent_photo_url = get_the_author_meta( 'fave_author_custom_picture' );
+              $agent_args = array();
+              $agent_id   = get_the_author_meta( 'ID' );
+
+              if( empty( $prop_agent_photo_url )) {
+                  $picture = HOUZEZ_IMAGE. 'profile-avatar.png';
+              } else {
+                  $picture = $prop_agent_photo_url;
+              }
+          }
+          $return_array['agent_name'] = $prop_agent;
+          $return_array['picture'] = $picture;
+          $return_array['agent_type'] = $agent_display;
+          $return_array['agent_id'] = $agent_id;
+      }
+
+      return $return_array;
+  } // End function
 }
 
 
