@@ -36,6 +36,7 @@ class Houzez_mobile_api {
         /**
          * Plugin Path
          */
+        define( 'HOUZEZ_API_VERSION', '1.1.2.3' );
         define( 'HOUZEZ_MOBILE_FUNC_PATH', plugin_dir_path( __FILE__ ) );
         define( 'HOUZI_IMAGE', plugins_url('/img/', __FILE__) );
     }
