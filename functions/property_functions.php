@@ -135,7 +135,12 @@ function addPropertyWithAuth() {
     // }
 
     $new_property                   = apply_filters( 'houzez_submit_listing', $new_property );
-    houzez_update_property_from_draft( $new_property ); 
+    houzez_update_property_from_draft( $new_property );
+
+    //if fave_multi_units_ids was set, update property meta data.
+    if( isset( $_POST['fave_multi_units_ids'] ) ) {
+        update_post_meta( $new_property, 'fave_multi_units_ids', sanitize_text_field( $_POST['fave_multi_units_ids'] ) );
+    }
     wp_send_json(['prop_id' => $new_property ],200);
 }
 
