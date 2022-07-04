@@ -101,10 +101,22 @@ function hm_postFeature(&$response)
 
 function hm_postAddress(&$response)
 {
-
+  $address_taxonomies = array();
+  if (taxonomy_exists( 'property_country' )) {
+      array_push($address_taxonomies, 'property_country' );
+  }
+  if (taxonomy_exists( 'property_state' )) {
+      array_push($address_taxonomies, 'property_state' );
+  }
+  if (taxonomy_exists( 'property_city' )) {
+      array_push($address_taxonomies, 'property_city' );
+  }
+  if (taxonomy_exists( 'property_area' )) {
+      array_push($address_taxonomies, 'property_area' );
+  }
   $address_array = wp_get_post_terms(
     $response->data['id'],
-    ['property_country', 'property_state', 'property_city', 'property_area']
+    $address_taxonomies
   );
   $property_address = array();
   foreach ($address_array as $address) :

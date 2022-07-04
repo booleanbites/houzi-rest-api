@@ -432,16 +432,28 @@ function appendPostFeature(&$property)
 
 function appendPostAddress(&$response)
 {
-
-  $address_array = wp_get_post_terms(
-    $response->ID,
-    ['property_country', 'property_state', 'property_city', 'property_area']
-  );
-  $property_address = array();
-  foreach ($address_array as $address) :
-    $property_address[$address->taxonomy] = $address->name;
-  endforeach;
-  $response->property_address = $property_address;
+    $address_taxonomies = array();
+    if (taxonomy_exists( 'property_country' )) {
+        array_push($address_taxonomies, 'property_country' );
+    }
+    if (taxonomy_exists( 'property_state' )) {
+        array_push($address_taxonomies, 'property_state' );
+    }
+    if (taxonomy_exists( 'property_city' )) {
+        array_push($address_taxonomies, 'property_city' );
+    }
+    if (taxonomy_exists( 'property_area' )) {
+        array_push($address_taxonomies, 'property_area' );
+    }
+    $address_array = wp_get_post_terms(
+        $response->ID,
+        $address_taxonomies
+    );
+    $property_address = array();
+    foreach ($address_array as $address) :
+        $property_address[$address->taxonomy] = $address->name;
+    endforeach;
+    $response->property_address = $property_address;
 }
 function appendPostAttr(&$response)
 {
