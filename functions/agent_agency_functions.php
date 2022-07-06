@@ -93,6 +93,10 @@ add_action( 'rest_api_init', function () {
     'methods' => 'GET',
     'callback' => 'allAgencyAgents',
   ));
+  register_rest_route( 'houzez-mobile-api/v1', '/delete-an-agent', array(
+    'methods' => 'POST',
+    'callback' => 'deleteAgent',
+  ));
 });
 
 function contactRealtor($request){
@@ -218,6 +222,43 @@ function editAgent($request){
   $_POST['action'] = "houzez_agency_agent_update";
   //using the existing theme method.
   do_action("wp_ajax_houzez_agency_agent_update");
+}
+function deleteAgent($request) {
+  if (! is_user_logged_in() ) {
+    $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+    wp_send_json($ajax_response, 403);
+    return; 
+  }
+  $userID       = get_current_user_id();
+  $user_role = houzez_user_role_by_user_id($userID);
+  if ($user_role != 'houzez_agency') {
+    $ajax_response = array( 'success' => false, 'reason' => 'User is not an agency.' );
+    wp_send_json($ajax_response, 403);
+    return; 
+  }
+  $agent_id = $_POST['agent_id'];
+  if(!isset($_POST['agent_id']) || empty($agent_id)) {
+    $ajax_response = array( 'success' => false, 'reason' => 'Please provide agent_id to delete.' );
+    wp_send_json($ajax_response, 403);
+    return; 
+  }
+  $agent_parent = get_user_meta($agent_id, 'fave_agent_agency', true);
+
+  if ($userID != $agent_parent){
+    //echo 'You do not have access to this.';
+    $ajax_response = array( 'success' => false, 'reason' => 'Agent user does not belong to agency.' );
+    wp_send_json($ajax_response, 403);
+    return;
+  }
+
+  $nonce = wp_create_nonce('agent_delete_nonce');
+  $_REQUEST['agent_delete_security'] = $nonce;
+
+  $_POST['action'] = "houzez_delete_agency_agent";
+
+  //using the existing theme method.
+  require_once(ABSPATH.'wp-admin/includes/user.php');
+  do_action("wp_ajax_houzez_delete_agency_agent");
 }
 
 function scheduleATour($request){
