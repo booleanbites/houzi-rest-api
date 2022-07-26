@@ -42,6 +42,9 @@ function getMetaData() {
     $response['decimal_point_separator'] = houzez_option( 'decimal_point_separator', '.' );
     $response['add-prop-gdpr-enabled'] = houzez_option('add-prop-gdpr-enabled');
     
+    
+    $response['register_mobile'] = houzez_option('register_mobile', 0);
+    
     $response['measurement_unit_global']  = houzez_option('measurement_unit_global');
     
     $prop_size_prefix = houzez_option('measurement_unit');
