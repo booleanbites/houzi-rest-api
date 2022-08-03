@@ -165,8 +165,8 @@ function setupSearchQuery() {
     $custom_fields_values = isset($_POST['custom_fields_values']) ? $_POST['custom_fields_values'] : '';
     
     if(!empty($custom_fields_values)) {
-        foreach ($custom_fields_values as $value) {
-            $dummy_array[] = $value;
+        foreach ($custom_fields_values as $key => $value) {
+            $dummy_array[$key] = $value;
         }
     }
 
@@ -330,17 +330,16 @@ function setupSearchQuery() {
     if(class_exists('Houzez_Fields_Builder')) {
         $fields_array = Houzez_Fields_Builder::get_form_fields();
         if(!empty($fields_array)):
-            
-            foreach ( $fields_array as $key => $value ):
+            foreach ( $fields_array as $value ):
                 $field_title = $value->label;
                 $field_name = $value->field_id;
                 $is_search = $value->is_search;
 
                 if( $is_search == 'yes' ) {
-                    if(!empty($dummy_array[$key])) {
+                    if(!empty($dummy_array[$field_name])) {
                         $meta_query[] = array(
                             'key' => 'fave_'.$field_name,
-                            'value' => $dummy_array[$key],
+                            'value' => $dummy_array[$field_name],
                             'type' => 'CHAR',
                             'compare' => '=',
                         );

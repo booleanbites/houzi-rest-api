@@ -120,11 +120,11 @@ add_action( 'rest_api_init', function () {
    *
    */
   function add_user_info_to_login( $data, $user ) {
-
-    $data['user_id'] = $user->ID;
+    $userID = $user->ID;
+    $data['user_id'] = $userID;
     $data['user_role'] = $user->roles;
-    $user_custom_picture    =   get_the_author_meta( 'fave_author_custom_picture' , $user->ID );
-    $author_picture_id      =   get_the_author_meta( 'fave_author_picture_id' , $user->ID );
+    $user_custom_picture    =   get_the_author_meta( 'fave_author_custom_picture' , $userID );
+    $author_picture_id      =   get_the_author_meta( 'fave_author_picture_id' , $userID );
     if( !empty( $author_picture_id ) ) {
       $author_picture_id = intval( $author_picture_id );
       if ( $author_picture_id ) {
@@ -133,7 +133,15 @@ add_action( 'rest_api_init', function () {
     } else {
       $data['avatar'] = esc_url( $user_custom_picture );
     }
-    //$data['avatar'] = get_avatar_url( $user->ID, 32 );
+    $user_agent_id = get_the_author_meta('fave_author_agent_id', $userID);
+    $user_agency_id = get_the_author_meta('fave_author_agency_id', $userID);
+    
+    if( !empty($user_agent_id) ) {
+      $data['fave_author_agent_id'] = $user_agent_id;
+    } else if( !empty($user_agency_id) ) {
+      $data['fave_author_agency_id'] = $user_agency_id;
+    }
+
     return $data;
   }
 
@@ -355,11 +363,22 @@ add_action( 'rest_api_init', function () {
     $contactName = $request['name'];
     $contactEmail = $request['email'];
     $contactMessage = $request['message'];
+    $website = $request['website'];
+    $phone = $request['phone'];
+
 
     $subject = "[$source] New message from $contactName";
 
     $body = "<p><b>Name:</b> $contactName</p>";
     $body .= "<p><b>Email:</b> $contactEmail</p>";
+
+    if (!empty($phone)) {
+      $body .= "<p><b>Message:</b> $phone</p>";
+    }
+    if (!empty($website)) {
+      $body .= "<p><b>Message:</b> $website</p>";
+    }
+    
     $body .= "<p><b>Message:</b> $contactMessage</p>";
 
     $to = get_option( 'admin_email' );
