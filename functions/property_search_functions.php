@@ -160,15 +160,15 @@ function setupSearchQuery() {
     $allowed_html = array();
     $keyword_array =  '';
 
-    $dummy_array = array();
+    //$dummy_array = array();
 
     $custom_fields_values = isset($_POST['custom_fields_values']) ? $_POST['custom_fields_values'] : '';
     
-    if(!empty($custom_fields_values)) {
-        foreach ($custom_fields_values as $key => $value) {
-            $dummy_array[$key] = $value;
-        }
-    }
+    // if(!empty($custom_fields_values)) {
+    //     foreach ($custom_fields_values as $key => $value) {
+    //         $dummy_array[$key] = $value;
+    //     }
+    // }
 
 
     $initial_city = isset($_POST['initial_city']) ? $_POST['initial_city'] : '';
@@ -330,18 +330,26 @@ function setupSearchQuery() {
     if(class_exists('Houzez_Fields_Builder')) {
         $fields_array = Houzez_Fields_Builder::get_form_fields();
         if(!empty($fields_array)):
+            
             foreach ( $fields_array as $value ):
                 $field_title = $value->label;
                 $field_name = $value->field_id;
                 $is_search = $value->is_search;
+                $field_type = $value->type;
 
                 if( $is_search == 'yes' ) {
-                    if(!empty($dummy_array[$field_name])) {
+                    if(!empty($custom_fields_values[$field_name])) {
+                        $compare = 'LIKE';
+                        if( $field_type == 'checkbox_list' || $field_type == 'multiselect' ) {
+                            $compare = 'IN';
+                        }
+
                         $meta_query[] = array(
                             'key' => 'fave_'.$field_name,
-                            'value' => $dummy_array[$field_name],
+                            'value' => $custom_fields_values[$field_name],
                             'type' => 'CHAR',
                             'compare' => '=',
+                            'compare' => $compare,
                         );
                     }
                 }
