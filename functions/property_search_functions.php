@@ -701,12 +701,16 @@ function propertyNode($property){
     $property->thumbnail    = get_the_post_thumbnail_url( $post_id, 'houzez-property-thumb-image' );
     
     $property->property_meta    = get_post_meta($post_id);
-    $property->property_type         = houzez_taxonomy_simple('property_type');
 
-    
-    $property->property_features = wp_get_post_terms(  $post_id,   ['property_feature'], array( 'fields' => 'names') );
+    $property_type_array = getCurrentLanguageTermsOnly($post_id, 'property_type');
+
+    $property->property_type  = implode(",",$property_type_array);    
+
+    $response->property_features = getCurrentLanguageTermsOnly($post_id, 'property_feature');
+    //$property->property_features = wp_get_post_terms(  $post_id,   ['property_feature'], array( 'fields' => 'names') );
     
     appendPostAttr($property);
+
     $priceHTML = houzez_listing_price_v1($post_id);
     $property->htmlPrice = $priceHTML;
     $property->price = strip_tags($priceHTML);

@@ -91,11 +91,13 @@ function hm_postFeature(&$response)
 {
   // $response->data['property_features'] = get_the_terms( $response->data['id'], 'property_feature' );
 
-  $response->data['property_features'] = wp_get_post_terms(
-    $response->data['id'],
-    ['property_feature'],
-    array('fields' => 'names')
-  );
+  // $response->data['property_features'] = wp_get_post_terms(
+  //   $response->data['id'],
+  //   ['property_feature'],
+  //   array('fields' => 'names')
+  // );
+
+  $response->data['property_features'] = getCurrentLanguageTermsOnly($response->data['id'], 'property_feature');
 }
 
 
@@ -129,16 +131,19 @@ function hm_postAttr(&$response)
 {
   $property_attr = wp_get_post_terms(
     $response->data['id'],
-    ['property_type', 'property_status', 'property_label']
-
+    ['property_type', 'property_status', 'property_label'],
   );
-
+  $current_lang = apply_filters( 'wpml_current_language', "en" );
   $property_attributes = array();
   foreach ($property_attr as $attribute) :
-    $property_attributes[$attribute->taxonomy] = $attribute->name;
+    $localizez_term_id = apply_filters( 'wpml_object_id', $attribute->term_id, $attribute->taxonomy, FALSE, $current_lang );
+    $term = get_term( $localizez_term_id );
+    if (empty($property_attributes[$attribute->taxonomy])) {
+      $property_attributes[$attribute->taxonomy] = $term->name;
+    }
   endforeach;
   $response->data['property_attr'] = $property_attributes;
-  
+
 }
 
 if(!function_exists('property_agency_agent_info')) {

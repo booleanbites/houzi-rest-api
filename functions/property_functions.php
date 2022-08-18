@@ -424,10 +424,11 @@ function appendPostFeature(&$property)
 {
   // $response->data['property_features'] = get_the_terms( $response->data['id'], 'property_feature' );
 
-  $property->property_features = wp_get_post_terms( $property->ID,
-    ['property_feature'],
-    array('fields' => 'names')
-  );
+//   $property->property_features = wp_get_post_terms( $property->ID,
+//     ['property_feature'],
+//     array('fields' => 'names')
+//   );
+    $property->property_features = getCurrentLanguageTermsOnly($property->ID, 'property_feature');
 }
 
 function appendPostAddress(&$response)
@@ -462,11 +463,32 @@ function appendPostAttr(&$response)
     ['property_type', 'property_status', 'property_label']
 
   );
-
+  $current_lang = apply_filters( 'wpml_current_language', "en" );
   $property_attributes = array();
   foreach ($property_attr as $attribute) :
-    $property_attributes[$attribute->taxonomy] = $attribute->name;
+    $localizez_term_id = apply_filters( 'wpml_object_id', $attribute->term_id, $attribute->taxonomy, FALSE, $current_lang );
+    $term = get_term( $localizez_term_id );
+    if (empty($property_attributes[$attribute->taxonomy])) {
+      $property_attributes[$attribute->taxonomy] = $term->name;
+    }
   endforeach;
   $response->property_attr = $property_attributes;
   
+}
+function getCurrentLanguageTermsOnly($postId, $term_name) {
+    $current_lang = apply_filters( 'wpml_current_language', "en" );
+
+    $property_feature_terms = wp_get_post_terms(
+        $postId,
+        [$term_name]
+    );
+    $property_attributes = array();
+    foreach ($property_feature_terms as $feature) :
+      $localizez_term_id = apply_filters( 'wpml_object_id', $feature->term_id, $feature->taxonomy, FALSE, $current_lang );
+      $term = get_term( $localizez_term_id );
+      if (!in_array($term->name,$property_attributes)) {
+        $property_attributes[] = $term->name;
+      }
+    endforeach;
+    return $property_attributes;
 }
