@@ -1,6 +1,3 @@
----
-title: Welcome
----
 
 ![Houzi Real Estate App for Houzez](images/banner.jpg)
 
