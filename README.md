@@ -8,7 +8,7 @@ Houzi a real estate mobile application that connects with Houzez Wordpress theme
 Visit website here: https://houzi.booleanbites.com
 
 
-This documentation consist of two parts.
+Read documentation about Houzi here:
 
 ### [Tools](https://houzi-docs.booleanbites.com/tools/xcode_setup)
 
