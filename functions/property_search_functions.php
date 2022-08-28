@@ -170,7 +170,7 @@ function setupSearchQuery() {
     //     }
     // }
 
-
+    $map_only = isset( $_POST[ 'map_only' ] ) && 'on' == $_POST[ 'map_only' ];
     $initial_city = isset($_POST['initial_city']) ? $_POST['initial_city'] : '';
     $features = isset($_POST['features']) ? $_POST['features'] : '';
     $keyword = isset($_POST['keyword']) ? $_POST['keyword'] : '';
@@ -366,10 +366,12 @@ function setupSearchQuery() {
     }
 
     // Meta Queries
-    $meta_query[] = array(
-        'key' => 'fave_property_map_address',
-        'compare' => 'EXISTS',
-    );
+    if(!empty($map_only) && $map_only == true) {
+        $meta_query[] = array(
+            'key' => 'fave_property_map_address',
+            'compare' => 'EXISTS',
+        );
+    }
 
     // Property ID
     if( !empty( $property_id )  ) {
