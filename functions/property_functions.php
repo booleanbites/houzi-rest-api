@@ -483,12 +483,14 @@ function getCurrentLanguageTermsOnly($postId, $term_name) {
         [$term_name]
     );
     $property_attributes = array();
-    foreach ($property_feature_terms as $feature) :
-      $localizez_term_id = apply_filters( 'wpml_object_id', $feature->term_id, $feature->taxonomy, FALSE, $current_lang );
-      $term = get_term( $localizez_term_id );
-      if (!in_array($term->name,$property_attributes)) {
-        $property_attributes[] = $term->name;
-      }
-    endforeach;
+    if (! empty($property_feature_terms)){
+        foreach ($property_feature_terms as $feature) :
+        $localizez_term_id = apply_filters( 'wpml_object_id', $feature->term_id, $feature->taxonomy, FALSE, $current_lang );
+        $term = get_term( $localizez_term_id );
+        if (!in_array($term->name,$property_attributes)) {
+            $property_attributes[] = $term->name;
+        }
+        endforeach;
+    }
     return $property_attributes;
 }

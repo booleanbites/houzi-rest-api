@@ -327,7 +327,7 @@ function setupSearchQuery() {
 
 
     //Custom Fields
-    if(class_exists('Houzez_Fields_Builder')) {
+    if(class_exists('Houzez_Fields_Builder') && !empty($custom_fields_values)) {
         $fields_array = Houzez_Fields_Builder::get_form_fields();
         if(!empty($fields_array)):
             
@@ -697,18 +697,18 @@ function getSimilarProperties() {
 }
 
 function propertyNode($property){
-
+    
     $post_id = $property->ID;
 
     $property->thumbnail    = get_the_post_thumbnail_url( $post_id, 'houzez-property-thumb-image' );
     
     $property->property_meta    = get_post_meta($post_id);
-
+    
     $property_type_array = getCurrentLanguageTermsOnly($post_id, 'property_type');
-
+    
     $property->property_type  = implode(",",$property_type_array);    
-
-    $response->property_features = getCurrentLanguageTermsOnly($post_id, 'property_feature');
+    
+    $property->property_features = getCurrentLanguageTermsOnly($post_id, 'property_feature');
     //$property->property_features = wp_get_post_terms(  $post_id,   ['property_feature'], array( 'fields' => 'names') );
     
     appendPostAttr($property);
