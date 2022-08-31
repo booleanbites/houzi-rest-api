@@ -11,7 +11,7 @@
 add_image_size( 'custom-size', 200, 200 );
 // The filter callback function.
 function houzez_property_rest_base_name( $string) {
-  $options = get_option( 'houzez_mobile_api_options' ); // Array of All Options
+  $options = get_option( 'houzi_rest_api_options' ); // Array of All Options
   
   if ($options != null && isset($options['fix_property_type_in_translation_0']) && $options['fix_property_type_in_translation_0'] === 'fix_property_type_in_translation_0' ) {
     // rest_base property should always be properties.
