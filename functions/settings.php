@@ -69,7 +69,7 @@ class MobileApiSettings {
 		);*/
 		add_settings_field(
 			'fix_property_type_in_translation_0', // id
-			'Fix property type in translation', // title
+			'Fix translated property slug', // title
 			array( $this, 'fix_property_type_in_translation_0_callback' ), // callback
 			'houzez-mobile-api-admin', // page
 			'houzez_mobile_api_setting_section' // section
@@ -105,7 +105,7 @@ class MobileApiSettings {
 
 	public function fix_property_type_in_translation_0_callback() {
 		printf(
-			'<input type="checkbox" name="houzez_mobile_api_options[fix_property_type_in_translation_0]" id="fix_property_type_in_translation_0" value="fix_property_type_in_translation_0" %s> <label for="fix_property_type_in_translation_0">When WPML plugin is active, it changes the rest api route for property. Check this option to fix this issue.</label>',
+			'<input type="checkbox" name="houzez_mobile_api_options[fix_property_type_in_translation_0]" id="fix_property_type_in_translation_0" value="fix_property_type_in_translation_0" %s> <label for="fix_property_type_in_translation_0"><br>If you have changed property slug via WPML plugin to another langugage, it also changes the rest api route for property.<br>Check this option to set the property slug to \'property\'.</label>',
 			( isset( $this->houzez_mobile_api_options['fix_property_type_in_translation_0'] ) && $this->houzez_mobile_api_options['fix_property_type_in_translation_0'] === 'fix_property_type_in_translation_0' ) ? 'checked' : ''
 		);
 	}
