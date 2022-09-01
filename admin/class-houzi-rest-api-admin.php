@@ -51,7 +51,7 @@ class Houzi_Rest_Api_Admin {
 
 		$this->plugin_name = $plugin_name;
 		$this->version = $version;
-
+		
 	}
 
 	/**
@@ -72,8 +72,9 @@ class Houzi_Rest_Api_Admin {
 		 * between the defined hooks and the functions defined in this
 		 * class.
 		 */
+		// wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/houzi-rest-api-admin.css', array(), $this->version, 'all' );
 
-		wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/houzi-rest-api-admin.css', array(), $this->version, 'all' );
+		wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/houzi-rest-api-admin.css', array(), rand(111,9999), 'all', 'all' );
 
 	}
 
@@ -96,8 +97,28 @@ class Houzi_Rest_Api_Admin {
 		 * class.
 		 */
 
-		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/houzi-rest-api-admin.js', array( 'jquery' ), $this->version, false );
+		//wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/houzi-rest-api-admin.js', array( 'jquery' ), $this->version, false );
+		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/houzi-rest-api-admin.js', array( 'jquery' ), rand(111,9999), false );
+		wp_localize_script($this->plugin_name, 'houzi_admin_vars',
+            array( 
+                'ajaxurl'      => admin_url( 'admin-ajax.php' ),
+                'paid_status'  => esc_html__( 'Paid','houzez' ),
+                'activate_now' => esc_html__( 'Activate Now', 'houzez' ),
+                'activating'   => esc_html__( 'Activating...', 'houzez' ),
+                'activated'    => esc_html__( 'Activated!', 'houzez' ),
+                'install_now'  => esc_html__( 'Install Now', 'houzez' ),
+                'installing'   => esc_html__( 'Installing...', 'houzez' ),
+                'installed'    => esc_html__( 'Installed!', 'houzez' ),
+                'active'       => esc_html__( 'Active', 'houzez' ),
+                'failed'       => esc_html__( 'Failed!', 'houzez' ),
+            )
+        );
+		
 
+	}
+	public function load_admin_settings()	{
+		require_once( HOUZI_REST_API_PLUGIN_PATH . 'admin/class-rest-api-settings.php');
+		$settings = new RestApiSettings($this->plugin_name,$this->version);
 	}
 
 }

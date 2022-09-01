@@ -156,7 +156,7 @@ class Houzi_Rest_Api {
 
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
-		$this->houzi_rest_api_inc_admin_files();
+		$plugin_admin->load_admin_settings();
 	}
 
 	/**
@@ -174,10 +174,7 @@ class Houzi_Rest_Api {
 		$this->loader->add_action( 'wp_enqueue_scripts', $plugin_public, 'enqueue_scripts' );
 		$this->houzi_rest_api_inc_files();
 	}
-	function houzi_rest_api_inc_admin_files() {
-        
-        require_once( HOUZI_REST_API_PLUGIN_PATH . 'admin/class-rest-api-settings.php');
-	}
+	
 	function houzi_rest_api_inc_files() {
         
         require_once( HOUZI_REST_API_PLUGIN_PATH . 'functions/property_search_functions.php');

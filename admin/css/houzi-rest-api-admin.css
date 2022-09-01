@@ -2,3 +2,100 @@
  * All of the CSS for your admin-specific functionality should be
  * included in this file.
  */
+
+.admin-houzi-form {
+    max-width: 800px;
+}
+.admin-houzi-form label {
+    font-weight: bold;
+    display: block;
+    margin: 10px 0;
+}
+.admin-houzi-form .submit {
+    padding: 10px 0;
+}
+.admin-houzi-form .form-field { 
+    margin-bottom: 15px;
+}
+.admin-houzi-form .form-field input, .admin-houzi-form .form-field select {
+   min-height: 45px;
+}
+.admin-houzi-form .form-field select {
+    width: 95%;
+}
+.admin-houzi-box-content {
+    padding: 10px 20px 0;
+    position: relative;
+}
+.admin-houzi-box-content .actions {
+    position: absolute;
+    right: 20px;
+    top: -18px;
+}
+.admin-houzi-box-wrap {
+    position: relative;
+    min-height: 1px;
+    padding-left: 15px;
+    padding-right: 15px;
+    box-sizing: border-box;
+}
+.admin-houzi-box-wrap-half {
+    width: 50%;
+    float: left;
+}
+.admin-houzi-box {
+    border: 1px solid #ddd; 
+    border-radius: 4px;
+    margin-bottom: 30px;
+}
+.admin-houzi-box-header {
+    /*border-bottom: 1px solid #ddd;    
+    background-color: rgba(0, 0, 0, 0.05); */
+    padding: 20px 20px 0;
+}
+.admin-houzi-box-header .dashicons-before {
+    float: left;
+    margin: 0 10px 0 0;
+    text-align: center;
+}
+.admin-houzi-box-header h3 {
+    margin: 0;
+}
+.admin-houzi-box-content {
+    padding: 10px 20px 0;
+    position: relative;
+}
+
+.admin-houzi-box-content .actions {
+    position: absolute;
+    right: 20px;
+    top: -18px;
+}
+.admin-houzi-box-plugins {
+    width: calc(50% - 22px);
+    float: left;
+    margin: 0 10px 20px;
+}
+.admin-houzi-box-wrap-plugins {
+    margin-left: -10px;
+    margin-right: -10px;
+}
+.admin-houzez-content .wp-list-table {
+    margin-bottom: 25px;
+}
+.admin-houzi-box-image {
+    float: left;
+    margin: 20px 20px 17px 20px;
+}
+.admin-houzi-box-footer {
+    border-top: 1px solid #ddd; 
+    padding: 10px 20px;
+    clear: both;
+}
+.pc-elevened {
+    color: green;
+    letter-spacing: 2px;
+    font-size: 16px;
+    border: 1px solid;
+    padding: 10px;
+}
