@@ -40,10 +40,13 @@ function getMetaData() {
     $response['currency_position'] = houzez_option( 'currency_position', '$' );
     $response['thousands_separator'] = houzez_option( 'thousands_separator', ',' );
     $response['decimal_point_separator'] = houzez_option( 'decimal_point_separator', '.' );
+    $response['num_decimals'] = houzez_option( 'decimals', '0' );
     $response['add-prop-gdpr-enabled'] = houzez_option('add-prop-gdpr-enabled');
     
-    
+    $response['register_first_name'] = houzez_option('register_first_name', 0);
+    $response['register_last_name'] = houzez_option('register_last_name', 0);
     $response['register_mobile'] = houzez_option('register_mobile', 0);
+    $response['enable_password'] = houzez_option('enable_password', 0);
     
     $response['measurement_unit_global']  = houzez_option('measurement_unit_global');
     
@@ -68,6 +71,10 @@ function getMetaData() {
     add_term_to_response($response, 'property_status');
     add_term_to_response($response, 'property_feature');
     
+    $houzi_eleven = get_option( 'houzi_eleven' );
+    $eleven_text = get_option( 'houzi_eleven_text' );
+  
+    $response['licensed'] = !empty($houzi_eleven) && !empty($eleven_text);
     $response['property_reviews'] = houzez_option( 'property_reviews' );
     $response['property_area'] = [];
     $response['schedule_time_slots'] = houzez_option('schedule_time_slots');

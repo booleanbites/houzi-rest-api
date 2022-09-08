@@ -76,31 +76,40 @@ class RestApiSettings {
 		<div class="wrap">
 			<h2>Houzi Rest Api</h2>
 			<p>Extended Rest Api for mobile apps.
-			<br/>Developed for <a href="https://houzi.booleanbites.com">Houzi real estate app</a> by <a href="https://houzi.booleanbites.com">BooleanBites.com</a></p>
+			<br/>Developed for <a target="_blank" href="https://houzi.booleanbites.com">Houzi real estate app</a> by <a target="_blank" href="https://houzi.booleanbites.com">BooleanBites.com</a></p>
 			<?php settings_errors();
-			 $active_tab = 'settings';
-			 if ( isset( $_GET['tab'] ) ) {
+
+			$is_elevened = $this->is_elevened();
+			$active_tab = $is_elevened ? 'settings' : 'p_code';
+			
+			if ( isset( $_GET['tab'] ) &&  $is_elevened) {
 				$active_tab = $_GET['tab'];
-			 }
+			}
 			?>
 			<h2 class="nav-tab-wrapper">
-                <a href="?page=<?php echo $_GET['page']; ?>&tab=settings" class="nav-tab <?php echo $active_tab == 'settings' ? 'nav-tab-active' : ''; ?>">Settings</a>
-                <a href="?page=<?php echo $_GET['page']; ?>&tab=p_code" class="nav-tab <?php echo $active_tab == 'p_code' ? 'nav-tab-active' : ''; ?>">Purchase Code</a>
-            </h2>
+				<?php if ($is_elevened) {?>
+				<a href="?page=<?php echo $_GET['page']; ?>&tab=settings" class="nav-tab <?php echo $active_tab == 'settings' ? 'nav-tab-active' : ''; ?>">Settings</a>
+				<?php } ?>
+				<a href="?page=<?php echo $_GET['page']; ?>&tab=p_code" class="nav-tab <?php echo $active_tab == 'p_code' ? 'nav-tab-active' : ''; ?>">Purchase Code</a>
+			</h2>
 			<?php 
 			if ( $active_tab == 'settings' ) {
 				$this->admin_settings();
 			} elseif ( $active_tab == 'p_code' ) {
 				$this->eleven_settings();
 			}
-			
+		
 			?>
 		</div>
 	<?php }
-
+	private function is_elevened() {
+		$houzi_eleven = get_option( 'houzi_eleven' );
+		$eleven_text = get_option( 'houzi_eleven_text' );
+		return !empty($houzi_eleven) && !empty($eleven_text);
+	}
 	public function eleven_settings() {
 		$houzi_eleven = get_option( 'houzi_eleven' );
-		$eleven_code = get_option( 'houzi_eleven_text' );
+		$eleven_text = get_option( 'houzi_eleven_text' );
 		?>
 
 		<p><?php esc_html_e('Enter purchase code to verify your purchase', 'houzi'); ?></p>
@@ -113,8 +122,8 @@ class RestApiSettings {
 				<?php if( $houzi_eleven == 'elevened' ) { ?>
 
 					<label><?php esc_html_e('Purchase Code', 'houzi'); ?> *</label>
-					<?php if( ! empty( $eleven_code ) ) { ?>
-					<input id="item_eleven_field" autocomplete="off" readonly class="regular-text" type="text" placeholder="Enter item purchase code." value="<?php echo esc_attr($eleven_code); ?>">
+					<?php if( ! empty( $eleven_text ) ) { ?>
+					<input id="item_eleven_field" autocomplete="off" readonly class="regular-text" type="text" placeholder="Enter item purchase code." value="<?php echo esc_attr($eleven_text); ?>">
 					<?php } ?>
 					<input type="hidden" name="action" value="houzi_lets_twelve">
 					<p>
@@ -125,15 +134,18 @@ class RestApiSettings {
 					<label><?php esc_html_e('Purchase Code', 'houzi'); ?> *</label>
 					<input id="item_eleven_field" autocomplete="off" class="regular-text" type="text" placeholder="Enter item purchase code.">
 					<input type="hidden" name="action" value="houzi_lets_eleven">
+					<div>
+						<p>
+							Activate your plugin by entering your purchase code. Activation allows you to continuous upgrade, seamlsess api integration and support.
+							You can consult <a target="_blank" href="https://help.market.envato.com/hc/en-us/articles/202822600-Where-Is-My-Purchase-Code-"> this article</a> to learn how to get item purchase code.  
+						</p>
+						
+					</div>
 				<?php
 				} ?>
 			</div>
 
-			<div>
-				<p>
-					You can consult <a target="_blank" href="https://help.market.envato.com/hc/en-us/articles/202822600-Where-Is-My-Purchase-Code-"> this article</a> to learn how to get item purchase code.  
-				</p>
-			</div>
+			
 
 			<div class="submit">
 
@@ -172,20 +184,21 @@ class RestApiSettings {
             wp_die();
         }
 
-        $my_item_id = 15752549;
         $error = new WP_Error();
-
-        $envato_token = 'n3UqTOU50S2rPm17mcPtGsh8nAv9fmU4';
+        
 		$header_map            = array();
 		$header            = array();
 		$header['User-Agent'] = 'Purchase code verification';
-
+		
+		// $my_item_id = 15752549;
         // $apiurl  = "https://api.envato.com/v1/market/private/user/verify-purchase:" . esc_html( $item_eleven_text ) . ".json";
-		// $header['Authorization'] = "Bearer " . $envato_token;
+		// $envato_token = 'n3UqTOU50S2rPm17mcPtGsh8nAv9fmU4';
 
 		$my_item_id = 17022701;
 		$apiurl  = "https://sandbox.bailey.sh/v3/market/author/sale?code=" . esc_html( $item_eleven_text );
-        
+        $envato_token = 'cFAKETOKENabcREPLACEMExyzcdefghj';
+
+		$header['Authorization'] = "Bearer " . $envato_token;
 		$header_map['headers'] = $header;
         $request  = wp_safe_remote_request( $apiurl, $header_map );
 		
