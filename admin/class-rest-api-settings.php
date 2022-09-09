@@ -46,6 +46,9 @@ class RestApiSettings {
 
 		add_action('wp_ajax_houzi_lets_eleven', array( $this, 'lets_go_eleven'));
 		add_action('wp_ajax_houzi_lets_twelve', array( $this, 'lets_go_twelve'));
+		add_action('update_option_houzi_rest_api_options', function( $old_value, $value ) {
+			do_action( 'litespeed_purge_all' );
+	   	}, 10, 2);
 	}
 	
 	function houzi_admin_css_hook( $hook ) {
@@ -308,6 +311,13 @@ class RestApiSettings {
 			'houzi-rest-api-admin', // page
 			'houzi_rest_api_setting_section' // section
 		);
+		/*add_settings_field(
+			'mobile_app_config_dev', // id
+			'App Config (Dev)', // title
+			array( $this, 'mobile_app_config_dev_callback' ), // callback
+			'houzi-rest-api-admin', // page
+			'houzi_rest_api_setting_section' // section
+		);*/
 	}
 
 	public function houzi_rest_api_sanitize($input) {
@@ -321,7 +331,9 @@ class RestApiSettings {
 		if ( isset( $input['mobile_app_config'] ) ) {
 			$sanitary_values['mobile_app_config'] = esc_textarea( $input['mobile_app_config'] );
 		}
-		
+		if ( isset( $input['mobile_app_config_dev'] ) ) {
+			$sanitary_values['mobile_app_config_dev'] = esc_textarea( $input['mobile_app_config_dev'] );
+		}
 
 		return $sanitary_values;
 	}
@@ -346,6 +358,12 @@ class RestApiSettings {
 		printf(
 			'<textarea class="large-text" rows="5" placeholder="JSON config from Houzi Config desktop app" name="houzi_rest_api_options[mobile_app_config]" id="mobile_app_config">%s</textarea>',
 			isset( $this->houzi_rest_api_options['mobile_app_config'] ) ? esc_attr( $this->houzi_rest_api_options['mobile_app_config']) : ''
+		);
+	}
+	public function mobile_app_config_dev_callback() {
+		printf(
+			'<textarea class="large-text" rows="15" placeholder="JSON config from Houzi Config desktop app" name="houzi_rest_api_options[mobile_app_config_dev]" id="mobile_app_config_dev">%s</textarea>',
+			isset( $this->houzi_rest_api_options['mobile_app_config_dev'] ) ? esc_attr( $this->houzi_rest_api_options['mobile_app_config_dev']) : ''
 		);
 	}
 	

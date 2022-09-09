@@ -61,6 +61,9 @@ function getMetaData() {
     $houzi_config = html_entity_decode( $options['mobile_app_config']);
     $response['mobile_app_config'] = json_decode($houzi_config, true, JSON_UNESCAPED_SLASHES);
 
+    $houzi_config_dev = html_entity_decode( $options['mobile_app_config_dev']);
+    $response['mobile_app_config_dev'] = json_decode($houzi_config_dev, true, JSON_UNESCAPED_SLASHES);
+
     add_term_to_response($response, 'property_country');
     add_term_to_response($response, 'property_state');
     add_term_to_response($response, 'property_city');
