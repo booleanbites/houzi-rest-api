@@ -176,6 +176,7 @@ function setupSearchQuery() {
     $keyword = isset($_POST['keyword']) ? $_POST['keyword'] : '';
     $country = isset($_POST['country']) ? ($_POST['country']) : '';
     $state = isset($_POST['state']) ? ($_POST['state']) : '';
+    $featured = isset($_POST['featured']) ? ($_POST['featured']) : '';
     $location = isset($_POST['location']) ? ($_POST['location']) : '';
     $area = isset($_POST['area']) ? ($_POST['area']) : '';
     $status = isset($_POST['status']) ? ($_POST['status']) : '';
@@ -360,6 +361,14 @@ function setupSearchQuery() {
         $meta_query[] = array(
             'key' => 'fave_currency',
             'value' => $currency,
+            'type' => 'CHAR',
+            'compare' => '=',
+        );
+    }
+    if(!empty($featured)) {
+        $meta_query[] = array(
+            'key' => 'fave_featured',
+            'value' => $featured,
             'type' => 'CHAR',
             'compare' => '=',
         );

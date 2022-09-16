@@ -376,7 +376,7 @@ add_action( 'rest_api_init', function () {
       $body .= "<p><b>Message:</b> $phone</p>";
     }
     if (!empty($website)) {
-      $body .= "<p><b>Message:</b> $website</p>";
+      $body .= "<p><b>Website:</b> $website</p>";
     }
     
     $body .= "<p><b>Message:</b> $contactMessage</p>";

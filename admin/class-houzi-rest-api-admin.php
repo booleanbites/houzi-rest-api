@@ -72,9 +72,9 @@ class Houzi_Rest_Api_Admin {
 		 * between the defined hooks and the functions defined in this
 		 * class.
 		 */
-		// wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/houzi-rest-api-admin.css', array(), $this->version, 'all' );
+		wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/houzi-rest-api-admin.css', array(), $this->version, 'all' );
 
-		wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/houzi-rest-api-admin.css', array(), rand(111,9999), 'all', 'all' );
+		// wp_enqueue_style( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'css/houzi-rest-api-admin.css', array(), rand(111,9999), 'all', 'all' );
 
 	}
 
@@ -97,8 +97,8 @@ class Houzi_Rest_Api_Admin {
 		 * class.
 		 */
 
-		//wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/houzi-rest-api-admin.js', array( 'jquery' ), $this->version, false );
-		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/houzi-rest-api-admin.js', array( 'jquery' ), rand(111,9999), false );
+		wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/houzi-rest-api-admin.js', array( 'jquery' ), $this->version, false );
+		// wp_enqueue_script( $this->plugin_name, plugin_dir_url( __FILE__ ) . 'js/houzi-rest-api-admin.js', array( 'jquery' ), rand(111,9999), false );
 		wp_localize_script($this->plugin_name, 'houzi_admin_vars',
             array( 
                 'ajaxurl'      => admin_url( 'admin-ajax.php' ),
