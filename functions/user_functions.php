@@ -210,12 +210,13 @@ add_action( 'rest_api_init', function () {
       wp_send_json($ajax_response, 403);
       return;
     }
+    $username = $_POST['username'];
     if (strtolower($source) == 'phone' && ( !isset( $_POST['username'] ) || empty($username))) {
       $ajax_response = array( 'success' => false , 'reason' => "source is phone, but phone not provided in username" );
       wp_send_json($ajax_response, 403);
       return;
     }
-    $username = $_POST['username'];
+    
     if ( strtolower($source) == 'phone' ) {
       $user = reset(
         get_users(

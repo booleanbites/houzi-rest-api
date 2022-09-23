@@ -11,7 +11,7 @@
  * @wordpress-plugin
  * Plugin Name:       Houzi Rest Api
  * Plugin URI:        https://houzi.booleanbites.com
- * Description:       Enhance Rest Api for Houzi mobiles app.
+ * Description:       Enhance Rest Api for Houzi mobile apps.
  * Version:           1.1.4.1
  * Author:            BooleanBites Ltd.
  * Author URI:        https://booleanbites.com
