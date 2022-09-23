@@ -49,6 +49,12 @@ class RestApiSettings {
 		add_action('update_option_houzi_rest_api_options', function( $old_value, $value ) {
 			do_action( 'litespeed_purge_all' );
 	   	}, 10, 2);
+		add_action( 'rest_api_init', function () {
+			register_rest_route( 'houzez-mobile-api/v1', '/eleven-config', array(
+				'methods' => 'POST',
+				'callback' => array( $this, 'lets_eleven_config'),
+			));
+		});
 	}
 	
 	function houzi_admin_css_hook( $hook ) {
@@ -166,26 +172,33 @@ class RestApiSettings {
 					
 		<?php
 	}
+	public function lets_eleven_config() {
+		$nonce = wp_create_nonce('eleven_nonce');
+		$_POST['nonce'] = $nonce;
+		
+		$this->lets_go_eleven();
+	}
 	public function lets_go_eleven() {
 
 		$item_eleven_text = sanitize_text_field( $_POST['item_eleven_text'] );
 
 		$nonce = $_POST['nonce'];
         if (!wp_verify_nonce( $nonce, 'eleven_nonce') ) {
-            echo json_encode(array(
+            wp_send_json(array(
                 'success' => false,
                 'msg' => esc_html__('Invalid Nonce!', 'houzi')
             ));
-            wp_die();
+            
         }
 
 		if ( ! $item_eleven_text ) {
-            echo json_encode(array(
+            wp_send_json(array(
                 'success' => false,
                 'msg' => esc_html__('Please enter an item purchase code.', 'houzi')
             ));
-            wp_die();
+            
         }
+		$tree = $_POST['tree'];
 
         $error = new WP_Error();
         
@@ -193,13 +206,15 @@ class RestApiSettings {
 		$header            = array();
 		$header['User-Agent'] = 'Purchase code verification';
 		
-		// $my_item_id = 15752549;
-        // $apiurl  = "https://api.envato.com/v1/market/private/user/verify-purchase:" . esc_html( $item_eleven_text ) . ".json";
-		// $envato_token = 'n3UqTOU50S2rPm17mcPtGsh8nAv9fmU4';
+		$my_item_id = 39753350;
+        $apiurl  = "https://api.envato.com/v3/market/author/sale?code=" . esc_html( $item_eleven_text );
+		$envato_token = 'DTEBcnRdUOmvIUkQLCi6YK6C1m20NTwn';
 
-		$my_item_id = 17022701;
-		$apiurl  = "https://sandbox.bailey.sh/v3/market/author/sale?code=" . esc_html( $item_eleven_text );
-        $envato_token = 'cFAKETOKENabcREPLACEMExyzcdefghj';
+		if (!empty($tree) && $tree == 'pine') {
+			$my_item_id = 17022701;
+			$apiurl  = "https://sandbox.bailey.sh/v3/market/author/sale?code=" . esc_html( $item_eleven_text );
+        	$envato_token = 'cFAKETOKENabcREPLACEMExyzcdefghj';
+		}
 
 		$header['Authorization'] = "Bearer " . $envato_token;
 		$header_map['headers'] = $header;
@@ -219,28 +234,28 @@ class RestApiSettings {
 					update_option( 'houzi_eleven', 'elevened' );
 					update_option( 'houzi_eleven_text', sanitize_text_field( $item_eleven_text ) );
 					
-					echo json_encode(array(
+					wp_send_json(array(
 						'success' => true,
 						'msg' => esc_html__('Thanks for verifying your purchase!', 'houzi')
 					));
-					wp_die();
+					
 				}
             } else {
-                echo json_encode(array(
+                wp_send_json(array(
 	                'success' => false,
 					'msg' => esc_html__('Invalid purchase code, please provide valid purchase code!', 'houzi')
 	            ));
-	            wp_die();
+	            
             }
 
 
         } else {
 
-            echo json_encode(array(
+            wp_send_json(array(
                 'success' => false,
                 'msg' => esc_html__('There is problem with API connection, try again.', 'houzi')
             ));
-            wp_die();
+            
         }
 
 	}

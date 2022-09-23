@@ -6,12 +6,13 @@ add_action( 'rest_api_init', function () {
     'methods' => 'GET',
     'callback' => 'getMetaData',
   ));
-});
-
-add_action( 'rest_api_init', function () {
   register_rest_route( 'houzez-mobile-api/v1', '/get-terms', array(
     'methods' => 'GET',
     'callback' => 'getTerms',
+  ));
+  register_rest_route( 'houzez-mobile-api/v1', '/houzi-setup-status', array(
+    'methods' => 'POST',
+    'callback' => 'houziSetupStatus',
   ));
 });
 function getTerms() {
@@ -172,6 +173,24 @@ function add_roles_to_response(&$response){
 
 
   $response['user_roles'] = $roles;
+  $response['all_user_roles'] = ["houzez_agent", "houzez_agency", "houzez_owner", "houzez_buyer", "houzez_seller", "houzez_manager"];
   
+}
+
+function houziSetupStatus() {
+    
+  $response = array();
+  
+  $response['success'] = true;
+  $response['version'] = HOUZI_REST_API_VERSION;
+  $response['houzez_ver'] = HOUZEZ_THEME_VERSION;
+
+  $houzi_eleven = get_option( 'houzi_eleven' );
+  $eleven_text = get_option( 'houzi_eleven_text' );
+  $response['licensed'] = !empty($houzi_eleven) && !empty($eleven_text);
+  $response['jwt_auth_active'] = class_exists('Jwt_Auth_Public');
+  $response['jwt_auth_key'] = defined('JWT_AUTH_SECRET_KEY');
+
+  wp_send_json($response, 200);
 }
 

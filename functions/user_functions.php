@@ -202,12 +202,35 @@ add_action( 'rest_api_init', function () {
           return;
         }
     }
+    
     $email = $_POST['email'];
-    //source wasn't apple, we need email or username.
-    if ( !isset( $_POST['email'] ) || empty($email)) {
+    //source wasn't apple or phone, we need email or username.
+    if (strtolower($source) != 'phone' && ( !isset( $_POST['email'] ) || empty($email))) {
       $ajax_response = array( 'success' => false , 'reason' => "email not provided" );
       wp_send_json($ajax_response, 403);
       return;
+    }
+    if (strtolower($source) == 'phone' && ( !isset( $_POST['username'] ) || empty($username))) {
+      $ajax_response = array( 'success' => false , 'reason' => "source is phone, but phone not provided in username" );
+      wp_send_json($ajax_response, 403);
+      return;
+    }
+    $username = $_POST['username'];
+    if ( strtolower($source) == 'phone' ) {
+      $user = reset(
+        get_users(
+          array(
+            'meta_key' => 'user_id_social',
+            'meta_value' => $user_id_social,
+            'count' => 1,
+          )
+        )
+      );
+      if ( $user ) {
+        doJWTAuthWithSecret($username, $user->data->user_pass);
+        //we logged in, return from here.
+        return;
+      }
     }
 
     if ( email_exists($email) ) {
@@ -230,7 +253,7 @@ add_action( 'rest_api_init', function () {
       return;
     }
 
-    $username = $_POST['username'];
+    
     if ( !isset( $_POST['username'] ) || empty($username) ) {
       $username = explode( '@', $email )[0];
     }
@@ -238,8 +261,8 @@ add_action( 'rest_api_init', function () {
     if (username_exists($username) ) {
       $user = get_user_by( 'login', $username );
 
-      //if there does exist a user with this email, we need to update its apple social id for future logins.
-      if ( strtolower($source) == 'apple' ) {
+      //if there does exist a user with this email/phonenum, we need to update its social id for future logins.
+      if ( strtolower($source) == 'apple' || strtolower($source) == 'phone') {
         update_user_meta( $user->ID, "user_id_social", $user_id_social );
       }
 
@@ -249,7 +272,7 @@ add_action( 'rest_api_init', function () {
         doJWTAuth($username, $user_id_social);
         return;
       } else {
-        doJWTAuthWithSecret($username, $secret.$user->data->user_pass);
+        doJWTAuthWithSecret($username, $user->data->user_pass);
         return;
       }
       
@@ -268,8 +291,11 @@ add_action( 'rest_api_init', function () {
     wp_set_password( $user_id_social, $wordpress_user_id ) ;
     
     update_user_meta( $wordpress_user_id, "user_id_social", $user_id_social );
+    if (strtolower($source) == 'phone') {
+      update_user_meta( $user->ID, "fave_author_mobile", $username );
+    }
 
-    doJWTAuth($email, $user_id_social);
+    doJWTAuth($username, $user_id_social);
     return;
 
     // $ajax_response = array( 'success' => true , 'email' => $email, 'username' => $username, 'user_id' => $user_id,  );
