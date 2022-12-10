@@ -29,8 +29,8 @@ function preparePropertyData($response, $post, $request)
 
   //TODO: add context params to only modify this result when its coming from app context.
   $params = $request->get_params();
-  $property_id_from_url = $params["id"];
-  $isediting = $params["editing"];
+  $property_id_from_url = $params["id"] ?? "";
+  $isediting = $params["editing"] ?? "";
   
 
   $should_append_extra_data = !empty( $property_id_from_url);
@@ -41,7 +41,7 @@ function preparePropertyData($response, $post, $request)
     hm_postFeature($response);
     hm_postAddress($response);
     
-    $response->data['is_fav'] = isFavoriteProperty($property_id_from_url);
+    $response->data['is_fav'] = !empty( $property_id_from_url) ? isFavoriteProperty($property_id_from_url) : false;
     $response->data['property_meta']['agent_info'] = houzez20_property_contact_form();
   } else {
     $response->data['thumbnail']   = get_the_post_thumbnail_url( get_the_ID(), 'houzez-property-thumb-image' );
@@ -52,7 +52,7 @@ function preparePropertyData($response, $post, $request)
   
   $additional_features = $property_meta["additional_features"];
   $floor_plans = $property_meta["floor_plans"];
-  $fave_multi_units = $property_meta["fave_multi_units"];
+  $fave_multi_units = $property_meta["fave_multi_units"] ?? null;
 
   unset($response->data['property_meta']['additional_features']);
   unset($response->data['property_meta']['floor_plans']);
@@ -60,7 +60,7 @@ function preparePropertyData($response, $post, $request)
   
   $response->data['property_meta']['additional_features'] = unserialize($additional_features[0]);
   $response->data['property_meta']['floor_plans'] = unserialize($floor_plans[0]);
-  $response->data['property_meta']['fave_multi_units'] = unserialize($fave_multi_units[0]);
+  $property_meta['fave_multi_units'] = $fave_multi_units ? unserialize($fave_multi_units[0]) : [];
 
   if(empty($isediting)) {
     unset($response->data['property_meta']['fave_property_images']);
@@ -68,7 +68,7 @@ function preparePropertyData($response, $post, $request)
   unset($response->data['property_meta']['houzez_views_by_date']);
   unset($response->data['property_meta']['_vc_post_settings']);
   
-  $should_add_agent_agency_info = $params["agent_agency_info"];
+  $should_add_agent_agency_info = $params["agent_agency_info"] ?? "";
   if (!empty($should_add_agent_agency_info) && $should_add_agent_agency_info == 'yes') {
     $response->data['property_meta']['agent_agency_info'] = property_agency_agent_info();
   }
