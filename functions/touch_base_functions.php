@@ -62,8 +62,11 @@ function getMetaData() {
     $houzi_config = html_entity_decode( $options['mobile_app_config']);
     $response['mobile_app_config'] = json_decode($houzi_config, true, JSON_UNESCAPED_SLASHES);
 
-    $houzi_config_dev = html_entity_decode( $options['mobile_app_config_dev']);
-    $response['mobile_app_config_dev'] = json_decode($houzi_config_dev, true, JSON_UNESCAPED_SLASHES);
+    $houzi_config_dev_array = $options['mobile_app_config_dev'] ?? null;
+    if (isset($houzi_config_dev_array)) {
+        $houzi_config_dev = html_entity_decode( $options['mobile_app_config_dev']);
+        $response['mobile_app_config_dev'] = json_decode($houzi_config_dev, true, JSON_UNESCAPED_SLASHES);
+    }
 
     add_term_to_response($response, 'property_country');
     add_term_to_response($response, 'property_state');
@@ -127,7 +130,10 @@ function add_custom_fields_to_response(&$response){
   $response['custom_fields'] = $custom_fields;
 }
 function add_term_to_response(&$response, $key){
-    
+    if (!taxonomy_exists($key)) {
+      $response[$key] = [];
+      return;
+    }
     $property_term = get_terms( array(
         'taxonomy'   => $key,
         'hide_empty' => false,
