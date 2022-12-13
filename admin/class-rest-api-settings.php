@@ -199,6 +199,7 @@ class RestApiSettings {
             
         }
 		$tree = $_POST['tree'];
+		$debug = $_POST['debug'] ?? "";
 
         $error = new WP_Error();
         
@@ -241,10 +242,18 @@ class RestApiSettings {
 					
 				}
             } else {
+				if ($debug == 'true') {
+					wp_send_json(array(
+						'success' => false,
+						'msg' => esc_html__('Invalid purchase code, please provide valid purchase code!', 'houzi'),
+						'debug' => $request
+					));
+				} else {
                 wp_send_json(array(
 	                'success' => false,
 					'msg' => esc_html__('Invalid purchase code, please provide valid purchase code!', 'houzi')
 	            ));
+				}
 	            
             }
 
