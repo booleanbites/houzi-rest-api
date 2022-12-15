@@ -395,7 +395,8 @@ function queryPropertyById($propertyId) {
   
         $property_meta['additional_features'] = unserialize($additional_features[0]);
         $property_meta['floor_plans'] = unserialize($floor_plans[0]);
-        $property_meta['fave_multi_units'] = $fave_multi_units ? unserialize($fave_multi_units[0]) : [];
+        $property_meta['fave_multi_units'] = $fave_multi_units ? unserialize($fave_multi_units[0]) : false;
+        
 
         $property->property_meta    = $property_meta;
 

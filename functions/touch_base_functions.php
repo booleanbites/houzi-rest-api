@@ -24,9 +24,16 @@ function getTerms() {
   $response = array();
   
   $response['success'] = true;
-  $term = $_GET['term'];
+  $terms = $_GET['term'];
+  if( is_array( $terms )) {
+    foreach ($terms as $term):
+      add_term_to_response($response, $term);
+    endforeach;
+  } else {
+    add_term_to_response($response, $terms);
+  }
+  
 
-  add_term_to_response($response, $term);
 
   wp_send_json($response, 200);
 }
