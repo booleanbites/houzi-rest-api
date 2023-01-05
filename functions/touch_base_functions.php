@@ -156,6 +156,24 @@ function add_term_to_response(&$response, $key){
         $term->thumbnail = $term_img_thumb;
         $term->full = $term_img;
       }
+      if ($key == 'property_area') {
+        $term_meta = get_option( "_houzez_property_area_$term->term_id");
+        if( $term_meta ) {
+          $term->fave_parent_term =  $term_meta['parent_city'];
+        }
+      }
+      if ($key == 'property_city') {
+        $term_meta = get_option( "_houzez_property_city_$term->term_id");
+        if( $term_meta ) {
+          $term->fave_parent_term = $term_meta['parent_state'];
+        }
+      }
+      if ($key == 'property_state') {
+        $term_meta = get_option( "_houzez_property_state_$term->term_id");
+        if( $term_meta ) {
+          $term->fave_parent_term = $term_meta['parent_country'];
+        }
+      }
     }
     $response[$key] = $property_term;
 }
