@@ -141,7 +141,13 @@ function addPropertyWithAuth() {
     if( isset( $_POST['fave_multi_units_ids'] ) ) {
         update_post_meta( $new_property, 'fave_multi_units_ids', sanitize_text_field( $_POST['fave_multi_units_ids'] ) );
     }
-    wp_send_json(['prop_id' => $new_property ],200);
+    $response_editing = 'false';
+    if( isset( $_POST['prop_id'] ) && !empty( $_POST['prop_id'] ) ){
+        //purge light-speed cache for this property post type.
+        do_action( 'litespeed_purge_post', $_POST['prop_id'] );
+        $response_editing = 'true';
+    }
+    wp_send_json(['prop_id' => $new_property, 'purged' => $response_editing ],200);
 }
 
 function deleteProperty() {
