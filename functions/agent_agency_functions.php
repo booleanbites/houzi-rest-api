@@ -324,12 +324,18 @@ function contactPropertyRealtor($request){
   //$_POST['agent_type'] = 'agent_info';
   $_POST['privacy_policy'] =  '1';
 
+  //newer version of houzez is using listing_id for wp-post-id, whereas property_id for character+id 
+	if(!isset($_POST['listing_id'])) {
+		$_POST['listing_id'] =  $_POST['property_id'];
+	}
+
   $enable_reCaptcha = houzez_option('enable_reCaptcha');
   
   global $houzez_options;
   $houzez_options['enable_reCaptcha'] = 0;
 
-  houzez_property_agent_contact();
+  //houzez_property_agent_contact();
+  do_action("wp_ajax_houzez_property_agent_contact");
 }
 function allAgencyAgents($request) {
   //disable lightspeed caching
