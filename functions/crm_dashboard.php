@@ -18,6 +18,8 @@ add_action( 'litespeed_init', function() {
       "leads",
       "delete-lead",
       "enquiries",
+      "all-enquiries",
+      "lead-details",
       "deals",
       "delete-deal",
       "delete-crm-enquiry",
@@ -63,7 +65,17 @@ add_action( 'rest_api_init', function () {
 
     register_rest_route( 'houzez-mobile-api/v1', '/enquiries', array(
       'methods' => 'GET',
+      'callback' => 'getEnquiries',
+    ));
+
+    register_rest_route( 'houzez-mobile-api/v1', '/all-enquiries', array(
+      'methods' => 'GET',
       'callback' => 'allEnquiries',
+    ));
+
+    register_rest_route( 'houzez-mobile-api/v1', '/lead-details', array(
+      'methods' => 'GET',
+      'callback' => 'leadDetails',
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/deals', array(
@@ -206,7 +218,7 @@ function allActivities(){
     wp_send_json($activities["data"],200);
 }
 
-function allEnquiries(){
+function getEnquiries(){
   //disable lightspeed caching
   do_action( 'litespeed_control_set_nocache', 'nocache due to logged in' );
   if (! is_user_logged_in() ) {
@@ -238,6 +250,93 @@ function allEnquiries(){
   wp_send_json($all_enquires["data"],200);
 }
 
+function allEnquiries(){
+  //disable lightspeed caching
+  do_action( 'litespeed_control_set_nocache', 'nocache due to logged in' );
+  if (! is_user_logged_in() ) {
+    $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+    wp_send_json($ajax_response, 403);
+    return; 
+  }
+  //a fix for pagination
+  if(isset($_GET["per_page"]) && !empty($_GET["per_page"])) {
+    $_GET["records"] = $_GET["per_page"];
+  }
+  $all_enquires = Houzez_Enquiry::get_enquires();
+
+  $results = array();
+  foreach( $all_enquires['data']['results'] as $enquiry ) {
+    $meta = maybe_unserialize($enquiry->enquiry_meta);
+    $lead = Houzez_Leads::get_lead($enquiry->lead_id);
+    
+    $enquiry->enquiry_meta = $meta;
+    $enquiry->display_name = $lead->display_name;
+    $enquiry->lead = $lead;
+    $enquiry->matched = [];
+
+    array_push($results, $enquiry);
+  }
+  $all_enquires["data"]["results"] = $results;
+  
+  wp_send_json($all_enquires["data"],200);
+}
+function leadDetails() {
+  //disable lightspeed caching
+  do_action( 'litespeed_control_set_nocache', 'nocache due to logged in' );
+  if (! is_user_logged_in() ) {
+    $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+    wp_send_json($ajax_response, 403);
+    return; 
+  }
+  //lead-id must be provided
+  if(!isset($_GET["lead-id"]) || empty($_GET["lead-id"])) {
+    $ajax_response = array( 'success' => false, 'reason' => 'Please provide lead-id.' );
+    wp_send_json($ajax_response, 400);
+    return; 
+  }
+  //need only one.
+  $_GET["records"] = "1";
+  
+  $all_enquires = Houzez_Enquiry::get_enquires();
+
+  $lpage = $_GET["lpage"] ? $_GET["lpage"] : "1";
+  set_query_var('paged', $lpage);
+
+  $results = array();
+  foreach( $all_enquires['data']['results'] as $enquiry ) {
+    $meta = maybe_unserialize($enquiry->enquiry_meta);
+    $lead = Houzez_Leads::get_lead($enquiry->lead_id);
+    $matched_query = matched_listings($enquiry->enquiry_meta);
+
+    if($matched_query->have_posts()):
+      while ($matched_query->have_posts()): $matched_query->the_post();
+        $property = $matched_query->post; 
+        $post_id = $property->ID;
+        $property_meta = get_post_meta($post_id);
+        $property->property_meta = $property_meta;
+        // $prop_id = houzez_get_listing_data('property_id');
+        // $property->fave_property_size = houzez_get_listing_data('property_size');
+        // $property->fave_property_bathrooms = houzez_get_listing_data('property_bathrooms');
+        // $property->fave_property_bedrooms = houzez_get_listing_data('property_bedrooms');
+        // $property->property_type = houzez_taxonomy_simple('property_type');
+        // $property->fave_property_price = houzez_property_price_crm();
+        // $property->fave_property_id = houzez_propperty_id_prefix($prop_id);
+        // $property->link = get_permalink(get_the_ID());
+      endwhile;
+    endif;
+
+    $enquiry->enquiry_meta = $meta;
+    $enquiry->display_name = $lead->display_name;
+    $enquiry->lead = $lead;
+    $enquiry->matched = $matched_query->posts;
+
+    array_push($results, $enquiry);
+  }
+  $all_enquires["data"]["results"] = $results;
+  
+  wp_send_json($all_enquires["data"],200);
+
+}
 function allDeals() {
   //disable lightspeed caching
   do_action( 'litespeed_control_set_nocache', 'nocache due to logged in' );
