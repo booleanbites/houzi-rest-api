@@ -124,6 +124,11 @@ add_action( 'rest_api_init', function () {
       'callback' => 'addDeal',
     ));
 
+    register_rest_route( 'houzez-mobile-api/v1', '/update-deal-data', array(
+      'methods' => 'POST',
+      'callback' => 'updateDealData',
+    ));
+
     register_rest_route( 'houzez-mobile-api/v1', '/delete-deal', array(
       'methods' => 'GET',
       'callback' => 'deleteDeal',
@@ -625,5 +630,36 @@ function deleteNote() {
   }
   //needs enquiry id in var ids
   do_action("wp_ajax_houzez_delete_note");
+}
+
+function updateDealData() {
+  if (! is_user_logged_in() ) {
+    $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+    wp_send_json($ajax_response, 403);
+    return; 
+  }
+  if(!isset($_POST["deal_id"]) || empty($_POST["deal_id"])) {
+    $ajax_response = array( 'success' => false, 'reason' => 'Please provide deal_id.' );
+    wp_send_json($ajax_response, 400);
+    return; 
+  }
+
+  if(!isset($_POST["purpose"]) || empty($_POST["purpose"])) {
+    $ajax_response = array( 'success' => false, 'reason' => 'Please provide purpose.' );
+    wp_send_json($ajax_response, 400);
+    return; 
+  }
+  if(!isset($_POST["deal_data"]) || empty($_POST["deal_data"])) {
+    $ajax_response = array( 'success' => false, 'reason' => 'Please provide deal_data.' );
+    wp_send_json($ajax_response, 400);
+    return; 
+  }
+  
+  //purposes: crm_set_deal_status, crm_set_deal_next_action, crm_set_action_due, crm_set_last_contact_date
+  $purpose = $_POST["purpose"];
+  
+  do_action("wp_ajax_".$purpose);
+  
+  
 }
 
