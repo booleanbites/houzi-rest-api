@@ -264,7 +264,14 @@ function leadDetails() {
     
   if (!empty($lead)) {
     $all_enquires = Houzez_Enquiry::get_enquires();
-    $lead->enquiries = $all_enquires;
+    //$lead->enquiries = $all_enquires;
+    $results = array();
+    foreach( $all_enquires['data']['results'] as $enquiry ) {
+      $meta = maybe_unserialize($enquiry->enquiry_meta);
+      $enquiry->enquiry_meta = $meta;
+      array_push($results, $enquiry);
+    }
+    $lead->enquiries = $results;
   }
 
   wp_send_json($lead,200);
@@ -286,6 +293,18 @@ function leadListingViewed() {
     return; 
   }
   $viewed = Houzez_Leads::get_lead_viewed_listings();
+  $listings = array();
+  foreach( $viewed['data']['results'] as $listing ) {
+    $listing_id = $listing->listing_id; 
+    $listing->title = get_the_title($listing_id);
+    $listing->thumbnail = get_the_post_thumbnail_url($listing_id, 'thumbnail');
+    $listing->address = get_post_meta($listing_id, 'fave_property_map_address', true);
+    $listing->permalink = get_permalink($listing_id);
+    //array_push($listings, $listing);
+  }
+  
+
+  //$viewed['data']['results'] = $listings;
   wp_send_json($viewed,200);
 
 }
@@ -305,7 +324,7 @@ function leadSavedSearches() {
     return; 
   }
   $searches = Houzez_Leads::get_lead_saved_searches();
-  wp_send_json($searches,200);
+  wp_send_json($searches["data"],200);
 
 }
 function leadNotes() {
@@ -410,7 +429,7 @@ function enquiryMatchedListing() {
   
   $enquiry = Houzez_Enquiry::get_enquiry($enquiry_id);
 
-  $prop_page = $_GET["prop_page"] ? $_GET["prop_page"] : "1";
+  $prop_page = (isset($_GET["prop_page"]) && !empty($_GET["enquiry-id"])) ? $_GET["prop_page"] : "1";
   set_query_var('paged', $prop_page);
 
   
