@@ -185,7 +185,7 @@ add_action( 'rest_api_init', function () {
         $type = isset($meta['type']) ? $meta['type'] : '';
         $subtype = isset($meta['subtype']) ? $meta['subtype'] : '';
   
-        if($type == 'lead') {
+        if($type == 'lead' || $type == 'review') {
           $permalink_id = isset($meta['listing_id']) ? $meta['listing_id'] : '';
           if(!empty($permalink_id)) {
             $meta['title'] = get_the_title($permalink_id);
@@ -241,6 +241,13 @@ function allLeads() {
     }
 
   $all_leads = Houzez_leads::get_leads();
+  
+  foreach( $all_leads['data']['results'] as $lead ) {
+    $enquiry_to = $lead->enquiry_to;
+    $enquiry_user_type = $lead->enquiry_user_type;
+    $lead->agent_info = houzezcrm_get_assigned_agent( $enquiry_to, $enquiry_user_type );  
+  }
+
   wp_send_json($all_leads["data"],200);
 }
 
@@ -272,6 +279,9 @@ function leadDetails() {
       array_push($results, $enquiry);
     }
     $lead->enquiries = $results;
+    $enquiry_to = $lead->enquiry_to;
+	  $enquiry_user_type = $lead->enquiry_user_type;
+	  $lead->agent_info = houzezcrm_get_assigned_agent( $enquiry_to, $enquiry_user_type );
   }
 
   wp_send_json($lead,200);
