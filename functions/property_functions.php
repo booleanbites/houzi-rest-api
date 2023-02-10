@@ -373,19 +373,25 @@ function queryPropertyById($propertyId) {
         'suppress_filters' =>  false
     );
     
-    $query_args = new WP_Query( $args );
+    $query_args = query_posts( $args );
     $properties = array();
     
     
-    
-    while( $query_args->have_posts() ):
-        $query_args->the_post();
-        $property = $query_args->post;
+    //global $post;
+    while( have_posts() ):
+        the_post();
+        //$property = $query_args->post;
+        $property = get_post();
+        //$post = $property;
+        setup_postdata($post);
+        do_action( 'template_redirect' );
+
+        //$property = $query_args->post;
         $post_id = $property->ID;
         
         $property->is_fav = isFavoriteProperty($post_id);
         $property->link = get_permalink();
-        $property_meta = get_post_meta($post_id);;
+        $property_meta = get_post_meta($post_id);
         
         
         $property_meta['agent_info'] = houzez20_property_contact_form();
@@ -414,7 +420,7 @@ function queryPropertyById($propertyId) {
         array_push($properties, $property );
         //break;
     endwhile;
-    
+    wp_reset_query();
     wp_send_json($properties[0] , 200);
 }
 
@@ -472,15 +478,19 @@ function appendPostAttr(&$response)
   );
   $current_lang = apply_filters( 'wpml_current_language', "en" );
   $property_attributes = array();
+  $property_attributes_all = array();
   foreach ($property_attr as $attribute) :
     $localizez_term_id = apply_filters( 'wpml_object_id', $attribute->term_id, $attribute->taxonomy, FALSE, $current_lang );
     $term = get_term( $localizez_term_id );
     if (empty($property_attributes[$attribute->taxonomy])) {
       $property_attributes[$attribute->taxonomy] = $term->name;
     }
+    $property_attributes_all[$attribute->taxonomy][] = $term->name;
   endforeach;
   $response->property_attr = $property_attributes;
-  
+  $response->property_type_text = $property_attributes_all["property_type"];
+  $response->property_status_text = $property_attributes_all["property_status"];
+  $response->property_label_text = $property_attributes_all["property_label"];
 }
 function getCurrentLanguageTermsOnly($postId, $term_name) {
     $current_lang = apply_filters( 'wpml_current_language', "en" );

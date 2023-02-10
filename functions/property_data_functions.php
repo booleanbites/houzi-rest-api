@@ -143,6 +143,7 @@ function hm_postAttr(&$response)
     if (empty($property_attributes[$attribute->taxonomy])) {
       $property_attributes[$attribute->taxonomy] = $term->name;
     }
+    $response->data[$attribute->taxonomy."_text"][] = $term->name;
   endforeach;
   $response->data['property_attr'] = $property_attributes;
 
