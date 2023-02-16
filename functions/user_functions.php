@@ -203,7 +203,7 @@ add_action( 'rest_api_init', function () {
         }
     }
     
-    $email = $_POST['email'];
+    $email = $_POST['email'] ?? "";
     //source wasn't apple or phone, we need email or username.
     if (strtolower($source) != 'phone' && ( !isset( $_POST['email'] ) || empty($email))) {
       $ajax_response = array( 'success' => false , 'reason' => "email not provided" );
@@ -218,15 +218,13 @@ add_action( 'rest_api_init', function () {
     }
     
     if ( strtolower($source) == 'phone' ) {
-      $user = reset(
-        get_users(
-          array(
-            'meta_key' => 'user_id_social',
-            'meta_value' => $user_id_social,
-            'count' => 1,
-          )
-        )
+      $user_query = array(
+        'meta_key' => 'user_id_social',
+        'meta_value' => $user_id_social,
+        'count' => 1,
       );
+      $user_obj = get_users($user_query);
+      $user = reset($user_obj);
       if ( $user ) {
         doJWTAuthWithSecret($username, $user->data->user_pass);
         //we logged in, return from here.

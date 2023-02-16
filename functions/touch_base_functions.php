@@ -97,6 +97,10 @@ function getMetaData() {
     add_roles_to_response($response);
     
     $response['enquiry_type'] = hcrm_get_option('enquiry_type', 'hcrm_enquiry_settings', esc_html__('Purchase, Rent, Sell, Miss, Evaluation, Mortgage', 'houzez'));
+    $response['lead_prefix'] = hcrm_get_option('prefix', 'hcrm_lead_settings', esc_html__('Mr, Mrs, Ms, Miss, Dr, Prof, Mr & Mrs', 'houzez'));
+    $response['lead_source'] = hcrm_get_option('source', 'hcrm_lead_settings', esc_html__('Website, Newspaper, Friend, Google, Facebook', 'houzez'));
+    $response['deal_status'] = hcrm_get_option('status', 'hcrm_deals_settings', esc_html__('New Lead, Meeting Scheduled, Qualified, Proposal Sent, Called, Negotiation, Email Sent', 'houzez'));
+    $response['deal_next_action'] = hcrm_get_option('next_action', 'hcrm_deals_settings', esc_html__('Qualification, Demo, Call, Send a Proposal, Send an Email, Follow Up, Meeting', 'houzez'));
     wp_send_json($response, 200);
     //echo json_encode($response);
 }
