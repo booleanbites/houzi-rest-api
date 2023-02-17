@@ -5,12 +5,28 @@ add_action( 'rest_api_init', function () {
     'callback' => 'create_nonce',
   ));
 });
-function create_nonce() {
+function create_nonce($request) {
     if(!isset( $_POST['nonce_name']) || empty($_POST['nonce_name']) ) {
         $ajax_response = array( 'success' => false, 'reason' => 'Please provide nonce_name' );
         wp_send_json($ajax_response, 403);
         return;
     }
+    
+    $app_secret = $request->get_header("app_secret");
+    $saved_app_secret = get_saved_app_secret();
+    
+    if (empty($app_secret) && !empty($saved_app_secret)) {
+        $ajax_response = array( 'success' => false, 'reason' => 'Please provide app_secret key in headers. Set app_secret in header hook in hooks_v2.dart' );
+        wp_send_json($ajax_response, 403);
+        return;
+    }
+
+    if ($app_secret != $saved_app_secret) {
+        $ajax_response = array( 'success' => false, 'reason' => 'app_secret mismatch. Please check if plugin and hook secret are same' );
+        wp_send_json($ajax_response, 403);
+        return;
+    }
+
     $nonce_name = $_POST['nonce_name'];
     $nonce = wp_create_nonce($nonce_name);
     $ajax_response = array( 'success' => true, 'nonce' => $nonce );
@@ -24,6 +40,15 @@ function nonce_security_enabled() {
       return true;
     }
     return false;
+}
+function get_saved_app_secret() {
+    $options = get_option( 'houzi_rest_api_options' ); // Array of All Options
+    
+    if ($options != null && isset($options['app_secret_key']) ) {
+      // rest_base property should always be properties.
+      return $options['app_secret_key'];
+    }
+    return "";
 }
 function create_nonce_or_throw_error($request_var, $nonce_var) {
     if (isset($_POST[$request_var]) && !empty($_POST[$request_var])) {
