@@ -118,6 +118,8 @@ class Houzi_Rest_Api_Admin {
 	}
 	public function load_admin_settings()	{
 		require_once( HOUZI_REST_API_PLUGIN_PATH . 'admin/class-rest-api-settings.php');
+		require_once( HOUZI_REST_API_PLUGIN_PATH . 'admin/partials/houzi-rest-api-admin-eleven.php');
+		require_once( HOUZI_REST_API_PLUGIN_PATH . 'admin/partials/houzi-rest-api-admin-tab-settings.php');
 		$settings = new RestApiSettings($this->plugin_name,$this->version);
 	}
 
