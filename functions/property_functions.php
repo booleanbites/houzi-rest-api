@@ -134,6 +134,13 @@ function addPropertyWithAuth() {
     //     $_POST['fave_multi_units'] = serialize($floor_plans_post);
     // }
 
+    // $nonce = wp_create_nonce('add_property_nonce');
+    // $_REQUEST['verify_add_prop_nonce'] = $nonce;
+
+    if (!create_nonce_or_throw_error('verify_add_prop_nonce', 'add_property_nonce')) {
+        return;
+    }
+
     $new_property                   = apply_filters( 'houzez_submit_listing', $new_property );
     houzez_update_property_from_draft( $new_property );
 
@@ -187,32 +194,6 @@ function deleteProperty() {
 }
 
 //upload an image that can be used to add in a property.
-function uploadPropertyImage(){
-    
-    if(!isset( $_FILES['property_upload_file']) ) {
-        $ajax_response = array( 'success' => false, 'reason' => 'Please provide property_upload_file' );
-        
-        wp_send_json($ajax_response, 400);
-        return;
-    }
-    if(! isset( $_POST['user_id'] ) ) {
-        $ajax_response = array( 'success' => false, 'reason' => 'Please provide user_id' );
-        wp_send_json($ajax_response, 400);
-        return;
-    }
-    $user = get_user_by( 'id', $user_id ); 
-    if( $user ) {
-        wp_set_current_user( $user_id, $user->user_login );
-        wp_set_auth_cookie( $user_id );
-        do_action( 'wp_login', $user->user_login, $user );
-    }
-
-    //create nonce
-    $nonce = wp_create_nonce('verify_gallery_nonce');
-    $_REQUEST['verify_nonce'] = $nonce;
-    require_once(ABSPATH . "wp-admin" . '/includes/image.php');
-    houzez_property_img_upload();
-}
 function uploadPropertyImageWithAuth(){
     
     if(!isset( $_FILES['property_upload_file']) ) {
@@ -223,8 +204,13 @@ function uploadPropertyImageWithAuth(){
     }
 
     //create nonce
-    $nonce = wp_create_nonce('verify_gallery_nonce');
-    $_REQUEST['verify_nonce'] = $nonce;
+    // $nonce = wp_create_nonce('verify_gallery_nonce');
+    // $_REQUEST['verify_nonce'] = $nonce;
+
+    if (!create_nonce_or_throw_error('verify_nonce', 'verify_gallery_nonce')) {
+        return;
+      }
+
     require_once(ABSPATH . "wp-admin" . '/includes/image.php');
     houzez_property_img_upload();
 }
@@ -248,8 +234,12 @@ function deleteImageForProperty() {
     //purge light-speed cache for this property post type.
     do_action( 'litespeed_purge_post', $_POST['prop_id'] );
 
-    $nonce = wp_create_nonce('verify_gallery_nonce');
-    $_POST['removeNonce'] = $nonce;
+    // $nonce = wp_create_nonce('verify_gallery_nonce');
+    // $_POST['removeNonce'] = $nonce;
+
+    if (!create_nonce_or_throw_error('removeNonce', 'verify_gallery_nonce')) {
+        return;
+    }
     
     do_action('wp_ajax_houzez_remove_property_thumbnail');
 }

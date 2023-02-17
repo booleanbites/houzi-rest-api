@@ -341,8 +341,12 @@ add_action( 'rest_api_init', function () {
       return;
     }
     //create nonce for this request.
-    $nonce = wp_create_nonce('houzez_register_nonce');
-    $_REQUEST['houzez_register_security'] = $nonce;
+    // $nonce = wp_create_nonce('houzez_register_nonce');
+    // $_REQUEST['houzez_register_security'] = $nonce;
+
+    if (!create_nonce_or_throw_error('houzez_register_security', 'houzez_register_nonce')) {
+      return;
+    }
     
     //disable captcha for this request.
     global $houzez_options;
@@ -353,8 +357,12 @@ add_action( 'rest_api_init', function () {
 
   function resetUserPassword() {
     //create nonce for this request.
-    $nonce = wp_create_nonce('fave_resetpassword_nonce');
-    $_REQUEST['security'] = $nonce;
+    // $nonce = wp_create_nonce('fave_resetpassword_nonce');
+    // $_REQUEST['security'] = $nonce;
+
+    if (!create_nonce_or_throw_error('security', 'fave_resetpassword_nonce')) {
+      return;
+    }
     
     do_action("wp_ajax_nopriv_houzez_reset_password");//houzez_reset_password();
     
@@ -364,8 +372,13 @@ add_action( 'rest_api_init', function () {
     //create nonce for this request.
     // $nonce = wp_create_nonce('fave_resetpassword_nonce');
     // $_REQUEST['security'] = $nonce;
-    $nonce = wp_create_nonce('houzez_pass_ajax_nonce');
-    $_REQUEST['houzez-security-pass'] = $nonce;
+    // $nonce = wp_create_nonce('houzez_pass_ajax_nonce');
+    // $_REQUEST['houzez-security-pass'] = $nonce;
+
+    if (!create_nonce_or_throw_error('houzez-security-pass', 'houzez_pass_ajax_nonce')) {
+      return;
+    }
+
     //newpass, confirmpass
     do_action("wp_ajax_houzez_ajax_password_reset");//houzez_reset_password();
     
@@ -563,8 +576,13 @@ function editProfile() {
   }
   
 
-  $nonce = wp_create_nonce('houzez_profile_ajax_nonce');
-  $_REQUEST['houzez-security-profile'] = $nonce;
+  // $nonce = wp_create_nonce('houzez_profile_ajax_nonce');
+  // $_REQUEST['houzez-security-profile'] = $nonce;
+
+  if (!create_nonce_or_throw_error('houzez-security-profile', 'houzez_profile_ajax_nonce')) {
+    return;
+  }
+
 
   do_action("wp_ajax_houzez_ajax_update_profile");
 }
@@ -624,8 +642,13 @@ function editProfilePhoto() {
       do_action( 'litespeed_purge_post', $user_agency_id );
   }
 
-  $nonce = wp_create_nonce('houzez_upload_nonce');
-  $_REQUEST['verify_nonce'] = $nonce;
+  // $nonce = wp_create_nonce('houzez_upload_nonce');
+  // $_REQUEST['verify_nonce'] = $nonce;
+
+  if (!create_nonce_or_throw_error('verify_nonce', 'houzez_upload_nonce')) {
+    return;
+  }
+  
   $_REQUEST['user_id'] = $userID;
 
   require_once(ABSPATH . "wp-admin" . '/includes/image.php');

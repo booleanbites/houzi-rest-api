@@ -558,8 +558,12 @@ function deleteDeal() {
     wp_send_json($ajax_response, 403);
     return; 
   }
-  $nonce = wp_create_nonce('delete_deal_nonce');
-  $_REQUEST['security'] = $nonce;
+  // $nonce = wp_create_nonce('delete_deal_nonce');
+  // $_REQUEST['security'] = $nonce;
+
+  if (!create_nonce_or_throw_error('security', 'delete_deal_nonce')) {
+    return;
+  }
 
   //needs enquiry id in var deal_id
   do_action("wp_ajax_houzez_delete_deal");
@@ -581,8 +585,12 @@ function deleteLead() {
     wp_send_json($ajax_response, 403);
     return;
   }
-  $nonce = wp_create_nonce('delete_lead_nonce');
-  $_REQUEST['security'] = $nonce;
+  // $nonce = wp_create_nonce('delete_lead_nonce');
+  // $_REQUEST['security'] = $nonce;
+
+  if (!create_nonce_or_throw_error('security', 'delete_lead_nonce')) {
+    return;
+  }
 
 
   //$_REQUEST['lead_id'] = $_POST['lead_id'];
@@ -625,8 +633,11 @@ function addNote() {
     wp_send_json($ajax_response, 403);
     return; 
   }
-  $nonce = wp_create_nonce('note_add_nonce');
-  $_REQUEST['security'] = $nonce;
+  // $nonce = wp_create_nonce('note_add_nonce');
+  // $_REQUEST['security'] = $nonce;
+  if (!create_nonce_or_throw_error('security', 'note_add_nonce')) {
+    return;
+  }
   if(!isset($_POST["note"]) || empty($_POST["note"])) {
     $ajax_response = array( 'success' => false, 'reason' => 'Please provide note.' );
     wp_send_json($ajax_response, 400);

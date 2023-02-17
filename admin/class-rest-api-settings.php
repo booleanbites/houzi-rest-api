@@ -302,25 +302,18 @@ class RestApiSettings {
 	}
 
 	public function houzi_rest_api_page_init() {
+		
 		register_setting(
 			'houzi_rest_api_option_group', // option_group
 			'houzi_rest_api_options', // option_name
 			array( $this, 'houzi_rest_api_sanitize' ) // sanitize_callback
 		);
-
 		add_settings_section(
 			'houzi_rest_api_setting_section', // id
 			'Settings', // title
 			array( $this, 'houzi_rest_api_section_info' ), // callback
 			'houzi-rest-api-admin' // page
 		);
-		/*add_settings_field(
-			'onesingnal_app_id_0', // id
-			'OneSingnal APP ID', // title
-			array( $this, 'onesingnal_app_id_0_callback' ), // callback
-			'houzi-rest-api-admin', // page
-			'houzi_rest_api_setting_section' // section
-		);*/
 		add_settings_field(
 			'fix_property_type_in_translation_0', // id
 			'Fix translated property slug', // title
@@ -329,19 +322,44 @@ class RestApiSettings {
 			'houzi_rest_api_setting_section' // section
 		);
 		add_settings_field(
+			'nonce_security_enabled', // id
+			'NONCE Security', // title
+			array( $this, 'nonce_security_check_box_callback' ), // callback
+			'houzi-rest-api-admin', // page
+			'houzi_rest_api_setting_section' // section
+		);
+		add_settings_field(
+			'app_secret_key', // id
+			'App Secret', // title
+			array( $this, 'app_secret_field_callback' ), // callback
+			'houzi-rest-api-admin', // page
+			'houzi_rest_api_setting_section' // section
+		);
+		if ( SHOW_EXPERIMENTAL_FEATUERS == true) {
+			add_settings_field(
+				'onesingnal_app_id_0', // id
+				'OneSingnal APP ID', // title
+				array( $this, 'onesingnal_app_id_0_callback' ), // callback
+				'houzi-rest-api-admin', // page
+				'houzi_rest_api_setting_section' // section
+			);
+		}
+		add_settings_field(
 			'mobile_app_config', // id
 			'App Config', // title
 			array( $this, 'mobile_app_config_callback' ), // callback
 			'houzi-rest-api-admin', // page
 			'houzi_rest_api_setting_section' // section
 		);
-		/*add_settings_field(
-			'mobile_app_config_dev', // id
-			'App Config (Dev)', // title
-			array( $this, 'mobile_app_config_dev_callback' ), // callback
-			'houzi-rest-api-admin', // page
-			'houzi_rest_api_setting_section' // section
-		);*/
+		if (SHOW_EXPERIMENTAL_FEATUERS == true) {
+			add_settings_field(
+				'mobile_app_config_dev', // id
+				'App Config (Dev)', // title
+				array( $this, 'mobile_app_config_dev_callback' ), // callback
+				'houzi-rest-api-admin', // page
+				'houzi_rest_api_setting_section' // section
+			);
+		}
 	}
 
 	public function houzi_rest_api_sanitize($input) {
@@ -351,6 +369,12 @@ class RestApiSettings {
 		}
 		if ( isset( $input['onesingnal_app_id_0'] ) ) {
 			$sanitary_values['onesingnal_app_id_0'] = sanitize_text_field( $input['onesingnal_app_id_0'] );
+		}
+		if ( isset( $input['nonce_security_enabled'] ) ) {
+			$sanitary_values['nonce_security_enabled'] = sanitize_text_field( $input['nonce_security_enabled'] );
+		}
+		if ( isset( $input['app_secret_key'] ) ) {
+			$sanitary_values['app_secret_key'] = sanitize_text_field( $input['app_secret_key'] );
 		}
 		if ( isset( $input['mobile_app_config'] ) ) {
 			$sanitary_values['mobile_app_config'] = esc_textarea( $input['mobile_app_config'] );
@@ -365,7 +389,25 @@ class RestApiSettings {
 	public function houzi_rest_api_section_info() {
 		
 	}
-
+	public function nonce_security_check_box_callback() {
+		printf(
+			'<input type="checkbox" name="houzi_rest_api_options[nonce_security_enabled]" id="nonce_security_enabled" value="nonce_security_enabled" %s>
+			<label for="nonce_security_enabled">
+				<br>Apply NONCE Security for POST apis plugin.<br>
+			</label>',
+			( isset( $this->houzi_rest_api_options['nonce_security_enabled'] ) && $this->houzi_rest_api_options['nonce_security_enabled'] === 'nonce_security_enabled' ) ? 'checked' : ''
+		);
+	}
+	public function app_secret_field_callback() {
+		printf(
+			'<input class="regular-text" type="text" name="houzi_rest_api_options[app_secret_key]" id="app_secret_key" value="%s" placeholder="Enter a secret key">
+			<label for="app_secret_key">
+				<br>This will be matched with secret key sent from app.<br>So make sure to add this secret key in header hook in your app source.<br>
+			</label>
+			',
+			isset( $this->houzi_rest_api_options['app_secret_key'] ) ? esc_attr( $this->houzi_rest_api_options['app_secret_key']) : ''
+		);
+	}
 	public function fix_property_type_in_translation_0_callback() {
 		printf(
 			'<input type="checkbox" name="houzi_rest_api_options[fix_property_type_in_translation_0]" id="fix_property_type_in_translation_0" value="fix_property_type_in_translation_0" %s> <label for="fix_property_type_in_translation_0"><br>If you have changed property slug via WPML plugin to another langugage, it also changes the rest api route for property.<br>Check this option to set the property slug to \'property\'.</label>',

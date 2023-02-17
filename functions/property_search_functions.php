@@ -809,8 +809,15 @@ function saveSearch() {
 
     $query_args_orig = setupSearchQuery();
     $search_args = base64_encode( serialize( $query_args_orig ));
-    $nonce = wp_create_nonce('houzez-save-search-nounce');
-    $_REQUEST['houzez_save_search_ajax'] = $nonce;
+    
+    
+    // $nonce = wp_create_nonce('houzez-save-search-nounce');
+    // $_REQUEST['houzez_save_search_ajax'] = $nonce;
+
+    if (!create_nonce_or_throw_error('houzez_save_search_ajax', 'houzez-save-search-nounce')) {
+        return;
+    }
+
     $_REQUEST['search_args'] = $search_args;
     $_REQUEST['search_URI'] = http_build_query($_POST);
 

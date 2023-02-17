@@ -64,8 +64,13 @@ function addReview(){
     }
 
     //create nonce
-    $nonce = wp_create_nonce('review-nonce');
-    $_POST['review-security'] = $nonce;
+    // $nonce = wp_create_nonce('review-nonce');
+    // $_POST['review-security'] = $nonce;
+    
+
+    if (!create_nonce_or_throw_error('review-security', 'review-nonce')) {
+        return;
+    }
     
     houzez_submit_review();
 }

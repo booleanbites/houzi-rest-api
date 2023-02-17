@@ -110,9 +110,11 @@ function contactRealtor($request){
 
   //using the existing theme method.
   
-  $nonce = wp_create_nonce('contact_realtor_nonce');
-  
-  $_POST['contact_realtor_ajax'] = $nonce;
+  // $nonce = wp_create_nonce('contact_realtor_nonce');
+  // $_POST['contact_realtor_ajax'] = $nonce;
+  if (!create_nonce_or_throw_error('contact_realtor_ajax', 'contact_realtor_nonce')) {
+    return;
+  }
   //$_POST['agent_type'] = 'agent_info';
   $_POST['privacy_policy'] =  '1';
 
@@ -151,9 +153,12 @@ function addAgent($request){
     $_POST['agency_ids_cpt[]'] ='';
   }
 
-  $nonce = wp_create_nonce('houzez_agency_agent_ajax_nonce');
-  $_REQUEST['houzez-security-agency-agent'] = $nonce;
+  // $nonce = wp_create_nonce('houzez_agency_agent_ajax_nonce');
+  // $_REQUEST['houzez-security-agency-agent'] = $nonce;
 
+  if (!create_nonce_or_throw_error('houzez-security-agency-agent', 'houzez_agency_agent_ajax_nonce')) {
+    return;
+  }
   
   $_POST['action'] = "houzez_agency_agent";
   $results = array();
@@ -216,8 +221,11 @@ function editAgent($request){
     $_POST['agency_ids_cpt[]'] ='';
   }
 
-  $nonce = wp_create_nonce('houzez_agency_agent_ajax_nonce');
-  $_REQUEST['houzez-security-agency-agent'] = $nonce;
+  // $nonce = wp_create_nonce('houzez_agency_agent_ajax_nonce');
+  // $_REQUEST['houzez-security-agency-agent'] = $nonce;
+  if (!create_nonce_or_throw_error('houzez-security-agency-agent', 'houzez_agency_agent_ajax_nonce')) {
+    return;
+  }
 
   $_POST['action'] = "houzez_agency_agent_update";
   //using the existing theme method.
@@ -251,9 +259,12 @@ function deleteAgent($request) {
     return;
   }
 
-  $nonce = wp_create_nonce('agent_delete_nonce');
-  $_REQUEST['agent_delete_security'] = $nonce;
+  // $nonce = wp_create_nonce('agent_delete_nonce');
+  // $_REQUEST['agent_delete_security'] = $nonce;
 
+  if (!create_nonce_or_throw_error('agent_delete_security', 'agent_delete_nonce')) {
+    return;
+  }
   $_POST['action'] = "houzez_delete_agency_agent";
 
   //using the existing theme method.
@@ -279,10 +290,13 @@ function scheduleATour($request){
 
   //using the existing theme method.
   
-  $nonce = wp_create_nonce('schedule-contact-form-nonce');
-  
+  // $nonce = wp_create_nonce('schedule-contact-form-nonce');
+  // $_POST['schedule_contact_form_ajax'] = $nonce;
 
-  $_POST['schedule_contact_form_ajax'] = $nonce;
+  if (!create_nonce_or_throw_error('schedule_contact_form_ajax', 'schedule-contact-form-nonce')) {
+    return;
+  }
+
   $_POST['is_listing_form'] = 'yes';
   $_POST['is_schedule_form'] = 'yes';
   $_POST['privacy_policy'] =  '1';
@@ -318,9 +332,13 @@ function contactPropertyRealtor($request){
 
   //using the existing theme method.
   
-  $nonce = wp_create_nonce('property_agent_contact_nonce');
-  
-  $_POST['property_agent_contact_security'] = $nonce;
+  // $nonce = wp_create_nonce('property_agent_contact_nonce');
+  // $_POST['property_agent_contact_security'] = $nonce;
+
+  if (!create_nonce_or_throw_error('property_agent_contact_security', 'property_agent_contact_nonce')) {
+    return;
+  }
+
   //$_POST['agent_type'] = 'agent_info';
   $_POST['privacy_policy'] =  '1';
 
