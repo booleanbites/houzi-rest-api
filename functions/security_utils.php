@@ -51,15 +51,15 @@ function get_saved_app_secret() {
     return "";
 }
 function create_nonce_or_throw_error($request_var, $nonce_var) {
-    if (isset($_POST[$request_var]) && !empty($_POST[$request_var])) {
+    if (isset($_REQUEST[$request_var]) && !empty($_REQUEST[$request_var])) {
         return true;
     }
     if (nonce_security_enabled()) {
-        if (!isset($_POST[$request_var]) || empty($_POST[$request_var])) {
-            $ajax_response = array( 'success' => false, 'reason' => 'Security nonce not found, please update app.' );
-            wp_send_json($ajax_response, 403);
-            return false;
-        }
+    
+        $ajax_response = array( 'success' => false, 'reason' => 'Security nonce not found, please update app.' );
+        wp_send_json($ajax_response, 403);
+        return false;
+    
     }
     
     //using the existing theme method.
