@@ -35,11 +35,11 @@ function create_nonce($request) {
 function nonce_security_enabled() {
     $options = get_option( 'houzi_rest_api_options' ); // Array of All Options
     
-    if ($options != null && isset($options['nonce_security_enabled']) && $options['nonce_security_enabled'] === 'nonce_security_enabled' ) {
+    if ($options != null && isset($options['nonce_security_disabled']) && $options['nonce_security_disabled'] === 'nonce_security_disabled' ) {
       // rest_base property should always be properties.
-      return true;
+      return false;
     }
-    return false;
+    return true;
 }
 function get_saved_app_secret() {
     $options = get_option( 'houzi_rest_api_options' ); // Array of All Options

@@ -89,7 +89,7 @@ class RestApiAdminSettings {
 			'houzi_rest_api_setting_section' // section
 		);
 		add_settings_field(
-			'nonce_security_enabled', // id
+			'nonce_security_disabled', // id
 			'NONCE Security', // title
 			array( $this, 'nonce_security_check_box_callback' ), // callback
 			'houzi-rest-api-admin', // page
@@ -137,8 +137,8 @@ class RestApiAdminSettings {
 		if ( isset( $input['onesingnal_app_id_0'] ) ) {
 			$sanitary_values['onesingnal_app_id_0'] = sanitize_text_field( $input['onesingnal_app_id_0'] );
 		}
-		if ( isset( $input['nonce_security_enabled'] ) ) {
-			$sanitary_values['nonce_security_enabled'] = sanitize_text_field( $input['nonce_security_enabled'] );
+		if ( isset( $input['nonce_security_disabled'] ) ) {
+			$sanitary_values['nonce_security_disabled'] = sanitize_text_field( $input['nonce_security_disabled'] );
 		}
 		if ( isset( $input['app_secret_key'] ) ) {
 			$sanitary_values['app_secret_key'] = sanitize_text_field( $input['app_secret_key'] );
@@ -158,11 +158,11 @@ class RestApiAdminSettings {
 	}
 	public function nonce_security_check_box_callback() {
 		printf(
-			'<input type="checkbox" name="houzi_rest_api_options[nonce_security_enabled]" id="nonce_security_enabled" value="nonce_security_enabled" %s>
-			<label for="nonce_security_enabled">
-				<br>Apply NONCE Security for POST apis plugin.<br>
+			'<input type="checkbox" name="houzi_rest_api_options[nonce_security_disabled]" id="nonce_security_disabled" value="nonce_security_disabled" %s>
+			<label for="nonce_security_disabled">
+				<br>Disable NONCE Security for POST apis plugin.<br>
 			</label>',
-			( isset( $this->houzi_rest_api_options['nonce_security_enabled'] ) && $this->houzi_rest_api_options['nonce_security_enabled'] === 'nonce_security_enabled' ) ? 'checked' : ''
+			( isset( $this->houzi_rest_api_options['nonce_security_disabled'] ) && $this->houzi_rest_api_options['nonce_security_disabled'] === 'nonce_security_disabled' ) ? 'checked' : ''
 		);
 	}
 	public function app_secret_field_callback() {
