@@ -34,7 +34,7 @@ if ( ! defined( 'WPINC' ) ) {
 define( 'HOUZI_REST_API_VERSION', '1.1.4.3' );
 define( 'HOUZI_REST_API_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
 define( 'HOUZI_IMAGE', plugins_url('/images/', __FILE__) );
-define( 'SHOW_EXPERIMENTAL_FEATUERS', true );
+define( 'SHOW_EXPERIMENTAL_FEATUERS', false );
 
 /**
  * The code that runs during plugin activation.
