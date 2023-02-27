@@ -12,17 +12,17 @@ function create_nonce($request) {
         return;
     }
     
-    $app_secret = $request->get_header("app_secret");
+    $app_secret = $request->get_header("app-secret");
     $saved_app_secret = get_saved_app_secret();
     
     if (empty($app_secret) && !empty($saved_app_secret)) {
-        $ajax_response = array( 'success' => false, 'reason' => 'Please provide app_secret key in headers. Set app_secret in header hook in hooks_v2.dart' );
+        $ajax_response = array( 'success' => false, 'reason' => 'Please provide app secret key in headers. Set app secret in header hook in hooks_v2.dart' );
         wp_send_json($ajax_response, 403);
         return;
     }
 
     if ($app_secret != $saved_app_secret) {
-        $ajax_response = array( 'success' => false, 'reason' => 'app_secret mismatch. Please check if plugin and hook secret are same' );
+        $ajax_response = array( 'success' => false, 'reason' => 'app secret mismatch. Please check if plugin and hook secret are same' );
         wp_send_json($ajax_response, 403);
         return;
     }
