@@ -146,6 +146,17 @@ add_action( 'rest_api_init', function () {
   }
 
   function signInUser(){
+    if (!create_nonce_or_throw_error('login_security', 'login_nonce')) {
+      return;
+    }
+
+    $nonce = $_POST['login_security'];
+    if ( ! wp_verify_nonce( $nonce, 'login_nonce' ) ) {
+      $ajax_response = array( 'success' => false , 'reason' => esc_html__( 'Security check failed!', 'houzi' ) );
+      wp_send_json($ajax_response, 403);
+      return;
+    }
+
     if ( !isset( $_POST['username'] ) ) {
       $ajax_response = array( 'success' => false , 'reason' => "username not provided" );
       wp_send_json($ajax_response, 403);
@@ -154,19 +165,29 @@ add_action( 'rest_api_init', function () {
       $ajax_response = array( 'success' => false , 'reason' => "password not provided" );
       wp_send_json($ajax_response, 403);
     }
+    
 
-      $request = new WP_REST_Request( 'POST', '/jwt-auth/v1/token' );
-      $request->set_body_params( [ 'username' => $_POST['username'], 'password' => $_POST['password'] ] );
-      $response = rest_do_request( $request );
-      $server = rest_get_server();
-      $data = $server->response_to_data( $response, false );
-      $json = wp_json_encode( $data );
+    $request = new WP_REST_Request( 'POST', '/jwt-auth/v1/token' );
+    $request->set_body_params( [ 'username' => $_POST['username'], 'password' => $_POST['password'] ] );
+    $response = rest_do_request( $request );
+    $server = rest_get_server();
+    $data = $server->response_to_data( $response, false );
+    $json = wp_json_encode( $data );
       
       //echo $json;
       wp_send_json($data, $response->get_status());
       die;
   }
   function socialSignOn(){
+    if (!create_nonce_or_throw_error('login_security', 'login_nonce')) {
+      return;
+    }
+    $nonce = $_POST['login_security'];
+    if ( ! wp_verify_nonce( $nonce, 'login_nonce' ) ) {
+      $ajax_response = array( 'success' => false , 'reason' => esc_html__( 'Security check failed!', 'houzi' ) );
+      wp_send_json($ajax_response, 403);
+      return;
+    }
 
     if ( !isset( $_POST['source'] ) ) {
       $ajax_response = array( 'success' => false , 'reason' => "source not provided" );

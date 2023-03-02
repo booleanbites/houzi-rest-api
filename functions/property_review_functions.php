@@ -36,6 +36,10 @@ add_action( 'rest_api_init', function () {
       'methods' => 'POST',
       'callback' => 'addReview',
     ));
+    register_rest_route( 'houzez-mobile-api/v1', '/report-content', array(
+        'methods' => 'POST',
+        'callback' => 'reportContent',
+    ));
   });
 
 add_filter('rest_prepare_houzez_reviews', 'prepareReviewsData', 10, 3);
@@ -73,4 +77,31 @@ function addReview(){
     }
     
     houzez_submit_review();
+}
+
+function reportContent(){
+    
+    if (! is_user_logged_in() ) {
+        $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+    }
+
+    if (!create_nonce_or_throw_error('report-security', 'report-nonce')) {
+        return;
+    }
+
+    $nonce = $_POST['report-security'];
+    if ( ! wp_verify_nonce( $nonce, 'report-nonce' ) ) {
+        $ajax_response = array( 'success' => false , 'reason' => esc_html__( 'Security check failed!', 'houzi' ) );
+        wp_send_json($ajax_response, 403);
+        return;
+    }
+
+    $content_type = $_POST['content_type'];
+    $content_id = $_POST['content_id'];
+    
+    $ajax_response = array( 'success' => true , 'message' => esc_html__( 'Thank you for reporting, our support will review your report.', 'houzi' ) );
+    wp_send_json($ajax_response, 200);
+    
 }

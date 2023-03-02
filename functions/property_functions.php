@@ -140,6 +140,12 @@ function addPropertyWithAuth() {
     if (!create_nonce_or_throw_error('verify_add_prop_nonce', 'add_property_nonce')) {
         return;
     }
+    $nonce = $_POST['verify_add_prop_nonce'];
+    if ( ! wp_verify_nonce( $nonce, 'add_property_nonce' ) ) {
+        $ajax_response = array( 'success' => false , 'reason' => esc_html__( 'Security nonce check failed!', 'houzi' ) );
+        wp_send_json($ajax_response, 403);
+        return;
+    }
 
     $new_property                   = apply_filters( 'houzez_submit_listing', $new_property );
     houzez_update_property_from_draft( $new_property );

@@ -64,7 +64,7 @@ add_action( 'rest_api_init', function () {
       'callback' => 'addLead',
     ));
     register_rest_route( 'houzez-mobile-api/v1', '/delete-lead', array(
-      'methods' => 'GET',
+      'methods' => 'POST',
       'callback' => 'deleteLead',
     ));
 
@@ -130,7 +130,7 @@ add_action( 'rest_api_init', function () {
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/delete-deal', array(
-      'methods' => 'GET',
+      'methods' => 'POST',
       'callback' => 'deleteDeal',
     ));
 
@@ -145,7 +145,7 @@ add_action( 'rest_api_init', function () {
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/delete-crm-enquiry', array(
-      'methods' => 'GET',
+      'methods' => 'POST',
       'callback' => 'deleteCRMEnquiry',
     ));
     
