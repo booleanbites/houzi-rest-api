@@ -14,12 +14,58 @@ add_filter( 'rest_property_query', function( $args, $request ){
         $args['meta_value'] = $request->get_param( 'fave_featured' );
     }
     if ( $request->get_param( 'fave_agents' ) ) {
-        $args['meta_key']   = 'fave_agents';
-        $args['meta_value'] = $request->get_param( 'fave_agents' );
+        // $args['meta_key']   = 'fave_agents';
+        // $args['meta_value'] = $request->get_param( 'fave_agents' );
+        $agent_id = $request->get_param( 'fave_agents' );
+        $args['meta_query']  = array(
+            'relation' => 'AND',
+            array(
+                'key' => 'fave_agents',
+                'value' => $agent_id,
+                'compare' => '='
+            ),
+            array(
+                'key' => 'fave_agent_display_option',
+                'value' => 'agent_info',
+                'compare' => '='
+            )
+        );
     }
     if ( $request->get_param( 'fave_property_agency' ) ) {
-        $args['meta_key']   = 'fave_property_agency';
-        $args['meta_value'] = $request->get_param( 'fave_property_agency' );
+        // $args['meta_key']   = 'fave_property_agency';
+        // $args['meta_value'] = $request->get_param( 'fave_property_agency' );
+        
+        $agency_id = $request->get_param( 'fave_property_agency' );
+        $agents_array = array();
+        $agency_agents_ids = Houzez_Query::loop_agency_agents_ids($agency_id);
+        
+        
+        if( !empty($agency_agents_ids) ) {
+            $agents_array = array(
+                'key' => 'fave_agents',
+                'value' => $agency_agents_ids,
+                'compare' => 'IN',
+            );
+        }
+        
+        $args['meta_query'] = array(
+            'relation' => 'OR',
+            $agents_array,
+            array(
+                'relation' => 'AND',
+                array(
+                    'key'     => 'fave_property_agency',
+                    'value'   => $agency_id,
+                    'compare' => '='
+                ),
+                array(
+                    'key'     => 'fave_agent_display_option',
+                    'value'   => 'agency_info',
+                    'compare' => '='
+                )
+            ),
+        );
+        
     }
 
     if ( $request->get_param( 'property_city' ) ) {
