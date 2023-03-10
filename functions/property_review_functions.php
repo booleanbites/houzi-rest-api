@@ -97,9 +97,42 @@ function reportContent(){
         wp_send_json($ajax_response, 403);
         return;
     }
+    global $current_user; wp_get_current_user();
+    $userID       = get_current_user_id();
+    $contactName = $current_user->display_name;
 
     $content_type = $_POST['content_type'];
     $content_id = $_POST['content_id'];
+
+    
+    $contentLink = get_post_permalink($content_id);
+    $contentTitle = get_the_title($content_id);
+    
+    $content_post = get_post($content_id);
+    $contentDescription = $content_post->post_content;
+
+    $author_id = get_post_field ('post_author', $content_id);
+    $content_author = get_the_author_meta( 'nickname' , $author_id ); 
+
+    $subject = "$contactName reported about a $content_type";
+    $body = "<p><b>Reporter ID:</b> $userID</p>";
+    $body .= "<p><b>Reporter Name:</b> $contactName</p>";
+    $body .= "<p><b>$content_type ID:</b> $content_id</p>";
+    $body .= "<p><b>$content_type title:</b> $contentTitle</p>";
+    $body .= "<p><b>$content_type content:</b> $contentDescription</p>";
+    $body .= "<p><b>$content_type author:</b> $content_author</p>";
+    $body .= "<p><b>Permalink:</b> $contentLink</p>";
+
+    $to = get_option( 'admin_email' );
+    $headers = array(
+        'Content-Type: text/html; charset=UTF-8',
+    );
+
+    if ( wp_mail( $to, $subject, $body, $headers ) ) {
+        // $response['status'] = 200;
+        // $response['message'] = 'Message sent successfully.';
+        //$response['test'] = $body;
+    }
     
     $ajax_response = array( 'success' => true , 'message' => esc_html__( 'Thank you for reporting, our support will review your report.', 'houzi' ) );
     wp_send_json($ajax_response, 200);
