@@ -160,7 +160,7 @@ class RestApiAdminSettings {
 		printf(
 			'<input type="checkbox" name="houzi_rest_api_options[nonce_security_disabled]" id="nonce_security_disabled" value="nonce_security_disabled" %s>
 			<label for="nonce_security_disabled">
-				<br>Disable NONCE Security for POST apis plugin.<br>
+				<br>Disable NONCE Security for important api functions.<br>
 			</label>',
 			( isset( $this->houzi_rest_api_options['nonce_security_disabled'] ) && $this->houzi_rest_api_options['nonce_security_disabled'] === 'nonce_security_disabled' ) ? 'checked' : ''
 		);
@@ -169,7 +169,7 @@ class RestApiAdminSettings {
 		printf(
 			'<input class="regular-text" type="text" name="houzi_rest_api_options[app_secret_key]" id="app_secret_key" value="%s" placeholder="Enter a secret key">
 			<label for="app_secret_key">
-				<br>This will be matched with secret key sent from app.<br>So make sure to add this secret key in header hook in your app source.<br>
+				<br>This will be matched with secret key sent from app.<br>So make sure to add this secret key in header hook in your app source. Read: <a  target="_blank" href="https://houzi-docs.booleanbites.com/tools/app_secret">Setup App Secret</><br>
 			</label>
 			',
 			isset( $this->houzi_rest_api_options['app_secret_key'] ) ? esc_attr( $this->houzi_rest_api_options['app_secret_key']) : ''

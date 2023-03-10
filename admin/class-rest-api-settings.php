@@ -68,7 +68,9 @@ class RestApiSettings {
 		<div class="wrap">
 			<h2>Houzi Rest Api</h2>
 			<p>Extended Rest Api for mobile apps.
-			<br/>Developed for <a target="_blank" href="https://houzi.booleanbites.com">Houzi real estate app</a> by <a target="_blank" href="https://houzi.booleanbites.com">BooleanBites.com</a></p>
+				<br/>Developed for <a target="_blank" href="https://houzi.booleanbites.com">Houzi real estate app</a> by <a target="_blank" href="https://houzi.booleanbites.com">BooleanBites.com</a>
+				<br/>Ver: <?php echo HOUZI_REST_API_VERSION ?>
+			</p>
 			<?php settings_errors();
 
 			$is_elevened = $this->is_elevened();
