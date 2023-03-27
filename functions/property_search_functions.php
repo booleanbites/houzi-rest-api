@@ -245,6 +245,9 @@ function setupSearchQuery() {
     $search_lat = isset($_POST['search_lat']) ? (float) $_POST['search_lat'] : false;
     $search_long = isset($_POST['search_long']) ? (float) $_POST['search_long'] : false;
     $search_radius = isset($_POST['search_radius']) ? (int) $_POST['search_radius'] : false;
+
+    $agency_id = isset($_POST['fave_property_agency']) ? ($_POST['fave_property_agency']) : '';
+    $agent_id = isset($_POST['fave_agents']) ? ($_POST['fave_agents']) : '';
     
     $page = isset($_POST['page']) ? (int) $_POST['page'] : 1;
     $per_page = isset($_POST['per_page']) ? (int) $_POST['per_page'] : 0;
@@ -625,6 +628,22 @@ function setupSearchQuery() {
         }
     }
 
+     // agent id logic
+     if( !empty( $agent_id )) {
+        
+        $meta_query[] = array(
+            'key' => 'fave_agents',
+            'value' => $agent_id,
+            'compare' => '='
+        );
+        $meta_query[] = array(
+            'key' => 'fave_agent_display_option',
+            'value' => 'agent_info',
+            'compare' => '='
+        );
+    
+    }
+
     $meta_count = count($meta_query);
 
     if( $meta_count > 0 || !empty($keyword_array)) {
@@ -637,6 +656,41 @@ function setupSearchQuery() {
             ),
         );
     }
+
+    // agency id logic
+    if( !empty( $agency_id )) {
+        $agents_array = array();
+        $agency_agents_ids = Houzez_Query::loop_agency_agents_ids($agency_id);
+        
+        
+        if( !empty($agency_agents_ids) ) {
+            $agents_array = array(
+                'key' => 'fave_agents',
+                'value' => $agency_agents_ids,
+                'compare' => 'IN',
+            );
+        }
+        //append array to meta query
+        $query_args['meta_query'][] = array(
+            'relation' => 'OR',
+            $agents_array,
+            array(
+                'relation' => 'AND',
+                array(
+                    'key'     => 'fave_property_agency',
+                    'value'   => $agency_id,
+                    'compare' => '='
+                ),
+                array(
+                    'key'     => 'fave_agent_display_option',
+                    'value'   => 'agency_info',
+                    'compare' => '='
+                )
+            ),
+        );
+    }
+   
+    
 
     $tax_count = count($tax_query);
 
