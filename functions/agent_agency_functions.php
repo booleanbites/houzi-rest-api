@@ -23,7 +23,7 @@ add_filter('rest_prepare_houzez_agent', 'prepareAgentData', 10, 3);
 function prepareAgentData($response, $post, $request)
 {
   $params = $request->get_params();
-  $agent_id_from_url = $params["id"];
+  $agent_id_from_url = $params["id"] ?? "";
   $should_append_extra_data = !empty( $agent_id_from_url);
   $imgID = $response->data['agent_meta']['_thumbnail_id'][0];
   $response->data['thumbnail'] = wp_get_attachment_url($imgID);

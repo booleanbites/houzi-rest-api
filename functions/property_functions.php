@@ -379,7 +379,7 @@ function queryPropertyById($propertyId) {
         //$property = $query_args->post;
         $property = get_post();
         //$post = $property;
-        setup_postdata($post);
+        setup_postdata($property);
         do_action( 'template_redirect' );
 
         //$property = $query_args->post;
