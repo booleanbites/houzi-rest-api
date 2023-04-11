@@ -40,6 +40,8 @@ function preparePropertyData($response, $post, $request)
     hm_postImages($response);
     hm_postFeature($response);
     hm_postAddress($response);
+    hm_postAttachments($response);
+    
     
     $response->data['is_fav'] = !empty( $property_id_from_url) ? isFavoriteProperty($property_id_from_url) : false;
     $response->data['property_meta']['agent_info'] = houzez20_property_contact_form();
@@ -87,6 +89,23 @@ function hm_postImages(&$response)
     $response->data['property_images'][] = wp_get_attachment_url($imgID);
     $response->data['property_images_thumb'][] = wp_get_attachment_image_src($imgID, 'thumbnail', true )[0];
   endforeach;
+}
+
+function hm_postAttachments(&$response)
+{
+  foreach ($response->data['property_meta']['fave_attachments'] as $attachment_id) :
+    // $response->data['attachments'][] = wp_get_attachment_url($attachment_id);
+    $attachment_metadata = wp_get_attachment_metadata($attachment_id);
+    $file_name = basename ( get_attached_file( $attachment_id ) );
+    $file_url = wp_get_attachment_url($attachment_id);
+    $file_size = size_format( filesize( get_attached_file( $attachment_id ) ), 2 );
+    $response->data['attachments'][] = array(
+      'url' => $file_url,
+      'name' => $file_name,
+      'size' => $file_size
+  );
+  endforeach;
+
 }
 
 function hm_postFeature(&$response)

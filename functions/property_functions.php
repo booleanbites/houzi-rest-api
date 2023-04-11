@@ -412,6 +412,7 @@ function queryPropertyById($propertyId) {
         appendPostFeature($property);
         appendPostAddress($property);
         appendPostAttr($property);
+        appendPostAttachments($property);
 
         array_push($properties, $property );
         //break;
@@ -428,6 +429,22 @@ function appendPostImages(&$property)
     $property->property_images[] = wp_get_attachment_url($imgID);
     $property->property_images_thumb[] = wp_get_attachment_image_src($imgID, 'thumbnail', true )[0];
   endforeach;
+}
+function appendPostAttachments(&$property)
+{
+    $property->attachments = array();
+    
+    foreach ($property->property_meta['fave_attachments'] as $attachment_id) {
+        $attachment_metadata = wp_get_attachment_metadata($attachment_id);
+        $file_name = basename ( get_attached_file( $attachment_id ) );
+        $file_url = wp_get_attachment_url($attachment_id);
+        $file_size = size_format( filesize( get_attached_file( $attachment_id ) ), 2 );
+        $property->attachments[] = array(
+            'url' => $file_url,
+            'name' => $file_name,
+            'size' => $file_size
+        );
+    }
 }
 function appendPostFeature(&$property)
 {
