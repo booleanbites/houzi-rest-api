@@ -250,7 +250,7 @@ function setupSearchQuery() {
     $agent_id = isset($_POST['fave_agents']) ? ($_POST['fave_agents']) : '';
     
     $page = isset($_POST['page']) ? (int) $_POST['page'] : 1;
-    $per_page = isset($_POST['per_page']) ? (int) $_POST['per_page'] : 0;
+    $per_page = isset($_POST['per_page']) ? (int) $_POST['per_page'] : 20;
 
     $prop_locations = array();
     houzez_get_terms_array( 'property_city', $prop_locations );
