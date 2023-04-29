@@ -13,6 +13,10 @@ add_filter( 'rest_property_query', function( $args, $request ){
         $args['meta_key']   = 'fave_featured';
         $args['meta_value'] = $request->get_param( 'fave_featured' );
     }
+    if ( $request->get_param( 'fave_virtual_tour' ) ) {
+        $args['meta_key']   = 'fave_virtual_tour';
+        $args['meta_value'] = $request->get_param( 'fave_virtual_tour' );
+    }
     if ( $request->get_param( 'fave_agents' ) ) {
         // $args['meta_key']   = 'fave_agents';
         // $args['meta_value'] = $request->get_param( 'fave_agents' );
@@ -223,6 +227,7 @@ function setupSearchQuery() {
     $country = isset($_POST['country']) ? ($_POST['country']) : '';
     $state = isset($_POST['state']) ? ($_POST['state']) : '';
     $featured = isset($_POST['featured']) ? ($_POST['featured']) : '';
+    $virtual_tour = isset( $_POST['virtual_tour'] ) ? boolval( $_POST['virtual_tour'] ) : false;
     $location = isset($_POST['location']) ? ($_POST['location']) : '';
     $area = isset($_POST['area']) ? ($_POST['area']) : '';
     $status = isset($_POST['status']) ? ($_POST['status']) : '';
@@ -420,6 +425,20 @@ function setupSearchQuery() {
             'value' => $featured,
             'type' => 'CHAR',
             'compare' => '=',
+        );
+    }
+
+    if(!empty($virtual_tour) && $virtual_tour == true) {
+        $meta_query[] = array(
+            array(
+                'key' => 'fave_virtual_tour',
+                'compare' => 'EXISTS' // Check if the meta key exists
+            ),
+            array(
+                'key' => 'fave_virtual_tour',
+                'value' => '',
+                'compare' => '!=' // Check if the meta value is not empty
+            )
         );
     }
 
