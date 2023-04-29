@@ -150,9 +150,11 @@ function hm_postAddress(&$response)
 
 function hm_postAttr(&$response)
 {
+  $prop_id = $response->data['id'];
+  $wanted_terms = ['property_type', 'property_status', 'property_label'];
   $property_attr = wp_get_post_terms(
-    $response->data['id'],
-    ['property_type', 'property_status', 'property_label'],
+    $prop_id,
+    $wanted_terms
   );
   $current_lang = apply_filters( 'wpml_current_language', "en" );
   $property_attributes = array();
