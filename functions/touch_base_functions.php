@@ -155,8 +155,10 @@ function add_term_to_response(&$response, $key){
         $taxonomy_img_id = get_term_meta( $term->term_id, 'fave_feature_img_icon', true );
       }
       if(!empty($taxonomy_img_id)) {
-        $term_img = wp_get_attachment_image_src( $taxonomy_img_id, 'full' )[0];
-        $term_img_thumb = wp_get_attachment_image_src($taxonomy_img_id, 'thumbnail', true )[0];
+        $term_img_array = wp_get_attachment_image_src( $taxonomy_img_id, 'full' );
+        $term_img = !empty($term_img_array) ? $term_img_array[0] : "";
+        $term_img_thumb_array = wp_get_attachment_image_src($taxonomy_img_id, 'thumbnail', true );
+        $term_img_thumb = !empty($term_img_thumb_array) ? $term_img_thumb_array[0] : "";
         $term->thumbnail = $term_img_thumb;
         $term->full = $term_img;
       }
