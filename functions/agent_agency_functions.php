@@ -25,7 +25,8 @@ function prepareAgentData($response, $post, $request)
   $params = $request->get_params();
   $agent_id_from_url = $params["id"] ?? "";
   $should_append_extra_data = !empty( $agent_id_from_url);
-  $imgID = $response->data['agent_meta']['_thumbnail_id'][0];
+  $thumb_id = $response->data['agent_meta']['_thumbnail_id'] ?? null;
+  $imgID = !empty ($thumb_id) ? $thumb_id[0] : null;
   $response->data['thumbnail'] = wp_get_attachment_url($imgID);
   return $response;
 }

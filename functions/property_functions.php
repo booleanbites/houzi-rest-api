@@ -392,8 +392,8 @@ function queryPropertyById($propertyId) {
         
         $property_meta['agent_info'] = houzez20_property_contact_form();
 
-        $additional_features = $property_meta["additional_features"];
-        $floor_plans = $property_meta["floor_plans"];
+        $additional_features = $property_meta["additional_features"] ?? null;
+        $floor_plans = $property_meta["floor_plans"] ?? null;
         $fave_multi_units = $property_meta["fave_multi_units"] ?? null;
 
         unset($property_meta['additional_features']);
@@ -401,9 +401,9 @@ function queryPropertyById($propertyId) {
         unset($property_meta['fave_multi_units']);
         
   
-        $property_meta['additional_features'] = unserialize($additional_features[0]);
-        $property_meta['floor_plans'] = unserialize($floor_plans[0]);
-        $property_meta['fave_multi_units'] = $fave_multi_units ? unserialize($fave_multi_units[0]) : false;
+        $property_meta['additional_features'] = $additional_features ? unserialize($additional_features[0]) : [];
+        $property_meta['floor_plans'] = $floor_plans ?  unserialize($floor_plans[0]) : [];
+        $property_meta['fave_multi_units'] = $fave_multi_units ? unserialize($fave_multi_units[0]) : [];
         
 
         $property->property_meta    = $property_meta;
@@ -425,7 +425,10 @@ function appendPostImages(&$property)
 {
     $property->property_images = array();
     $property->property_images_thumb = array();
-  foreach ($property->property_meta['fave_property_images'] as $imgID) :
+    $property_images_array = !empty($property->property_meta['fave_property_images']) ? $property->property_meta['fave_property_images'] : [];
+	if ($property_images_array == null || empty($property_images_array)) return;
+	
+  foreach ($property_images_array as $imgID) :
     $property->property_images[] = wp_get_attachment_url($imgID);
     $property->property_images_thumb[] = wp_get_attachment_image_src($imgID, 'thumbnail', true )[0];
   endforeach;
@@ -434,7 +437,10 @@ function appendPostAttachments(&$property)
 {
     $property->attachments = array();
     
-    foreach ($property->property_meta['fave_attachments'] as $attachment_id) {
+    $property_attachment_array = !empty($property->property_meta['fave_attachments']) ? $property->property_meta['fave_attachments'] : [];
+	if ($property_attachment_array == null || empty($property_attachment_array)) return;
+    
+    foreach ($property_attachment_array as $attachment_id) {
         $attachment_metadata = wp_get_attachment_metadata($attachment_id);
         $file_name = basename ( get_attached_file( $attachment_id ) );
         $file_url = wp_get_attachment_url($attachment_id);
@@ -501,9 +507,9 @@ function appendPostAttr(&$response)
     $property_attributes_all[$attribute->taxonomy][] = $term->name;
   endforeach;
   $response->property_attr = $property_attributes;
-  $response->property_type_text = $property_attributes_all["property_type"];
-  $response->property_status_text = $property_attributes_all["property_status"];
-  $response->property_label_text = $property_attributes_all["property_label"];
+  $response->property_type_text = !empty($property_attributes_all["property_type"]) ? $property_attributes_all["property_type"] : []; 
+  $response->property_status_text = !empty($property_attributes_all["property_status"]) ? $property_attributes_all["property_status"] : [];
+  $response->property_label_text = !empty($property_attributes_all["property_label"]) ? $property_attributes_all["property_label"] : [];
 }
 function getCurrentLanguageTermsOnly($postId, $term_name) {
     $current_lang = apply_filters( 'wpml_current_language', "en" );

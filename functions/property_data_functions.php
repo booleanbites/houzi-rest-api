@@ -52,17 +52,16 @@ function preparePropertyData($response, $post, $request)
   
   $property_meta = $response->data['property_meta'];
   
-  $additional_features = $property_meta["additional_features"];
-  $floor_plans = $property_meta["floor_plans"];
+  $additional_features = $property_meta["additional_features"] ?? null;
+  $floor_plans = $property_meta["floor_plans"] ?? null;
   $fave_multi_units = $property_meta["fave_multi_units"] ?? null;
 
   unset($response->data['property_meta']['additional_features']);
   unset($response->data['property_meta']['floor_plans']);
   unset($response->data['property_meta']['fave_multi_units']);
   
-  $response->data['property_meta']['additional_features'] = unserialize($additional_features[0]);
-  $response->data['property_meta']['floor_plans'] = unserialize($floor_plans[0]);
-  
+  $response->data['property_meta']['additional_features'] = $additional_features ? unserialize($additional_features[0]) : [];
+  $response->data['property_meta']['floor_plans'] = $floor_plans ?  unserialize($floor_plans[0]) : [];
   $response->data['property_meta']['fave_multi_units'] = $fave_multi_units ? unserialize($fave_multi_units[0]) : false;
   
 
@@ -85,7 +84,10 @@ function preparePropertyData($response, $post, $request)
 
 function hm_postImages(&$response)
 {
-  foreach ($response->data['property_meta']['fave_property_images'] as $imgID) :
+  $property_images_array = !empty($response->data['property_meta']['fave_property_images']) ? $response->data['property_meta']['fave_property_images'] : [];
+	if ($property_images_array == null || empty($property_images_array)) return;
+	
+  foreach ($property_images_array as $imgID) :
     $response->data['property_images'][] = wp_get_attachment_url($imgID);
     $response->data['property_images_thumb'][] = wp_get_attachment_image_src($imgID, 'thumbnail', true )[0];
   endforeach;
@@ -93,7 +95,10 @@ function hm_postImages(&$response)
 
 function hm_postAttachments(&$response)
 {
-  foreach ($response->data['property_meta']['fave_attachments'] as $attachment_id) :
+  $property_attachment_array = !empty($response->data['property_meta']['fave_attachments']) ? $response->data['property_meta']['fave_attachments'] : [];
+	if ($property_attachment_array == null || empty($property_attachment_array)) return;
+	
+  foreach ($property_attachment_array as $attachment_id) :
     // $response->data['attachments'][] = wp_get_attachment_url($attachment_id);
     $attachment_metadata = wp_get_attachment_metadata($attachment_id);
     $file_name = basename ( get_attached_file( $attachment_id ) );
