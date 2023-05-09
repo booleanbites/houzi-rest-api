@@ -16,7 +16,8 @@ add_action( 'litespeed_init', function() {
     $exclude_url_list = array(
         "delete-property",
         "is-fav-property",
-        "my-properties"
+        "my-properties",
+        "print-pdf-property"
     );
     foreach ($exclude_url_list as $exclude_url) {
         if (strpos($_SERVER['REQUEST_URI'], $exclude_url) !== FALSE) {
