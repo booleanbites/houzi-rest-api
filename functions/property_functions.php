@@ -91,9 +91,15 @@ add_action( 'rest_api_init', function () {
         'methods' => 'GET',
         'callback' => 'getProperty',
     ));
+
     register_rest_route( 'houzez-mobile-api/v1', '/property-by-permalink', array(
         'methods' => 'GET',
         'callback' => 'getPropertyByPermalink',
+    ));
+
+    register_rest_route( 'houzez-mobile-api/v1', '/print-pdf-property', array(
+        'methods' => 'GET',
+        'callback' => 'printPdfProperty',
     ));
   
   });
@@ -282,6 +288,19 @@ function isFavProperty() {
     $ajax_response = array( 'success' => true, 'is_fav' => isFavoriteProperty($_REQUEST['listing_id']) );
     wp_send_json($ajax_response, 200);
 
+}
+
+function printPdfProperty() {
+    if ( !isset( $_GET['propid'] ) ) {
+        $ajax_response = array( 'success' => false , 'reason' => esc_html__( 'No Property ID found', 'houzez' ) );
+        wp_send_json($ajax_response,400);
+        return;
+    }
+
+    $_POST['propid'] = $_GET["propid"];
+
+    // do_action( 'wp_ajax_nopriv_houzez_create_print');
+    do_action( 'wp_ajax_houzez_create_print');
 }
 
 function getMyProperties() {
