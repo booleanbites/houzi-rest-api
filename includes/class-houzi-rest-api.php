@@ -187,6 +187,7 @@ class Houzi_Rest_Api {
         require_once( HOUZI_REST_API_PLUGIN_PATH . 'functions/user_functions.php');
         require_once( HOUZI_REST_API_PLUGIN_PATH . 'functions/property_review_functions.php');
 		require_once( HOUZI_REST_API_PLUGIN_PATH . 'functions/security_utils.php');
+		require_once( HOUZI_REST_API_PLUGIN_PATH . 'functions/houzez_partners.php');
         
     }
 	/**
