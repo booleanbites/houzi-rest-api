@@ -687,8 +687,8 @@ function setupSearchQuery() {
                 $apiKey = isset( $obj["apiKey"] ) ? $obj["apiKey"] : '';
                 $value = isset( $obj["value"] ) ? $obj["value"] : '';
                 $pickerType = isset( $obj["pickerType"] ) ? $obj["pickerType"] : '';
-                $minRange = isset( $obj["minRange"] ) ? $obj["minRange"] : '';
-                $maxRange = isset( $obj["maxRange"] ) ? $obj["maxRange"] : '';
+                $minRange = isset( $obj["min_range_value"] ) ? $obj["min_range_value"] : '';
+                $maxRange = isset( $obj["max_range_value"] ) ? $obj["max_range_value"] : '';
 
                 if ( !empty( $apiKey ) && gettype( $apiKey ) == string ) {
                     # string_picker & dropdown logic
@@ -1429,8 +1429,8 @@ function setupSearchQueryForTesting() {
                 $apiKey = isset( $obj["apiKey"] ) ? $obj["apiKey"] : '';
                 $value = isset( $obj["value"] ) ? $obj["value"] : '';
                 $pickerType = isset( $obj["pickerType"] ) ? $obj["pickerType"] : '';
-                $minRange = isset( $obj["minRange"] ) ? $obj["minRange"] : '';
-                $maxRange = isset( $obj["maxRange"] ) ? $obj["maxRange"] : '';
+                $minRange = isset( $obj["min_range_value"] ) ? $obj["min_range_value"] : '';
+                $maxRange = isset( $obj["max_range_value"] ) ? $obj["max_range_value"] : '';
 
                 if ( !empty( $apiKey ) && gettype( $apiKey ) == string ) {
                     # string_picker & dropdown logic
