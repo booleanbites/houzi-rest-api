@@ -14,6 +14,7 @@ add_action( 'litespeed_init', function() {
   //these URLs need to be excluded from lightspeed caches
   $exclude_url_list = array(
       "profile",
+      "proceed-payment"
   );
   foreach ($exclude_url_list as $exclude_url) {
       if (strpos($_SERVER['REQUEST_URI'], $exclude_url) !== FALSE) {
@@ -83,6 +84,16 @@ add_action( 'rest_api_init', function () {
     register_rest_route( 'houzez-mobile-api/v1', '/delete-user-account', array(
       'methods' => 'POST',
       'callback' => 'deleteUserAccount',
+    ));
+
+    register_rest_route( 'houzez-mobile-api/v1', '/user-payment-status', array(
+      'methods' => 'POST',
+      'callback' => 'paymentStatus',
+    ));
+
+    register_rest_route( 'houzez-mobile-api/v1', '/proceed-payment', array(
+      'methods' => 'GET',
+      'callback' => 'proceedPayment',
     ));
 
     
@@ -732,4 +743,53 @@ function check_with_hashed_password( $check, $password, $hash, $user_id ) {
 */
 function is_sha1( $str ) {
 	return ( bool ) preg_match( '/^[0-9a-f]{40}$/i', $str );
+}
+
+function paymentStatus($request) {
+  if (!is_user_logged_in() ) {
+    $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+    wp_send_json($ajax_response, 403);
+    return; 
+  }
+  $userID = get_current_user_id();
+
+  $enable_paid_submission = houzez_option('enable_paid_submission');
+  $remaining_listings = houzez_get_remaining_listings( $userID );
+  
+  $payment_page = houzez_get_template_link('template/template-payment.php');
+
+  $user_has_membership = houzez_user_has_membership($userID);
+  $response['enable_paid_submission'] = $enable_paid_submission;
+  $response['remaining_listings'] = $remaining_listings;
+  $response['payment_page'] = $payment_page;
+  $response['user_has_membership'] = $user_has_membership;
+  wp_send_json($response, 200);
+}
+
+function proceedPayment($request) {
+  // if (!is_user_logged_in() ) {
+  //   $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+  //   wp_send_json($ajax_response, 403);
+  //   return; 
+  // }
+  // if(empty($_POST["listing_id"])) {
+  //   $ajax_response = array( 'success' => false, 'reason' => 'Please provide property id in listing_id.' );
+  //   wp_send_json($ajax_response, 404);
+  //   return;
+  // }
+  $user_id  = $_GET['user_id'];
+  $user = get_user_by( 'id', $user_id ); 
+  if ( $user ) {
+        wp_set_current_user( $user_id, $user->user_login );
+        wp_set_auth_cookie( $user_id );
+        do_action( 'wp_login', $user->user_login, $user );
+  }
+  // $payment_page = houzez_get_template_link('template/template-payment.php');
+  // $payment_page_link = add_query_arg( 'prop-id', $post_id, $payment_page );
+  // $payment_page_link_featured = add_query_arg( 'upgrade_id', $post_id, $payment_page );
+  
+  // $payment_status = get_post_meta( get_the_ID(), 'fave_payment_status', true );
+  // wp_send_json($response, 200);
+  //wp_redirect( houzez_get_template_link('template/template-payment.php') ); exit;
+  wp_redirect( home_url() ); exit;
 }
