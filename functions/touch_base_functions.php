@@ -44,6 +44,7 @@ function getMetaData() {
     $response['success'] = true;
     $response['version'] = HOUZI_REST_API_VERSION;
     $response['houzez_ver'] = HOUZEZ_THEME_VERSION;
+    $response['payment_enabled'] = houzez_option( 'enable_paid_submission', 'no' );
     $response['default_currency'] = houzez_get_currency();
     $response['currency_position'] = houzez_option( 'currency_position', '$' );
     $response['thousands_separator'] = houzez_option( 'thousands_separator', ',' );
