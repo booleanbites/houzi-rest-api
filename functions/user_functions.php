@@ -96,6 +96,11 @@ add_action( 'rest_api_init', function () {
       'callback' => 'proceedPayment',
     ));
 
+    register_rest_route( 'houzez-mobile-api/v1', '/proceed-with-payment', array(
+      'methods' => 'POST',
+      'callback' => 'proceedWithPayment',
+    ));
+
     
 
     register_rest_route( 'contact-us/v1', 'send-message', array(
@@ -792,4 +797,117 @@ function proceedPayment($request) {
   // wp_send_json($response, 200);
   //wp_redirect( houzez_get_template_link('template/template-payment.php') ); exit;
   wp_redirect( home_url() ); exit;
+}
+
+function proceedWithPayment($request) {
+  if (!is_user_logged_in() ) {
+    $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+    wp_send_json($ajax_response, 403);
+    return; 
+  }
+  $userID                     = get_current_user_id();
+  $admin_email                = get_bloginfo('admin_email');
+  $listings_admin_approved    = houzez_option('listings_admin_approved');
+  $enable_paid_submission     = houzez_option('enable_paid_submission');
+  $prop_id                    = $request['prop_id'];
+  $paymentMethod              = $request['iap'] ?? 'google_iap';
+  $pack_id                    = $request['pack_id'];
+
+  if( $enable_paid_submission == 'per_listing' || $enable_paid_submission == 'free_paid_listing' ) {
+    $time = time();
+    $date = date( 'Y-m-d H:i:s', $time );
+    $is_prop_upgrade = 1;
+
+    if( $is_prop_upgrade == 1 ) {
+
+        $invoiceID = houzez_generate_invoice( 'Upgrade to Featured','one_time', $prop_id, $date, $userID, 0, 1, '', $paymentMethod );
+        update_post_meta( $invoiceID, 'invoice_payment_status', 1 );
+        update_post_meta( $prop_id, 'fave_featured', 1 );
+        update_post_meta( $prop_id, 'houzez_featured_listing_date', current_time( 'mysql' ) );
+
+        $args = array(
+            'listing_title'  =>  get_the_title($prop_id),
+            'listing_id'     =>  $prop_id,
+            'invoice_no' =>  $invoiceID,
+            'listing_url'    =>  get_permalink($prop_id),
+        );
+
+        /*
+        * Send email
+        * */
+        // houzez_email_type( $user_email, 'featured_submission_listing', $args);
+        print(
+          "valid"
+        );
+        houzez_email_type( $admin_email, 'admin_featured_submission_listing', $args);
+
+    } else {
+
+        update_post_meta( $prop_id, 'fave_payment_status', 'paid' );
+
+        if( $listings_admin_approved != 'yes' ){
+            $post = array(
+                'ID'            => $prop_id,
+                'post_status'   => 'publish'
+            );
+
+            // if( $relist_mode == "relist" ) {
+            //     $post['post_date'] = current_time( 'mysql' );
+            // }
+
+            $post_id =  wp_update_post($post );
+        }  else {
+            $post = array(
+                'ID'            => $prop_id,
+                'post_status'   => 'pending'
+            );
+
+            // if( $relist_mode == "relist" ) {
+            //     $post['post_date'] = current_time( 'mysql' );
+            // }
+            $post_id =  wp_update_post($post );
+        }
+
+        if( $is_prop_featured == 1 ) {
+            update_post_meta( $prop_id, 'fave_featured', 1 );
+            $invoiceID = houzez_generate_invoice( 'Listing with Featured','one_time', $prop_id, $date, $userID, 1, 0, '', $paymentMethod );
+        } else {
+            $invoiceID = houzez_generate_invoice( 'Listing','one_time', $prop_id, $date, $userID, 0, 0, '', $paymentMethod );
+        }
+
+        update_post_meta( $invoiceID, 'invoice_payment_status', 1 );
+
+        $args = array(
+            'listing_title'  =>  get_the_title($prop_id),
+            'listing_id'     =>  $prop_id,
+            'invoice_no'     =>  $invoiceID,
+            'listing_url'    =>  get_permalink($prop_id),
+        );
+
+        /*
+        * Send email
+        * */
+        houzez_email_type( $user_email, 'paid_submission_listing', $args);
+        houzez_email_type( $admin_email, 'admin_paid_submission_listing', $args);
+    }
+  } else if ($enable_paid_submission == 'membership' ) {
+    houzez_save_user_packages_record($userID, $pack_id);
+    if( houzez_check_user_existing_package_status( $current_user->ID, $pack_id ) ){
+        houzez_downgrade_package( $current_user->ID, $pack_id );
+        houzez_update_membership_package( $userID, $pack_id);
+    } else {
+        houzez_update_membership_package($userID, $pack_id);
+    }
+
+    $invoiceID = houzez_generate_invoice( 'package', 'one_time', $pack_id, $date, $userID, 0, 0, '', $paymentMethod, 1 );
+    update_post_meta( $invoiceID, 'invoice_payment_status', 1 );
+    update_user_meta( $userID, 'houzez_is_recurring_membership', 0 );
+    update_user_meta( $userID, 'houzez_payment_method', $paymentMethod);
+
+    $args = array();
+
+    houzez_email_type( $user_email,'purchase_activated_pack', $args );
+  }
+  
+  
 }
