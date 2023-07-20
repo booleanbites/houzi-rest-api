@@ -54,6 +54,13 @@ class RestApiElevenSettings {
 				'callback' => array( $this, 'lets_eleven_config'),
 			));
 		});
+
+		add_action( 'rest_api_init', function () {
+			register_rest_route( 'houzez-mobile-api/v1', '/create-eleven-nonce', array(
+				'methods' => 'POST',
+				'callback' => array( $this, 'create_eleven_nonce'),
+			));
+		});
 	}
 
 	private function is_elevened() {
@@ -118,21 +125,13 @@ class RestApiElevenSettings {
 		<?php
 	}
 	public function lets_eleven_config() {
-		// $nonce = wp_create_nonce('eleven_nonce');
-		// $_POST['nonce'] = $nonce;
-
-		if (!create_nonce_or_throw_error('nonce', 'eleven_nonce')) {
-			return;
-		}
-	
-		
 		$this->lets_go_eleven();
 	}
 	public function lets_go_eleven() {
 
 		$item_eleven_text = sanitize_text_field( $_POST['item_eleven_text'] );
-
 		$nonce = $_POST['nonce'];
+
         if (!wp_verify_nonce( $nonce, 'eleven_nonce') ) {
             wp_send_json(array(
                 'success' => false,
@@ -236,5 +235,18 @@ class RestApiElevenSettings {
             'msg' => esc_html__('Deactivated', 'houzi')
         ));
         wp_die();
+	}
+	public function create_eleven_nonce($request) {
+
+		if(!isset( $_POST['nonce_name']) || empty($_POST['nonce_name']) ) {
+			$ajax_response = array( 'success' => false, 'reason' => 'Please provide nonce_name' );
+			wp_send_json($ajax_response, 403);
+			return;
+		}
+
+		$nonce_name = $_POST['nonce_name'];
+		$nonce = wp_create_nonce($nonce_name);
+		$ajax_response = array( 'success' => true, 'nonce' => $nonce );
+		wp_send_json($ajax_response, 200);
 	}
 }
