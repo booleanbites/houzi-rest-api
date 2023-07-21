@@ -189,7 +189,35 @@ function searchPropertiesTest() {
     queryPropertiesAndSendJSON($query_args);
 }
 function queryPropertiesAndSendJSON($query_actual) {
-    $query_args = new WP_Query( $query_actual );
+
+    $keyword_filters = isset( $_POST['keyword_filters'] ) ? ( $_POST['keyword_filters'] ) : '';
+
+    if( !empty( $keyword_filters ) ) {
+        
+        $jsonProcessed = stripslashes($keyword_filters);
+
+        $decodedJson = json_decode($jsonProcessed, true);
+
+        $keyword_filters_Obj = $decodedJson["keyword_filters"];
+
+        $search_queries = $keyword_filters_Obj;
+
+        add_filter('posts_where', function($where) use ($search_queries) {
+            global $wp_query;
+            return custom_title_content_filter($where, $wp_query, $search_queries);
+        }, 10, 2);
+
+        $query_args = new WP_Query( $query_actual );
+
+        // Remove the filter after the query
+        remove_filter('posts_where', function($where) use ($search_queries) {
+            global $wp_query;
+            return custom_title_content_filter($where, $wp_query, $search_queries);
+        }, 10);
+    } else {
+        $query_args = new WP_Query( $query_actual );
+    }
+
     $properties = array();
     $found_posts = $query_args->found_posts;
     while( $query_args->have_posts() ):
@@ -203,6 +231,42 @@ function queryPropertiesAndSendJSON($query_actual) {
     wp_send_json( array( 'success' => true ,'count' => $found_posts , 'result' => $properties), 200);
     //wp_send_json( array( 'success' => true, 'query' => $query_actual), 200);
 }
+
+function custom_title_content_filter($where, $query, $search_queries) {
+    global $wpdb;
+
+    // Add your custom filtering conditions here
+    if (!empty($search_queries)) {
+        $where .= " AND (";
+        $first = true;
+        foreach ($search_queries as $search_query_data) {
+            $relation = isset($search_query_data['query_type']) ? strtoupper($search_query_data['query_type']) : 'OR';
+            $keywords = isset($search_query_data['value']) ? explode(",",$search_query_data['value']) : array();
+
+            if (!empty($keywords)) {
+                if (!$first) {
+                    $where .= " $relation ";
+                }
+                $where .= "(";
+                $innerFirst = true;
+                foreach ($keywords as $search_query) {
+                    if (!$innerFirst) {
+                        // $where .= " OR ";
+                        $where .= " $relation ";
+                    }
+                    $where .= "{$wpdb->posts}.post_title LIKE '%$search_query%' OR {$wpdb->posts}.post_content LIKE '%$search_query%'";
+                    $innerFirst = false;
+                }
+                $where .= ")";
+                $first = false;
+            }
+        }
+        $where .= ")";
+    }
+
+    return $where;
+}
+
 function setupSearchQuery() {
     $meta_query = array();
     $tax_query = array();
