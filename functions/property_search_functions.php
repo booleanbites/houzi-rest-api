@@ -319,7 +319,20 @@ function setupSearchQuery() {
     $agent_id = isset($_POST['fave_agents']) ? ($_POST['fave_agents']) : '';
 
     $meta_key_filters = isset( $_POST['meta_key_filters'] ) ? ( $_POST['meta_key_filters'] ) : '';
-    
+
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ///  Query Types variables
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    $country_query_type = isset($_POST['country_query_type']) ? ($_POST['country_query_type']) : '';
+    $state_query_type = isset($_POST['state_query_type']) ? ($_POST['state_query_type']) : '';
+    $area_query_type = isset($_POST['area_query_type']) ? ($_POST['area_query_type']) : '';
+    $status_query_type = isset($_POST['status_query_type']) ? ($_POST['status_query_type']) : '';
+    $type_query_type = isset($_POST['type_query_type']) ? ($_POST['type_query_type']) : '';
+    $label_query_type = isset($_POST['label_query_type']) ? ($_POST['label_query_type']) : '';
+    $features_query_type = isset($_POST['features_query_type']) ? $_POST['features_query_type'] : '';
+    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
     $page = isset($_POST['page']) ? (int) $_POST['page'] : 1;
     $per_page = isset($_POST['per_page']) ? (int) $_POST['per_page'] : 20;
 
@@ -552,61 +565,193 @@ function setupSearchQuery() {
     }
 
     if( !empty($area) ) {
-        $tax_query[] = array(
-            'taxonomy' => 'property_area',
-            'field' => 'slug',
-            'terms' => $area
-        );
+
+        if( !empty($area_query_type) ) {
+            
+            $area_array = array(
+                'taxonomy' => 'property_area',
+                'field' => 'slug',
+                'terms' => $area
+            );
+
+            $tax_query[] = array(
+                'relation' => $area_query_type,
+                $area_array
+            );
+
+        } else {
+
+            $tax_query[] = array(
+                'taxonomy' => 'property_area',
+                'field' => 'slug',
+                'terms' => $area
+            );
+        }
     }
     if( !empty($state) ) {
-        $tax_query[] = array(
-            'taxonomy'      => 'property_state',
-            'field'         => 'slug',
-            'terms'         => $state
-        );
+
+        if( !empty($state_query_type) ) {
+
+            $state_array = array(
+                'taxonomy'      => 'property_state',
+                'field'         => 'slug',
+                'terms'         => $state
+            );
+            
+            $tax_query[] = array(
+                'relation' => $state_query_type,
+                $state_array
+            );
+        
+        } else {
+
+            $tax_query[] = array(
+                'taxonomy'      => 'property_state',
+                'field'         => 'slug',
+                'terms'         => $state
+            );
+        }
     }
 
     if( !empty( $country ) ) {
-        $meta_query[] = array(
-            'key' => 'fave_property_country',
-            'value'   => $country,
-            'type'    => 'CHAR',
-            'compare' => '=',
-        );
+
+        if( !empty($country_query_type) ) {
+
+            $country_array = array(
+                'key' => 'fave_property_country',
+                'value'   => $country,
+                'type'    => 'CHAR',
+                'compare' => '=',
+            );
+
+            $meta_query[] = array(
+                'relation' => $country_query_type,
+                $country_array
+            );
+
+        } else {
+
+            $meta_query[] = array(
+                'key' => 'fave_property_country',
+                'value'   => $country,
+                'type'    => 'CHAR',
+                'compare' => '=',
+            );
+        }
     }
 
     if( !empty($status) ) {
-        $tax_query[] = array(
-            'taxonomy' => 'property_status',
-            'field' => 'slug',
-            'terms' => $status
-        );
+
+        if( !empty($status_query_type) ) {
+        
+            $status_array = array(
+                'taxonomy' => 'property_status',
+                'field' => 'slug',
+                'terms' => $status
+            );
+
+            $tax_query[] = array(
+                'relation' => $status_query_type,
+                $status_array
+            );
+
+        } else {
+
+            $tax_query[] = array(
+                'taxonomy' => 'property_status',
+                'field' => 'slug',
+                'terms' => $status
+            );
+        }
+
+        
     }
     if( !empty($type) ) {
-        $tax_query[] = array(
-            'taxonomy' => 'property_type',
-            'field' => 'slug',
-            'terms' => $type
-        );
+
+        if( !empty($type_query_type) ) {
+
+            $type_array = array(
+                'taxonomy' => 'property_type',
+                'field' => 'slug',
+                'terms' => $type
+            );
+
+            $tax_query[] = array(
+                'relation' => $type_query_type,
+                $type_array
+            );
+        
+        } else {
+
+            $tax_query[] = array(
+                'taxonomy' => 'property_type',
+                'field' => 'slug',
+                'terms' => $type
+            );            
+        }
+
+        
     }
 
     if ( !empty($label) ) {
-        $tax_query[] = array(
-            'taxonomy' => 'property_label',
-            'field' => 'slug',
-            'terms' => $label
-        );
+
+        if( !empty($label_query_type) ) {
+
+            $label_array = array(
+                'taxonomy' => 'property_label',
+                'field' => 'slug',
+                'terms' => $label
+            );
+
+            $tax_query[] = array(
+                'relation' => $label_query_type,
+                $label_array
+            );
+
+        } else {
+
+            $tax_query[] = array(
+                'taxonomy' => 'property_label',
+                'field' => 'slug',
+                'terms' => $label
+            );
+        }
     }
 
     if( !empty( $features ) ) {
 
-        foreach ($features as $feature):
-            $tax_query[] = array(
-                'taxonomy' => 'property_feature',
-                'field' => 'slug',
-                'terms' => $feature
-            );
-        endforeach;
+        if( !empty($features_query_type) ) {
+
+            foreach ($features as $feature):
+        
+                $features_array = array(
+                    'taxonomy' => 'property_feature',
+                    'field' => 'slug',
+                    'terms' => $feature
+                );
+
+                $tax_query[] = array(
+                    'relation' => $features_query_type,
+                    $features_array
+                );
+
+            endforeach;
+
+        } else {
+
+            foreach ($features as $feature):
+
+                $tax_query[] = array(
+                    'taxonomy' => 'property_feature',
+                    'field' => 'slug',
+                    'terms' => $feature
+                );
+
+            endforeach;
+
+        }
+
+        
     }
 
     // bedrooms logic
