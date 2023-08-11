@@ -245,7 +245,8 @@ function custom_title_content_filter($where, $query, $search_queries) {
 
             if (!empty($keywords)) {
                 if (!$first) {
-                    $where .= " $relation ";
+                    // $where .= " $relation ";
+                    $where .= " AND ";
                 }
                 $where .= "(";
                 $innerFirst = true;
