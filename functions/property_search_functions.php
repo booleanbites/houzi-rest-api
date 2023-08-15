@@ -723,36 +723,25 @@ function setupSearchQuery() {
 
         if( !empty($features_query_type) ) {
 
-            foreach ($features as $feature):
-        
-                $features_array = array(
-                    'taxonomy' => 'property_feature',
-                    'field' => 'slug',
-                    'terms' => $feature
-                );
+            $features_array = array(
+                'taxonomy' => 'property_feature',
+                'field' => 'slug',
+                'terms' => $features
+            );
 
-                $tax_query[] = array(
-                    'relation' => $features_query_type,
-                    $features_array
-                );
-
-            endforeach;
+            $tax_query[] = array(
+                'relation' => $features_query_type,
+                $features_array
+            );
 
         } else {
 
-            foreach ($features as $feature):
-
-                $tax_query[] = array(
+            $tax_query[] = array(
                     'taxonomy' => 'property_feature',
                     'field' => 'slug',
-                    'terms' => $feature
+                    'terms' => $features
                 );
-
-            endforeach;
-
-        }
-
-        
+        }    
     }
 
     // bedrooms logic
