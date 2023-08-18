@@ -59,8 +59,10 @@ class RestApiIAPProductIds {
     }
 
     public function register_settings() {
-        register_setting( 'iap_product_ids_group', 'iap_product_id_1' );
-        register_setting( 'iap_product_ids_group', 'iap_product_id_2' );
+        register_setting( 'iap_product_ids_group', 'android_featured_product_id' );
+        register_setting( 'iap_product_ids_group', 'android_per_listing_product_id' );
+        register_setting( 'iap_product_ids_group', 'ios_featured_product_id' );
+        register_setting( 'iap_product_ids_group', 'ios_per_listing_product_id' );
     }
 
     public function render_settings_page() {
@@ -72,12 +74,20 @@ class RestApiIAPProductIds {
                 <?php do_settings_sections( 'iap_product_ids_group' ); ?>
                 <table class="form-table">
                     <tr valign="top">
-                        <th scope="row">Make featured product id</th>
-                        <td><input type="text" name="iap_product_id_1" value="<?php echo esc_attr( get_option( 'iap_product_id_1' ) ); ?>" /></td>
+                        <th scope="row">Make featured product id (Google PlayStore)</th>
+                        <td><input type="text" name="android_featured_product_id" value="<?php echo esc_attr( get_option( 'android_featured_product_id' ) ); ?>" /></td>
                     </tr>
                     <tr valign="top">
-                        <th scope="row">Per Listing product id</th>
-                        <td><input type="text" name="iap_product_id_2" value="<?php echo esc_attr( get_option( 'iap_product_id_2' ) ); ?>" /></td>
+                        <th scope="row">Make featured product id (Apple AppStore)</th>
+                        <td><input type="text" name="ios_featured_product_id" value="<?php echo esc_attr( get_option( 'ios_featured_product_id' ) ); ?>" /></td>
+                    </tr>
+                    <tr valign="top">
+                        <th scope="row">Per Listing product id (Google PlayStore)</th>
+                        <td><input type="text" name="android_per_listing_product_id" value="<?php echo esc_attr( get_option( 'android_per_listing_product_id' ) ); ?>" /></td>
+                    </tr>
+                    <tr valign="top">
+                        <th scope="row">Per Listing product id (Apple AppStore)</th>
+                        <td><input type="text" name="ios_per_listing_product_id" value="<?php echo esc_attr( get_option( 'ios_per_listing_product_id' ) ); ?>" /></td>
                     </tr>
                 </table>
                 <?php submit_button(); ?>
