@@ -66,21 +66,17 @@ function getMetaData() {
     } elseif( $prop_size_prefix == 'sq_meter' ) {
       $response['measurement_unit_text'] = houzez_option('measurement_unit_square_meter_text');
     }
-
-    $options = get_option( 'houzi_rest_api_options' ); // Array of All Options
     $response['android_featured_product_id'] = get_option( 'android_featured_product_id' ) ?? "";
     $response['ios_featured_product_id'] = get_option( 'ios_featured_product_id' ) ?? "";
     $response['android_per_listing_product_id'] = get_option( 'android_per_listing_product_id' ) ?? "";
     $response['ios_per_listing_product_id'] = get_option( 'ios_per_listing_product_id' ) ?? "";
-    $houzi_config = html_entity_decode( $options['mobile_app_config']);
-    $response['mobile_app_config'] = json_decode($houzi_config, true, JSON_UNESCAPED_SLASHES);
-
     $radius_unit = houzez_option('radius_unit') ?? null;
     if (isset($radius_unit)) {
       $response['radius_unit']  = houzez_option('radius_unit');
     }
-
     $options = get_option( 'houzi_rest_api_options' ); // Array of All Options
+    $houzi_config = html_entity_decode( $options['mobile_app_config']);
+    $response['mobile_app_config'] = json_decode($houzi_config, true, JSON_UNESCAPED_SLASHES);
 
     $houzi_config_array = $options['mobile_app_config'] ?? null;
     if (isset($houzi_config_array)) {
