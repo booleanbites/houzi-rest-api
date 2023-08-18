@@ -67,8 +67,10 @@ function getMetaData() {
       $response['measurement_unit_text'] = houzez_option('measurement_unit_square_meter_text');
     }
     $options = get_option( 'houzi_rest_api_options' ); // Array of All Options
-    $response['featured_product_id'] = get_option( 'iap_product_id_1' );
-    $response['per_listing_product_id'] = get_option( 'iap_product_id_2' );
+    $response['android_featured_product_id'] = get_option( 'android_featured_product_id' ) ?? "";
+    $response['ios_featured_product_id'] = get_option( 'ios_featured_product_id' ) ?? "";
+    $response['android_per_listing_product_id'] = get_option( 'android_per_listing_product_id' ) ?? "";
+    $response['ios_per_listing_product_id'] = get_option( 'ios_per_listing_product_id' ) ?? "";
     $houzi_config = html_entity_decode( $options['mobile_app_config']);
     $response['mobile_app_config'] = json_decode($houzi_config, true, JSON_UNESCAPED_SLASHES);
 
