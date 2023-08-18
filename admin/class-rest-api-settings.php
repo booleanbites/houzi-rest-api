@@ -31,6 +31,7 @@ class RestApiSettings {
 
 	private $settings;
 	private $eleven;
+	private $iap;
 
 	/**
 	 * Initialize the class and set its properties.
@@ -47,6 +48,7 @@ class RestApiSettings {
 
 		$this->settings = new RestApiAdminSettings($this->plugin_name,$this->version);
 		$this->eleven = new RestApiElevenSettings($this->plugin_name,$this->version);
+		$this->iap = new RestApiIAPProductIds($this->plugin_name,$this->version);
 	}
 
 	public function houzi_rest_api_add_plugin_page() {
@@ -81,16 +83,21 @@ class RestApiSettings {
 			}
 			?>
 			<h2 class="nav-tab-wrapper">
-				<?php if ($is_elevened) {?>
+			<?php if ($is_elevened) {?>
 				<a href="?page=<?php echo $_GET['page']; ?>&tab=settings" class="nav-tab <?php echo $active_tab == 'settings' ? 'nav-tab-active' : ''; ?>">Settings</a>
-				<?php } ?>
+			<?php } ?>
+			<a href="?page=<?php echo $_GET['page']; ?>&tab=iap" class="nav-tab <?php echo $active_tab == 'iap' ? 'nav-tab-active' : ''; ?>">In-App Purchase</a>
+
 				<a href="?page=<?php echo $_GET['page']; ?>&tab=p_code" class="nav-tab <?php echo $active_tab == 'p_code' ? 'nav-tab-active' : ''; ?>">Purchase Code</a>
 			</h2>
+
 			<?php 
 			if ( $active_tab == 'settings' ) {
 				$this->settings->admin_settings();
-			} elseif ( $active_tab == 'p_code' ) {
+			} else if ( $active_tab == 'p_code' ) {
 				$this->eleven->eleven_settings();
+			} else if ( $active_tab == 'iap' ) {
+				$this->iap->render_settings_page();
 			}
 		
 			?>
