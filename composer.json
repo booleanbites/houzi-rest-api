@@ -1,0 +1,24 @@
+{
+    "name": "booleanbites/houzi-rest-api",
+    "description": "Enhance Rest Api for Houzi mobile apps.",
+    "type": "plugin",
+    "autoload": {
+        "psr-4": {
+            "BooleanBites\\HouziRestApi\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "BooleanBites"
+        }
+    ],
+	"repositories": [
+    {
+      "type": "vcs",
+      "url": "https://github.com/OneSignal/onesignal-php-api.git"
+    }
+  ],
+    "require": {
+		"onesignal/onesignal-php-api": "*@dev"
+	}
+}

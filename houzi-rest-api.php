@@ -26,6 +26,8 @@ if ( ! defined( 'WPINC' ) ) {
 	die;
 }
 
+require __DIR__ . '/vendor/autoload.php';
+
 /**
  * Currently plugin version.
  * Start at version 1.0.0 and use SemVer - https://semver.org
