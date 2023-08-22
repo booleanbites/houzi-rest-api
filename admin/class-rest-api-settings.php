@@ -102,11 +102,11 @@ class RestApiSettings
 			<a href="?page=<?php echo $_GET['page']; ?>&tab=iap" class="nav-tab <?php echo $active_tab == 'iap' ? 'nav-tab-active' : ''; ?>">In-App Purchase</a>
 
 				<a href="?page=<?php echo $_GET['page']; ?>&tab=p_code" class="nav-tab <?php echo $active_tab == 'p_code' ? 'nav-tab-active' : ''; ?>">Purchase Code</a>
-			</h2>
 			<?php if ($is_elevened) { ?>
 				<a href="?page=<?php echo $_GET['page']; ?>&tab=notify"
 					class="nav-tab <?php echo $active_tab == 'notify' ? 'nav-tab-active' : ''; ?>">Push Notification</a>
 			<?php } ?>
+			</h2>
 
 			<?php 
 			if ( $active_tab == 'settings' ) {
