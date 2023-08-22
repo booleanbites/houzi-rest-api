@@ -32,6 +32,7 @@ class RestApiSettings
 
 	private $settings;
 	private $eleven;
+	private $iap;
 	private $notify;
 
 	/**
@@ -48,8 +49,9 @@ class RestApiSettings
 		$this->version = $version;
 		add_action('admin_menu', array($this, 'houzi_rest_api_add_plugin_page'));
 
-		$this->settings = new RestApiAdminSettings($this->plugin_name, $this->version);
-		$this->eleven = new RestApiElevenSettings($this->plugin_name, $this->version);
+		$this->settings = new RestApiAdminSettings($this->plugin_name,$this->version);
+		$this->eleven = new RestApiElevenSettings($this->plugin_name,$this->version);
+		$this->iap = new RestApiIAPProductIds($this->plugin_name,$this->version);
 		$this->notify = new RestApiNotify($this->plugin_name, $this->version);
 	}
 
@@ -94,29 +96,27 @@ class RestApiSettings
 			}
 			?>
 			<h2 class="nav-tab-wrapper">
-				<?php if ($is_elevened) { ?>
-					<a href="?page=<?php echo $_GET['page']; ?>&tab=settings"
-						class="nav-tab <?php echo $active_tab == 'settings' ? 'nav-tab-active' : ''; ?>">Settings</a>
-				<?php } ?>
-				<a href="?page=<?php echo $_GET['page']; ?>&tab=p_code"
-					class="nav-tab <?php echo $active_tab == 'p_code' ? 'nav-tab-active' : ''; ?>">Purchase Code</a>
+			<?php if ($is_elevened) {?>
+				<a href="?page=<?php echo $_GET['page']; ?>&tab=settings" class="nav-tab <?php echo $active_tab == 'settings' ? 'nav-tab-active' : ''; ?>">Settings</a>
+			<?php } ?>
+			<a href="?page=<?php echo $_GET['page']; ?>&tab=iap" class="nav-tab <?php echo $active_tab == 'iap' ? 'nav-tab-active' : ''; ?>">In-App Purchase</a>
 
-				<?php if ($is_elevened) { ?>
-					<a href="?page=<?php echo $_GET['page']; ?>&tab=notify"
-						class="nav-tab <?php echo $active_tab == 'notify' ? 'nav-tab-active' : ''; ?>">Push Notification</a>
-				<?php } ?>
+				<a href="?page=<?php echo $_GET['page']; ?>&tab=p_code" class="nav-tab <?php echo $active_tab == 'p_code' ? 'nav-tab-active' : ''; ?>">Purchase Code</a>
 			</h2>
-			<?php
-			switch ($active_tab) {
-				case 'settings':
-					$this->settings->admin_settings();
-					break;
-				case 'p_code':
-					$this->eleven->eleven_settings();
-					break;
-				case 'notify':
-					$this->notify->houzi_notify_tab();
-					break;
+			<?php if ($is_elevened) { ?>
+				<a href="?page=<?php echo $_GET['page']; ?>&tab=notify"
+					class="nav-tab <?php echo $active_tab == 'notify' ? 'nav-tab-active' : ''; ?>">Push Notification</a>
+			<?php } ?>
+
+			<?php 
+			if ( $active_tab == 'settings' ) {
+				$this->settings->admin_settings();
+			} else if ( $active_tab == 'p_code' ) {
+				$this->eleven->eleven_settings();
+			} else if ( $active_tab == 'iap' ) {
+				$this->iap->render_settings_page();
+			} else if ( $active_tab == 'notify' ) {
+				$this->notify->houzi_notify_tab();
 			}
 
 			?>

@@ -44,6 +44,7 @@ function getMetaData() {
     $response['success'] = true;
     $response['version'] = HOUZI_REST_API_VERSION;
     $response['houzez_ver'] = HOUZEZ_THEME_VERSION;
+    $response['payment_enabled'] = houzez_option( 'enable_paid_submission', 'no' );
     $response['default_currency'] = houzez_get_currency();
     $response['currency_position'] = houzez_option( 'currency_position', '$' );
     $response['thousands_separator'] = houzez_option( 'thousands_separator', ',' );
@@ -65,10 +66,24 @@ function getMetaData() {
     } elseif( $prop_size_prefix == 'sq_meter' ) {
       $response['measurement_unit_text'] = houzez_option('measurement_unit_square_meter_text');
     }
+    $response['android_featured_product_id'] = get_option( 'android_featured_product_id' ) ?? "";
+    $response['ios_featured_product_id'] = get_option( 'ios_featured_product_id' ) ?? "";
+    $response['android_per_listing_product_id'] = get_option( 'android_per_listing_product_id' ) ?? "";
+    $response['ios_per_listing_product_id'] = get_option( 'ios_per_listing_product_id' ) ?? "";
+    $radius_unit = houzez_option('radius_unit') ?? null;
+    if (isset($radius_unit)) {
+      $response['radius_unit']  = houzez_option('radius_unit');
+    }
     $options = get_option( 'houzi_rest_api_options' ); // Array of All Options
     $houzi_config = html_entity_decode( $options['mobile_app_config']);
     $response['mobile_app_config'] = json_decode($houzi_config, true, JSON_UNESCAPED_SLASHES);
 
+    $houzi_config_array = $options['mobile_app_config'] ?? null;
+    if (isset($houzi_config_array)) {
+      $houzi_config = html_entity_decode( $options['mobile_app_config']);
+      $response['mobile_app_config'] = json_decode($houzi_config, true, JSON_UNESCAPED_SLASHES);
+    }
+    
     $houzi_config_dev_array = $options['mobile_app_config_dev'] ?? null;
     if (isset($houzi_config_dev_array)) {
         $houzi_config_dev = html_entity_decode( $options['mobile_app_config_dev']);

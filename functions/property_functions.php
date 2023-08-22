@@ -16,7 +16,8 @@ add_action( 'litespeed_init', function() {
     $exclude_url_list = array(
         "delete-property",
         "is-fav-property",
-        "my-properties"
+        "my-properties",
+        "print-pdf-property"
     );
     foreach ($exclude_url_list as $exclude_url) {
         if (strpos($_SERVER['REQUEST_URI'], $exclude_url) !== FALSE) {
@@ -91,9 +92,20 @@ add_action( 'rest_api_init', function () {
         'methods' => 'GET',
         'callback' => 'getProperty',
     ));
+
     register_rest_route( 'houzez-mobile-api/v1', '/property-by-permalink', array(
         'methods' => 'GET',
         'callback' => 'getPropertyByPermalink',
+    ));
+
+    register_rest_route( 'houzez-mobile-api/v1', '/print-pdf-property', array(
+        'methods' => 'GET',
+        'callback' => 'printPdfProperty',
+    ));
+
+    register_rest_route( 'houzez-mobile-api/v1', '/property-by-meta-key', array(
+        'methods' => 'GET',
+        'callback' => 'getPropertyByMetaKey',
     ));
   
   });
@@ -284,6 +296,19 @@ function isFavProperty() {
 
 }
 
+function printPdfProperty() {
+    if ( !isset( $_GET['propid'] ) ) {
+        $ajax_response = array( 'success' => false , 'reason' => esc_html__( 'No Property ID found', 'houzez' ) );
+        wp_send_json($ajax_response,400);
+        return;
+    }
+
+    $_POST['propid'] = $_GET["propid"];
+
+    // do_action( 'wp_ajax_nopriv_houzez_create_print');
+    do_action( 'wp_ajax_houzez_create_print');
+}
+
 function getMyProperties() {
     if (! is_user_logged_in() ) {
         $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
@@ -368,10 +393,65 @@ function queryPropertyById($propertyId) {
         'posts_per_page'   =>  1,
         'suppress_filters' =>  false
     );
+
+    sendPropertyJson($args);
     
+    // $query_args = query_posts( $args );
+    // $properties = array();
+    
+    
+    //global $post;
+    // while( have_posts() ):
+    //     the_post();
+    //     //$property = $query_args->post;
+    //     $property = get_post();
+    //     //$post = $property;
+    //     setup_postdata($property);
+    //     do_action( 'template_redirect' );
+
+    //     //$property = $query_args->post;
+    //     $post_id = $property->ID;
+        
+    //     $property->is_fav = isFavoriteProperty($post_id);
+    //     $property->link = get_permalink();
+    //     $property_meta = get_post_meta($post_id);
+        
+        
+    //     $property_meta['agent_info'] = houzez20_property_contact_form();
+
+    //     $additional_features = $property_meta["additional_features"] ?? null;
+    //     $floor_plans = $property_meta["floor_plans"] ?? null;
+    //     $fave_multi_units = $property_meta["fave_multi_units"] ?? null;
+
+    //     unset($property_meta['additional_features']);
+    //     unset($property_meta['floor_plans']);    
+    //     unset($property_meta['fave_multi_units']);
+        
+  
+    //     $property_meta['additional_features'] = $additional_features ? unserialize($additional_features[0]) : [];
+    //     $property_meta['floor_plans'] = $floor_plans ?  unserialize($floor_plans[0]) : [];
+    //     $property_meta['fave_multi_units'] = $fave_multi_units ? unserialize($fave_multi_units[0]) : [];
+        
+
+    //     $property->property_meta    = $property_meta;
+
+    //     appendPostImages($property);
+    //     appendPostFeature($property);
+    //     appendPostAddress($property);
+    //     appendPostAttr($property);
+    //     appendPostAttachments($property);
+
+    //     array_push($properties, $property );
+    //     //break;
+    // endwhile;
+    // wp_reset_query();
+    // wp_send_json($properties[0] , 200);
+}
+
+function sendPropertyJson($args) {
+
     $query_args = query_posts( $args );
     $properties = array();
-    
     
     //global $post;
     while( have_posts() ):
@@ -418,7 +498,12 @@ function queryPropertyById($propertyId) {
         //break;
     endwhile;
     wp_reset_query();
-    wp_send_json($properties[0] , 200);
+
+    if (!empty($properties)) {
+        wp_send_json($properties[0] , 200);
+    } else {
+        wp_send_json($properties , 200);
+    }
 }
 
 function appendPostImages(&$property)
@@ -529,4 +614,32 @@ function getCurrentLanguageTermsOnly($postId, $term_name) {
         endforeach;
     }
     return $property_attributes;
+}
+
+function getPropertyByMetaKey($request) {
+    if ( !isset( $_GET['meta_key']) || empty( $_GET['meta_key']) ) {
+        $ajax_response = array( 'success' => false , 'reason' => esc_html__( 'No Meta Key found', 'houzez' ) );
+        wp_send_json($ajax_response,400);
+        return;
+    }
+
+    if ( !isset( $_GET['meta_value']) || empty( $_GET['meta_value']) ) {
+        $ajax_response = array( 'success' => false , 'reason' => esc_html__( 'No Meta Value found', 'houzez' ) );
+        wp_send_json($ajax_response,400);
+        return;
+    }
+
+    $meta_key     = $_GET['meta_key'];
+    $meta_value     = $_GET['meta_value'];
+    
+
+    $args = array(
+        'post_type'        =>  'property',
+        'meta_key'         =>  $meta_key,    
+        'meta_value'       =>  $meta_value,
+        'posts_per_page'   =>  1,
+        'suppress_filters' =>  false
+    );
+
+    sendPropertyJson($args);
 }
