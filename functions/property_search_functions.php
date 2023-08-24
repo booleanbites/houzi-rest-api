@@ -1982,6 +1982,7 @@ function getSimilarProperties() {
 function propertyNode($property){
     
     $post_id = $property->ID;
+    $property->link = get_permalink();
 
     $property->thumbnail    = get_the_post_thumbnail_url( $post_id, 'houzez-property-thumb-image' );
     
