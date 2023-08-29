@@ -660,7 +660,7 @@ function houzez_handle_custom_endpoint() {
     // Check if the 'propid' parameter is set in the query string and is not empty.
     if ( isset( $_GET['propid'] ) && ! empty( $_GET['propid'] ) ) {
         // Houzez function to print the property.
-		houzez_create_print ();
+		houzi_create_print ();
         // Note: The following 'exit;' line is commented out, which means WordPress 
 		// will continue processing after this function.
         // If you uncomment the 'exit;' line, it will stop further WordPress processing 
@@ -671,7 +671,7 @@ function houzez_handle_custom_endpoint() {
 add_action( 'template_redirect', 'houzez_handle_custom_endpoint' );
 
 
-function houzez_create_print () {
+function houzi_create_print () {
 	if(!isset($_GET['propid'])|| !is_numeric($_GET['propid'])){
 		exit();
 	}
