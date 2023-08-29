@@ -57,9 +57,9 @@ class RestApiNotify
 
         add_action('wp_ajax_test_notification', array($this, 'test_notification'));
 
-        add_action('send_notification', array($this, 'parse_notification_data'), 10, 1);
+        add_action('send_houzi_notification', array($this, 'parse_notification_data'), 10, 1);
 
-        add_action('wp_mail', array($this, 'houzi_notify_email_handler'), 10, 1);
+        // add_action('wp_mail', array($this, 'houzi_notify_email_handler'), 10, 1);
 
         add_action('update_option_houzi_notify_options', function ($old_value, $value) {
             do_action('litespeed_purge_all');
@@ -70,65 +70,180 @@ class RestApiNotify
 
     function houzi_notify_email_handler($args)
     {
-        error_log(json_encode(array_keys($args)));
-
-
-        // $this->send_push_notification($args["subject"], $args["subject"], $args["to"]);
+        $this->send_push_notification($args["subject"], $args["subject"], $args["to"]);
     }
 
     function parse_notification_data($args)
     {
+
+        error_log(json_encode($args));
+
         switch ($args['type']) {
-            case 'rating':
+            case 'review':
                 $author_id = get_post_field('post_author', $args['listing_id']);
                 $author_email = get_the_author_meta('user_email', $author_id);
 
-                error_log($author_email);
-
+                $this->send_push_notification($args['title'], $this->remove_html_tags($args["message"]), $author_email);
                 break;
-            case 'lead':
-                error_log(json_encode($args));
+            default:
+                $this->send_push_notification($args['title'], $this->remove_html_tags($args["message"]), $args['to']);
                 break;
         }
+    }
 
-        // error_log(json_encode($args));
+    public function test_notification()
+    {
+        $config = Configuration::getDefaultConfiguration()
+            ->setAppKeyToken($this->houzi_notify_options['onesingnal_api_key_token'])
+            ->setUserKeyToken($this->houzi_notify_options['onesingnal_user_key_token']);
+
+        $apiInstance = new DefaultApi(
+            new GuzzleHttp\Client(),
+            $config
+        );
+
+        $dataArray = $_POST['data'];
+
+        $admin_users = get_users(
+            array(
+                'role__in' => array('administrator'),
+                // Specify the role(s) of the admin user(s)
+                'fields' => array('user_email'),
+                // Retrieve only the email field
+            )
+        );
+
+        // Loop through the admin users and retrieve their email addresses
+        $admin_emails = array();
+        foreach ($admin_users as $admin_user) {
+            $admin_emails[] = sha1($admin_user->user_email);
+        }
+
+        $aliases = array(
+            "external_id" => $admin_emails,
+        );
+
+        $notification = $this->prepareNotification($dataArray["title"], $dataArray["message"], $aliases);
+
+        $result = $apiInstance->createNotification($notification);
+    }
+
+    function prepareNotification($enHeading, $enContent, $externalIds, $data = []): Notification
+    {
+        $headingContent = new StringMap();
+        $headingContent->setEn($enHeading);
+
+        $messageContent = new StringMap();
+        $messageContent->setEn($enContent);
+
+        $notification = new Notification();
+        $notification->setAppId($this->houzi_notify_options['onesingnal_app_id']);
+        $notification->setHeadings($headingContent);
+        $notification->setContents($messageContent);
+        if (count($data) > 0) {
+            $notification->setData($data);
+        }
+
+        // $notification->setIncludedSegments(['Subscribed Users']);
+
+        // $notification->setIncludeExternalUserIds($externalIds);
+        // $notification->setChannelForExternalUserIds("push");
+
+        $notification->setIncludeAliases($externalIds);
+        $notification->setTargetChannel("push");
+
+        return $notification;
+    }
+
+    public function send_push_notification($title, $message, $email)
+    {
+        $config = Configuration::getDefaultConfiguration()
+            ->setAppKeyToken($this->houzi_notify_options['onesingnal_api_key_token'])
+            ->setUserKeyToken($this->houzi_notify_options['onesingnal_user_key_token']);
+
+        $apiInstance = new DefaultApi(
+            new GuzzleHttp\Client(),
+            $config
+        );
+
+        // $notification = $this->prepareNotification($title, $message, array(sha1($email)));
+        $aliases = array("external_id" => array(sha1($email)));
+        $notification = $this->prepareNotification($title, $message, $aliases);
+
+        $result = $apiInstance->createNotification($notification);
+    }
+
+    function remove_html_tags(string $text): string
+    {
+        // Create a regular expression that matches all HTML tags.
+        $pattern = '/<[^>]+>/';
+
+        // Replace all HTML line breaks with newline characters ("\n").
+        $text = preg_replace('/<br(\s*)?\/?>/i', PHP_EOL, $text);
+
+        // Convert newline characters to HTML line breaks.
+        $text = nl2br($text);
+
+        // Use the regular expression to replace all HTML tags with empty strings.
+        $text = preg_replace($pattern, '', $text);
+
+        return $text;
     }
 
     public function houzi_notify_page_init()
     {
 
         register_setting(
-            'houzi_notify_option_group', // option_group
-            'houzi_notify_options', // option_name
+            'houzi_notify_option_group',
+            // option_group
+            'houzi_notify_options',
+            // option_name
             array($this, 'houzi_notify_sanitize') // sanitize_callback
         );
         add_settings_section(
-            'notify', // id
-            'OneSignal Configurations', // title
-            array($this, 'houzi_notify_section_info'), // callback
+            'notify',
+            // id
+            'OneSignal Configurations',
+            // title
+            array($this, 'houzi_notify_section_info'),
+            // callback
             'houzi-rest-api&tab=notify' // page
         );
         add_settings_field(
-            'onesingnal_app_id', // id
-            'OneSingnal App ID', // title
-            array($this, 'onesingnal_app_id_callback'), // callback
-            'houzi-rest-api&tab=notify', // page
+            'onesingnal_app_id',
+            // id
+            'OneSingnal App ID',
+            // title
+            array($this, 'onesingnal_app_id_callback'),
+            // callback
+            'houzi-rest-api&tab=notify',
+            // page
             'notify' // section
         );
         add_settings_field(
-            'onesingnal_api_key_token', // id
-            'OneSingnal API Key Token', // title
-            array($this, 'onesingnal_api_key_token_callback'),// callback
-            'houzi-rest-api&tab=notify', // page
+            'onesingnal_api_key_token',
+            // id
+            'OneSingnal API Key Token',
+            // title
+            array($this, 'onesingnal_api_key_token_callback'),
+            // callback
+            'houzi-rest-api&tab=notify',
+            // page
             'notify' // section
         );
         add_settings_field(
-            'onesingnal_user_key_token', // id
-            'OneSingnal User Key Token', // title
-            array($this, 'onesingnal_user_key_token_callback'), // callback
-            'houzi-rest-api&tab=notify', // page
+            'onesingnal_user_key_token',
+            // id
+            'OneSingnal User Key Token',
+            // title
+            array($this, 'onesingnal_user_key_token_callback'),
+            // callback
+            'houzi-rest-api&tab=notify',
+            // page
             'notify' // section
         );
+
+        // $this->test_notification();
     }
 
     public function houzi_notify_sanitize($input)
@@ -145,7 +260,7 @@ class RestApiNotify
 
         return $sanitary_values;
     }
-    
+
     public function houzi_notify_section_info()
     {
     }
@@ -225,79 +340,5 @@ class RestApiNotify
         </div>
 
         <?php
-    }
-
-    public function test_notification()
-    {
-        error_log("test notification");
-
-        $config = Configuration::getDefaultConfiguration()
-            ->setAppKeyToken($this->houzi_notify_options['onesingnal_api_key_token'])
-            ->setUserKeyToken($this->houzi_notify_options['onesingnal_user_key_token']);
-
-        $apiInstance = new DefaultApi(
-            new GuzzleHttp\Client(),
-            $config
-        );
-
-        $dataArray = $_POST['data'];
-
-        $admin_users = get_users(
-            array(
-                'role__in' => array('administrator'),
-                // Specify the role(s) of the admin user(s)
-                'fields' => array('user_email'),
-                // Retrieve only the email field
-            )
-        );
-
-        // Loop through the admin users and retrieve their email addresses
-        $admin_emails = array();
-        foreach ($admin_users as $admin_user) {
-            $admin_emails[] = sha1($admin_user->user_email);
-        }
-
-        error_log(implode($admin_emails));
-
-        $notification = $this->createNotification($dataArray["title"], $dataArray["message"], $admin_emails);
-
-        $result = $apiInstance->createNotification($notification);
-        error_log($result);
-    }
-
-    function createNotification($enHeading, $enContent, $externalIds): Notification
-    {
-        $headingContent = new StringMap();
-        $headingContent->setEn($enHeading);
-
-        $messageContent = new StringMap();
-        $messageContent->setEn($enContent);
-
-        $notification = new Notification();
-        $notification->setAppId($this->houzi_notify_options['onesingnal_app_id']);
-        $notification->setHeadings($headingContent);
-        $notification->setContents($messageContent);
-        // $notification->setIncludedSegments(['Subscribed Users']);
-        $notification->setIncludeExternalUserIds($externalIds);
-        $notification->setChannelForExternalUserIds("push");
-
-        return $notification;
-    }
-
-    public function send_push_notification($title, $message, $email)
-    {
-        $config = Configuration::getDefaultConfiguration()
-            ->setAppKeyToken($this->houzi_notify_options['onesingnal_api_key_token'])
-            ->setUserKeyToken($this->houzi_notify_options['onesingnal_user_key_token']);
-
-        $apiInstance = new DefaultApi(
-            new GuzzleHttp\Client(),
-            $config
-        );
-
-        $notification = $this->createNotification($title, $message, array(sha1($email)));
-
-        $result = $apiInstance->createNotification($notification);
-        error_log($result);
     }
 }
