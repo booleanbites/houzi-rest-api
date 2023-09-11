@@ -12,7 +12,7 @@
  * Plugin Name:       Houzi Rest Api
  * Plugin URI:        https://houzi.booleanbites.com
  * Description:       Enhance Rest Api for Houzi mobile apps.
- * Version:           1.3.6
+ * Version:           1.3.7.1
  * Author:            BooleanBites Ltd.
  * Author URI:        https://booleanbites.com
  * License:           GPL-2.0+
@@ -33,7 +33,7 @@ require __DIR__ . '/vendor/autoload.php';
  * Start at version 1.0.0 and use SemVer - https://semver.org
  * Rename this for your plugin and update it as you release new versions.
  */
-define( 'HOUZI_REST_API_VERSION', '1.3.6' );
+define( 'HOUZI_REST_API_VERSION', '1.3.7.1' );
 define( 'HOUZI_REST_API_PLUGIN_PATH', plugin_dir_path( __FILE__ ) );
 define( 'HOUZI_IMAGE', plugins_url('/images/', __FILE__) );
 define( 'SHOW_EXPERIMENTAL_FEATUERS', false );

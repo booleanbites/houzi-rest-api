@@ -1982,6 +1982,7 @@ function getSimilarProperties() {
 function propertyNode($property){
     
     $post_id = $property->ID;
+    $property->link = get_permalink();
 
     $property->thumbnail    = get_the_post_thumbnail_url( $post_id, 'houzez-property-thumb-image' );
     
@@ -2007,6 +2008,13 @@ function propertyNode($property){
     if (!empty($should_add_agent_agency_info) && $should_add_agent_agency_info == 'yes') {
         $property->property_meta['agent_agency_info'] = property_agency_agent_info();
     }
+
+    $should_add_contact_info = isset($_REQUEST['contact_info']) ? $_REQUEST['contact_info'] : '';
+
+    if (!empty($should_add_contact_info) && $should_add_contact_info == 'yes') {
+        $property->property_meta['agent_info'] = houzez20_property_contact_form();
+    }
+    
     return $property;
 }
 
