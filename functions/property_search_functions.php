@@ -1913,7 +1913,7 @@ function getSimilarProperties() {
 
         for ( $i = 0; $i < $similar_taxonomies_count; $i ++ ) {
             
-            $similar_terms = get_the_terms( get_the_ID(), $similer_criteria[ $i ] );
+            $similar_terms = get_the_terms( $property_id, $similer_criteria[ $i ] );
             if ( ! empty( $similar_terms ) && is_array( $similar_terms ) ) {
                 $terms_array = array();
                 foreach ( $similar_terms as $property_term ) {
