@@ -39,7 +39,9 @@ function prepareAgencyData($response, $post, $request)
   // $agency_id_from_url = $params["id"];
   // $should_append_extra_data = !empty( $agency_id_from_url);
 
-  $imgID = $response->data['agency_meta']['_thumbnail_id'][0];
+  // $imgID = $response->data['agency_meta']['_thumbnail_id'][0];
+  $thumb_id = $response->data['agency_meta']['_thumbnail_id'] ?? null;
+  $imgID = !empty ($thumb_id) ? $thumb_id[0] : null;
   
   $response->data['thumbnail'] = wp_get_attachment_url($imgID);
 
