@@ -2002,6 +2002,10 @@ function propertyNode($property){
     $property->price = strip_tags($priceHTML);
     $property->priceSimple = houzez_listing_price_map_pins();
 
+    $should_add_all_images_list = isset($_REQUEST['add_all_images_list']) ? $_REQUEST['add_all_images_list'] : '';
+    if (!empty($should_add_all_images_list) && $should_add_all_images_list == 'yes') {
+        $property->property_meta['property_images'] = appendPostImages($property);
+    }
 
     $should_add_agent_agency_info = isset($_REQUEST['agent_agency_info']) ? $_REQUEST['agent_agency_info'] : '';
     
