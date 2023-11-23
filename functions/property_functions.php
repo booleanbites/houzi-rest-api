@@ -158,6 +158,13 @@ function addPropertyWithAuth() {
         wp_send_json($ajax_response, 403);
         return;
     }
+    if( isset( $_POST['fave_private_note'] ) && !empty( $_POST['fave_private_note'] ) ){
+        $_POST['private_note'] =  $_POST['fave_private_note']; 
+     }
+
+    if (isset($_POST['fave_property_disclaimer']) && !empty($_POST['fave_property_disclaimer'])) {
+        $_POST['property_disclaimer'] = $_POST['fave_property_disclaimer'];
+    }
 
     $new_property                   = apply_filters( 'houzez_submit_listing', $new_property );
     houzez_update_property_from_draft( $new_property );
