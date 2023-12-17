@@ -75,18 +75,16 @@ function getMetaData() {
       $response['radius_unit']  = houzez_option('radius_unit');
     }
     $options = get_option( 'houzi_rest_api_options' ); // Array of All Options
-    $houzi_config = html_entity_decode( $options['mobile_app_config']);
-    $response['mobile_app_config'] = json_decode($houzi_config, true, JSON_UNESCAPED_SLASHES);
-
+    
     $houzi_config_array = $options['mobile_app_config'] ?? null;
     if (isset($houzi_config_array)) {
-      $houzi_config = html_entity_decode( $options['mobile_app_config']);
+      $houzi_config = html_entity_decode( $houzi_config_array );
       $response['mobile_app_config'] = json_decode($houzi_config, true, JSON_UNESCAPED_SLASHES);
     }
     
     $houzi_config_dev_array = $options['mobile_app_config_dev'] ?? null;
     if (isset($houzi_config_dev_array)) {
-        $houzi_config_dev = html_entity_decode( $options['mobile_app_config_dev']);
+        $houzi_config_dev = html_entity_decode( $houzi_config_dev_array );
         $response['mobile_app_config_dev'] = json_decode($houzi_config_dev, true, JSON_UNESCAPED_SLASHES);
     }
 
