@@ -889,9 +889,9 @@ function setupSearchQuery() {
                 $minRange = isset( $obj["min_range_value"] ) ? $obj["min_range_value"] : '';
                 $maxRange = isset( $obj["max_range_value"] ) ? $obj["max_range_value"] : '';
 
-                if ( !empty( $apiKey ) && gettype( $apiKey ) == string ) {
+                if ( !empty( $apiKey ) && is_string( $apiKey ) ) {
                     # string_picker & dropdown logic
-                    if ( ( $pickerType == 'string_picker' || $pickerType == 'dropdown' ) && !empty( $value ) && gettype( $value ) == string && $value != 'any' ) {
+                    if ( ( $pickerType == 'string_picker' || $pickerType == 'dropdown' ) && !empty( $value ) && is_string( $value ) && $value != 'any' ) {
         
                         $apiKey = sanitize_text_field($apiKey);
                         $value = sanitize_text_field($value);
@@ -943,7 +943,7 @@ function setupSearchQuery() {
                     
 
                     # text_field logic
-                    if ( $pickerType == 'text_field' && !empty( $value ) && gettype( $value ) == string && $value != 'any' ) {
+                    if ( $pickerType == 'text_field' && !empty( $value ) && is_string( $value ) && $value != 'any' ) {
         
                         $apiKey = sanitize_text_field($apiKey);
                         $value = sanitize_text_field($value);
@@ -1631,9 +1631,9 @@ function setupSearchQueryForTesting() {
                 $minRange = isset( $obj["min_range_value"] ) ? $obj["min_range_value"] : '';
                 $maxRange = isset( $obj["max_range_value"] ) ? $obj["max_range_value"] : '';
 
-                if ( !empty( $apiKey ) && gettype( $apiKey ) == string ) {
+                if ( !empty( $apiKey ) && is_string( $apiKey ) ) {
                     # string_picker & dropdown logic
-                    if ( ( $pickerType == 'string_picker' || $pickerType == 'dropdown' ) && !empty( $value ) && gettype( $value ) == string && $value != 'any' ) {
+                    if ( ( $pickerType == 'string_picker' || $pickerType == 'dropdown' ) && !empty( $value ) && is_string( $value ) && $value != 'any' ) {
         
                         $apiKey = sanitize_text_field($apiKey);
                         $value = sanitize_text_field($value);
@@ -1685,7 +1685,7 @@ function setupSearchQueryForTesting() {
                     
 
                     # text_field logic
-                    if ( $pickerType == 'text_field' && !empty( $value ) && gettype( $value ) == string && $value != 'any' ) {
+                    if ( $pickerType == 'text_field' && !empty( $value ) && is_string( $value ) && $value != 'any' ) {
         
                         $apiKey = sanitize_text_field($apiKey);
                         $value = sanitize_text_field($value);
