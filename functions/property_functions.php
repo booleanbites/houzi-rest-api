@@ -169,6 +169,33 @@ function addPropertyWithAuth() {
     $new_property                   = apply_filters( 'houzez_submit_listing', $new_property );
     houzez_update_property_from_draft( $new_property );
 
+    global $current_user;
+
+    wp_get_current_user();
+    $userID = $current_user->ID;
+
+    $user_email = $current_user->user_email;
+    $admin_email =  get_bloginfo('admin_email');
+
+    $args = array(
+        'listing_title'  =>  get_the_title($new_property),
+        'listing_id'     =>  $new_property,
+        'listing_url'    =>  get_permalink($new_property),
+    );
+
+    $submission_action = $_POST['action'];
+
+    /*
+     * Send email
+     * */
+    if( $submission_action != 'update_property' ) {
+        houzez_email_type( $user_email, 'free_submission_listing', $args);
+        houzez_email_type( $admin_email, 'admin_free_submission_listing', $args);
+        
+    } else if($submission_action == 'update_property' && houzez_option('edit_listings_admin_approved') == 'yes' ) {
+        houzez_email_type( $admin_email, 'admin_update_listing', $args);
+    }
+
     //if fave_multi_units_ids was set, update property meta data.
     if( isset( $_POST['fave_multi_units_ids'] ) ) {
         update_post_meta( $new_property, 'fave_multi_units_ids', sanitize_text_field( $_POST['fave_multi_units_ids'] ) );
