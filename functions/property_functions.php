@@ -107,6 +107,21 @@ add_action( 'rest_api_init', function () {
         'methods' => 'GET',
         'callback' => 'getPropertyByMetaKey',
     ));
+
+    register_rest_route( 'houzez-mobile-api/v1', '/admin-approve-disapprove', array(
+        'methods' => 'POST',
+        'callback' => 'adminApproveDisapproveListing',
+    ));
+
+    register_rest_route( 'houzez-mobile-api/v1', '/toggle-featured', array(
+        'methods' => 'POST',
+        'callback' => 'toggleFeatured',
+    ));
+
+    register_rest_route( 'houzez-mobile-api/v1', '/all-properties', array(
+        'methods' => 'GET',
+        'callback' => 'getAllProperties',
+    ));
   
   });
 
@@ -394,6 +409,63 @@ function getMyProperties() {
     $args = houzez_prop_sort ( $args );
     queryPropertiesAndSendJSON($args);
 }
+
+function getAllProperties() {
+    if (! is_user_logged_in() ) {
+        $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+      }
+    $userID       = get_current_user_id();
+    $user_role = houzez_user_role_by_user_id($userID);
+    if ($user_role != 'administrator') {
+        $ajax_response = array( 'success' => false, 'reason' => 'User is not an administrator.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+    }
+    $qry_status = 'any';
+
+    if( isset( $_GET['status'] ) && !empty( $_GET['status'] )) {
+        $qry_status = $_GET['status'];
+    }
+
+    $sortby = '';
+    if( isset( $_GET['sortby'] ) ) {
+        $sortby = $_GET['sortby'];
+    }
+    $no_of_prop   =  5;
+    $paged = 1;
+
+    if( isset( $_GET['per_page'] ) ) {
+        $no_of_prop = $_GET['per_page'];
+    }
+    if( isset( $_GET['page'] ) ) {
+        $paged = $_GET['page'];
+    }
+
+    if ( get_query_var( 'paged' ) ) {
+        $paged = get_query_var( 'paged' );
+    } elseif ( get_query_var( 'page' ) ) { // if is static front page
+        $paged = get_query_var( 'page' );
+    }
+    
+    $args = array(
+        'post_type'        =>  'property',
+        'paged'             => $paged,
+        'posts_per_page'    => $no_of_prop,
+        'post_status'      =>  array( $qry_status ),
+        'suppress_filters' => false
+    );
+    if( isset ( $_GET['keyword'] ) ) {
+        $keyword = trim( $_GET['keyword'] );
+        if ( ! empty( $keyword ) ) {
+            $args['s'] = $keyword;
+        }
+    }
+    $args = houzez_prop_sort ( $args );
+    queryPropertiesAndSendJSON($args);
+}
+
 function getPropertyByPermalink($request) {
     if ( !isset( $_GET['perm']) || empty( $_GET['perm']) ) {
         $ajax_response = array( 'success' => false , 'reason' => esc_html__( 'No permalink found', 'houzez' ) );
@@ -677,6 +749,95 @@ function getPropertyByMetaKey($request) {
 
     sendPropertyJson($args);
 }
+
+function adminApproveDisapproveListing() {
+    if (! is_user_logged_in() ) {
+        $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+    }
+
+    $userID       = get_current_user_id();
+    $user_role = houzez_user_role_by_user_id($userID);
+    if ($user_role != 'administrator') {
+        $ajax_response = array( 'success' => false, 'reason' => 'User is not an administrator.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+    }
+
+    $action = $_REQUEST['action'];
+    if (!( isset($_POST['listing_id']) || (isset($_REQUEST['action']) ))) {
+        $ajax_response = array( 'success' => false , 'reason' => esc_html__( 'No Property ID (listing_id) found', 'houzez' ) );
+        wp_send_json($ajax_response,400);
+        return;
+    }
+
+    /*
+     * get the original listing id
+     */
+    $listing_id = $_POST['listing_id'];
+
+    $post_id = absint($listing_id);
+
+    $post_status = ($action == 'approve') ? 'publish' : 'disapproved';
+
+    $listing_data = array(
+        'ID' => $post_id,
+        'post_status' => $post_status
+    );
+    wp_update_post($listing_data);
+
+    $author_id = get_post_field('post_author', $post_id);
+    $user = get_user_by('id', $author_id);
+    $user_email = $user->user_email;
+
+    $args = array(
+        'listing_title' => get_the_title($post_id),
+        'listing_url' => get_permalink($post_id)
+    );
+
+    $email_type = ($action == 'approve') ? 'listing_approved' : 'listing_disapproved';
+    houzez_email_type($user_email, $email_type, $args);
+
+    $ajax_response = array( 'success' => true, 'message' => 'Listing ' . $action );
+    wp_send_json($ajax_response, 200);
+}
+
+function toggleFeatured() {
+    if (! is_user_logged_in() ) {
+        $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+    }
+
+    $userID       = get_current_user_id();
+    $user_role = houzez_user_role_by_user_id($userID);
+    if ($user_role != 'administrator') {
+        $ajax_response = array( 'success' => false, 'reason' => 'User is not an administrator.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+    }
+
+    if (! (isset( $_POST['listing_id'])  || ( isset($_REQUEST['action']) && in_array($_REQUEST['action'], array('houzez_mark_featured', 'houzez_remove_featured')) ) ) ) {
+        $ajax_response = array( 'success' => false , 'reason' => esc_html__( 'No Property ID (listing_id) found', 'houzez' ) );
+        wp_send_json($ajax_response,400);
+        return;
+    }
+
+    /*
+     * get the original listing id
+     */
+    $listing_id = $_POST['listing_id'];
+    $post_id = absint($listing_id);
+    $action = $_REQUEST['action'];
+
+    $featured_value = ($action == 'houzez_mark_featured') ? 1 : 0;
+    update_post_meta($post_id, 'fave_featured', $featured_value);
+
+    $ajax_response = array( 'success' => true, 'message' => 'Listing ' . $action );
+    wp_send_json($ajax_response, 200);
+}
+
 
 //-----------------------------Add custom print property endpoint-------------------------------------
 
