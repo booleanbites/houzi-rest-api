@@ -122,6 +122,21 @@ add_action( 'rest_api_init', function () {
         'methods' => 'GET',
         'callback' => 'getAllProperties',
     ));
+
+    register_rest_route( 'houzez-mobile-api/v1', '/expire-listing', array(
+        'methods' => 'POST',
+        'callback' => 'expireListing',
+    ));
+
+    register_rest_route( 'houzez-mobile-api/v1', '/sold-listing', array(
+        'methods' => 'POST',
+        'callback' => 'soldListing',
+    ));
+
+    register_rest_route( 'houzez-mobile-api/v1', '/pending-listing', array(
+        'methods' => 'POST',
+        'callback' => 'pendingListing',
+    ));
   
   });
 
@@ -836,6 +851,146 @@ function toggleFeatured() {
 
     $ajax_response = array( 'success' => true, 'message' => 'Listing ' . $action );
     wp_send_json($ajax_response, 200);
+}
+
+function expireListing() {
+    if (! is_user_logged_in() ) {
+        $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+    }
+
+    $userID       = get_current_user_id();
+    $user_role = houzez_user_role_by_user_id($userID);
+    if ($user_role != 'administrator') {
+        $ajax_response = array( 'success' => false, 'reason' => 'User is not an administrator.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+    }
+
+    if (! ( isset( $_POST['listing_id'])  || ( isset($_REQUEST['action']) && 'houzez_expire_listing' == $_REQUEST['action'] ) ) ) {
+        $ajax_response = array( 'success' => false , 'reason' => esc_html__( 'No property exist', 'houzez' ) );
+        wp_send_json($ajax_response,400);
+        return;
+    }
+ 
+    /*
+     * get the original listing id
+     */
+    $listing_id = $_POST['listing_id'];
+    $post_id = absint($listing_id);
+
+    $listing_data = array(
+        'ID' => $post_id,
+        'post_status' => 'expired'
+    );
+    wp_update_post($listing_data);
+
+    update_post_meta($post_id, 'fave_featured', '0');
+
+    $author_id   = get_post_field ('post_author', $post_id);
+    $user        = get_user_by('id', $author_id );
+    $user_email  = $user->user_email;
+
+    $args = array(
+        'listing_title' => get_the_title($post_id),
+        'listing_url' => get_permalink($post_id)
+    );
+    houzez_email_type( $user_email,'listing_expired', $args );
+
+    $ajax_response = array( 'success' => true, 'message' => 'Listing expired' );
+    wp_send_json($ajax_response, 200);
+}
+
+function soldListing() {
+    if (! is_user_logged_in() ) {
+        $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+    }
+
+    $userID       = get_current_user_id();
+    $user_role = houzez_user_role_by_user_id($userID);
+    if ($user_role != 'administrator') {
+        $ajax_response = array( 'success' => false, 'reason' => 'User is not an administrator.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+    }
+
+    if (! ( isset( $_POST['listing_id'])  || ( isset($_REQUEST['action']) && 'houzez_mark_as_sold' == $_REQUEST['action'] ) ) ) {
+        $ajax_response = array( 'success' => false , 'reason' => esc_html__( 'No property exist', 'houzez' ) );
+        wp_send_json($ajax_response,400);
+        return;
+    }
+ 
+    /*
+     * get the original listing id
+     */
+    $listing_id = $_POST['listing_id'];
+    $post_id = absint($listing_id);
+
+    $listing_data = array(
+        'ID' => $post_id,
+        'post_status' => 'houzez_sold'
+    );
+    wp_update_post($listing_data);
+
+    $mark_sold_status = houzez_option('mark_sold_status');
+
+    if( $mark_sold_status != '' ) {
+        $mark_sold_status = intval($mark_sold_status);
+        wp_set_object_terms( $post_id, $mark_sold_status, 'property_status' );
+    }
+
+    $ajax_response = array( 'success' => true, 'message' => 'Listing marked as sold' );
+    wp_send_json($ajax_response, 200);
+    
+}
+
+function pendingListing() {
+    if (! is_user_logged_in() ) {
+        $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+    }
+
+    $userID       = get_current_user_id();
+    $user_role = houzez_user_role_by_user_id($userID);
+    if ($user_role != 'administrator') {
+        $ajax_response = array( 'success' => false, 'reason' => 'User is not an administrator.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+    }
+
+    if (! ( isset( $_POST['listing_id'])  || ( isset($_REQUEST['action']) && 'pending' == $_REQUEST['action'] ) ) ) {
+        $ajax_response = array( 'success' => false , 'reason' => esc_html__( 'No property exist', 'houzez' ) );
+        wp_send_json($ajax_response,400);
+        return;
+    }
+ 
+    /*
+     * get the original listing id
+     */
+    $listing_id = $_POST['listing_id'];
+    $post_id = absint($listing_id);
+
+    $listings_admin_approved = houzez_option('listings_admin_approved');
+
+    if( $listings_admin_approved != 'yes' ) {
+        $prop_status = 'publish';
+    } else {
+        $prop_status = 'pending';
+    }
+
+    $listing_data = array(
+        'ID' => $post_id,
+        'post_status' => $prop_status
+    );
+    wp_update_post($listing_data);
+
+    $ajax_response = array( 'success' => true, 'message' => 'Listing marked as' . $prop_status );
+    wp_send_json($ajax_response, 200);
+    
 }
 
 
