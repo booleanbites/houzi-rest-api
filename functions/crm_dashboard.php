@@ -53,109 +53,131 @@ add_action( 'rest_api_init', function () {
     register_rest_route( 'houzez-mobile-api/v1', '/activities', array(
       'methods' => 'GET',
       'callback' => 'allActivities',
+      'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/leads', array(
       'methods' => 'GET',
       'callback' => 'allLeads',
+      'permission_callback' => '__return_true'
     ));
     register_rest_route( 'houzez-mobile-api/v1', '/add-lead', array(
       'methods' => 'POST',
       'callback' => 'addLead',
+      'permission_callback' => '__return_true'
     ));
     register_rest_route( 'houzez-mobile-api/v1', '/delete-lead', array(
       'methods' => 'POST',
       'callback' => 'deleteLead',
+      'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/lead-details', array(
       'methods' => 'GET',
       'callback' => 'leadDetails',
+      'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/lead-listing-viewed', array(
       'methods' => 'GET',
       'callback' => 'leadListingViewed',
+      'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/lead-saved-searches', array(
       'methods' => 'GET',
       'callback' => 'leadSavedSearches',
+      'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/lead-notes', array(
       'methods' => 'GET',
       'callback' => 'leadNotes',
+      'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/enquiries', array(
       'methods' => 'GET',
       'callback' => 'getEnquiries',
+      'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/all-enquiries', array(
       'methods' => 'GET',
       'callback' => 'allEnquiries',
+      'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/enquiry-matched-listing', array(
       'methods' => 'GET',
       'callback' => 'enquiryMatchedListing',
+      'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/send-matched-listing-email', array(
       'methods' => 'POST',
       'callback' => 'sendMatchedListingEmail',
+      'permission_callback' => '__return_true'
     ));
 
     
     register_rest_route( 'houzez-mobile-api/v1', '/enquiry-notes', array(
       'methods' => 'GET',
       'callback' => 'enquiryNotes',
+      'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/deals', array(
       'methods' => 'GET',
       'callback' => 'allDeals',
+      'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/add-deal', array(
       'methods' => 'POST',
       'callback' => 'addDeal',
+      'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/update-deal-data', array(
       'methods' => 'POST',
       'callback' => 'updateDealData',
+      'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/delete-deal', array(
       'methods' => 'POST',
       'callback' => 'deleteDeal',
+      'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/add-crm-enquiry', array(
       'methods' => 'POST',
       'callback' => 'addCRMEnquiry',
+      'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/add-property-request', array(
       'methods' => 'POST',
       'callback' => 'addPropertyRequest',
+      'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/delete-crm-enquiry', array(
       'methods' => 'POST',
       'callback' => 'deleteCRMEnquiry',
+      'permission_callback' => '__return_true'
     ));
     
     register_rest_route( 'houzez-mobile-api/v1', '/add-note', array(
       'methods' => 'POST',
       'callback' => 'addNote',
+      'permission_callback' => '__return_true'
     ));
     register_rest_route( 'houzez-mobile-api/v1', '/delete-note', array(
       'methods' => 'POST',
       'callback' => 'deleteNote',
+      'permission_callback' => '__return_true'
     ));
     
   });

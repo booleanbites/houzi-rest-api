@@ -75,30 +75,37 @@ add_action( 'rest_api_init', function () {
   register_rest_route( 'houzez-mobile-api/v1', '/contact-realtor', array(
     'methods' => 'POST',
     'callback' => 'contactRealtor',
+    'permission_callback' => '__return_true'
   ));
   register_rest_route( 'houzez-mobile-api/v1', '/schedule-tour', array(
     'methods' => 'POST',
     'callback' => 'scheduleATour',
+    'permission_callback' => '__return_true'
   ));
   register_rest_route( 'houzez-mobile-api/v1', '/contact-property-agent', array(
     'methods' => 'POST',
     'callback' => 'contactPropertyRealtor',
+    'permission_callback' => '__return_true'
   ));
   register_rest_route( 'houzez-mobile-api/v1', '/add-new-agent', array(
     'methods' => 'POST',
     'callback' => 'addAgent',
+    'permission_callback' => '__return_true'
   ));
   register_rest_route( 'houzez-mobile-api/v1', '/edit-an-agent', array(
     'methods' => 'POST',
     'callback' => 'editAgent',
+    'permission_callback' => '__return_true'
   ));
   register_rest_route( 'houzez-mobile-api/v1', '/agency-all-agents', array(
     'methods' => 'GET',
     'callback' => 'allAgencyAgents',
+    'permission_callback' => '__return_true'
   ));
   register_rest_route( 'houzez-mobile-api/v1', '/delete-an-agent', array(
     'methods' => 'POST',
     'callback' => 'deleteAgent',
+    'permission_callback' => '__return_true'
   ));
 });
 

@@ -48,16 +48,19 @@ add_action( 'rest_api_init', function () {
     register_rest_route( 'houzez-mobile-api/v1', '/save-property', array(
         'methods' => 'POST',
         'callback' => 'addPropertyWithAuth',
+        'permission_callback' => '__return_true'
       ));
     
     register_rest_route( 'houzez-mobile-api/v1', '/delete-property', array(
         'methods' => 'GET',
         'callback' => 'deleteProperty',
+        'permission_callback' => '__return_true'
       ));
   
     register_rest_route( 'houzez-mobile-api/v1', '/update-property', array(
       'methods' => 'POST',
       'callback' => 'addPropertyWithAuth',
+      'permission_callback' => '__return_true'
     ));
 
     // register_rest_route( 'houzez-mobile-api/v1', '/upload-property-image', array(
@@ -67,75 +70,90 @@ add_action( 'rest_api_init', function () {
     register_rest_route( 'houzez-mobile-api/v1', '/save-property-image', array(
         'methods' => 'POST',
         'callback' => 'uploadPropertyImageWithAuth',
+        'permission_callback' => '__return_true'
     ));
     register_rest_route( 'houzez-mobile-api/v1', '/delete-property-image', array(
         'methods' => 'POST',
         'callback' => 'deleteImageForProperty',
+        'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/like-property', array(
         'methods' => 'POST',
         'callback' => 'likeProperty',
+        'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/is-fav-property', array(
         'methods' => 'GET',
         'callback' => 'isFavProperty',
+        'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/my-properties', array(
         'methods' => 'GET',
         'callback' => 'getMyProperties',
+        'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/property', array(
         'methods' => 'GET',
         'callback' => 'getProperty',
+        'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/property-by-permalink', array(
         'methods' => 'GET',
         'callback' => 'getPropertyByPermalink',
+        'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/print-pdf-property', array(
         'methods' => 'GET',
         'callback' => 'printPdfProperty',
+        'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/property-by-meta-key', array(
         'methods' => 'GET',
         'callback' => 'getPropertyByMetaKey',
+        'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/admin-approve-disapprove', array(
         'methods' => 'POST',
         'callback' => 'adminApproveDisapproveListing',
+        'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/toggle-featured', array(
         'methods' => 'POST',
         'callback' => 'toggleFeatured',
+        'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/all-properties', array(
         'methods' => 'GET',
         'callback' => 'getAllProperties',
+        'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/expire-listing', array(
         'methods' => 'POST',
         'callback' => 'expireListing',
+        'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/sold-listing', array(
         'methods' => 'POST',
         'callback' => 'soldListing',
+        'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/pending-listing', array(
         'methods' => 'POST',
         'callback' => 'pendingListing',
+        'permission_callback' => '__return_true'
     ));
   
   });

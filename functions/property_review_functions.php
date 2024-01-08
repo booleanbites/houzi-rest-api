@@ -35,10 +35,12 @@ add_action( 'rest_api_init', function () {
     register_rest_route( 'houzez-mobile-api/v1', '/add-review', array(
       'methods' => 'POST',
       'callback' => 'addReview',
+      'permission_callback' => '__return_true'
     ));
     register_rest_route( 'houzez-mobile-api/v1', '/report-content', array(
         'methods' => 'POST',
         'callback' => 'reportContent',
+        'permission_callback' => '__return_true'
     ));
   });
 

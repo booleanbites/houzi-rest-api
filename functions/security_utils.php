@@ -3,6 +3,7 @@ add_action( 'rest_api_init', function () {
     register_rest_route( 'houzez-mobile-api/v1', '/create-nonce', array(
     'methods' => 'POST',
     'callback' => 'create_nonce',
+    'permission_callback' => '__return_true'
   ));
 });
 function create_nonce($request) {

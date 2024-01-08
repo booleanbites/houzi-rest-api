@@ -116,43 +116,52 @@ add_action( 'rest_api_init', function () {
   register_rest_route( 'houzez-mobile-api/v1', '/search-properties', array(
     'methods' => 'POST',
     'callback' => 'searchProperties',
+    'permission_callback' => '__return_true'
   ));
 
   register_rest_route( 'houzez-mobile-api/v1', '/search-test', array(
     'methods' => 'POST',
     'callback' => 'searchPropertiesTest',
+    'permission_callback' => '__return_true'
   ));
 
   register_rest_route( 'houzez-mobile-api/v1', '/get-property-detail', array(
     'methods' => 'GET',
     'callback' => 'getPropertDetail',
+    'permission_callback' => '__return_true'
   ));
 
   register_rest_route( 'houzez-mobile-api/v1', '/similar-properties', array(
     'methods' => 'GET',
     'callback' => 'getSimilarProperties',
+    'permission_callback' => '__return_true'
   ));
 
   register_rest_route( 'houzez-mobile-api/v1', '/favorite-properties', array(
     'methods' => 'GET',
     'callback' => 'getFavoriteProperties',
+    'permission_callback' => '__return_true'
   ));
 
   register_rest_route( 'houzez-mobile-api/v1', '/save-search', array(
     'methods' => 'POST',
     'callback' => 'saveSearch',
+    'permission_callback' => '__return_true'
   ));
   register_rest_route( 'houzez-mobile-api/v1', '/saved-searches', array(
     'methods' => 'GET',
     'callback' => 'listSavedSearches',
+    'permission_callback' => '__return_true'
   ));
   register_rest_route( 'houzez-mobile-api/v1', '/view-saved-search', array(
     'methods' => 'POST',
     'callback' => 'viewSavedSearch',
+    'permission_callback' => '__return_true'
   ));
   register_rest_route( 'houzez-mobile-api/v1', '/delete-saved-search', array(
     'methods' => 'POST',
     'callback' => 'deleteSearch',
+    'permission_callback' => '__return_true'
   ));
 
 });

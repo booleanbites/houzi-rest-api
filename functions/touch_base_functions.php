@@ -5,14 +5,17 @@ add_action( 'rest_api_init', function () {
   register_rest_route( 'houzez-mobile-api/v1', '/touch-base', array(
     'methods' => 'GET',
     'callback' => 'getMetaData',
+    'permission_callback' => '__return_true'
   ));
   register_rest_route( 'houzez-mobile-api/v1', '/get-terms', array(
     'methods' => 'GET',
     'callback' => 'getTerms',
+    'permission_callback' => '__return_true'
   ));
   register_rest_route( 'houzez-mobile-api/v1', '/houzi-setup-status', array(
     'methods' => 'POST',
     'callback' => 'houziSetupStatus',
+    'permission_callback' => '__return_true'
   ));
 });
 function getTerms() {

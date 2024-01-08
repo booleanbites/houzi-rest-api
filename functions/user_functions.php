@@ -40,80 +40,96 @@ add_action( 'rest_api_init', function () {
     register_rest_route( 'houzez-mobile-api/v1', '/signup', array(
       'methods' => 'POST',
       'callback' => 'signupUser',
+      'permission_callback' => '__return_true'
     ));
     register_rest_route( 'houzez-mobile-api/v1', '/signin', array(
       'methods' => 'POST',
       'callback' => 'signInUser',
+      'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/social-sign-on', array(
       'methods' => 'POST',
       'callback' => 'socialSignOn',
+      'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/reset-password', array(
       'methods' => 'POST',
       'callback' => 'resetUserPassword',
+      'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/profile', array(
       'methods' => 'GET',
       'callback' => 'fetchProfile',
+      'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/update-profile', array(
       'methods' => 'POST',
       'callback' => 'editProfile',
+      'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/fix-profile-pic', array(
       'methods' => 'POST',
       'callback' => 'fixProfilePicture',
+      'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/update-profile-photo', array(
       'methods' => 'POST',
       'callback' => 'editProfilePhoto',
+      'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/update-password', array(
       'methods' => 'POST',
       'callback' => 'updatePassword',
+      'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/delete-user-account', array(
       'methods' => 'POST',
       'callback' => 'deleteUserAccount',
+      'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/user-payment-status', array(
       'methods' => 'POST',
       'callback' => 'paymentStatus',
+      'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/proceed-payment', array(
       'methods' => 'GET',
       'callback' => 'proceedPayment',
+      'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/proceed-with-payment', array(
       'methods' => 'POST',
       'callback' => 'proceedWithPayment',
+      'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/make-property-featured', array(
       'methods' => 'POST',
       'callback' => 'makePropertyFeatured',
+      'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/remove-from-featured', array(
       'methods' => 'POST',
       'callback' => 'removeFromFeatured',
+      'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/user-current-package', array(
       'methods' => 'POST',
       'callback' => 'userCurrentPackage',
+      'permission_callback' => '__return_true'
     ));
 
     
