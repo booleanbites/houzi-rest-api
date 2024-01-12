@@ -351,6 +351,9 @@ add_action( 'rest_api_init', function () {
     }
     $profile_image_url = $_POST['profile_url'];
     $display_name = $_POST['display_name'];
+    if (!str_contains($display_name, ' ')) {
+      $display_name .= ' ';
+    }
 
     houzez_register_user_social( $email, $username, $display_name, $user_id_social, $profile_image_url );
 
