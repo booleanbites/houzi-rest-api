@@ -628,25 +628,23 @@ function setupSearchQuery() {
         if( !empty($country_query_type) ) {
 
             $country_array = array(
-                'key' => 'fave_property_country',
-                'value'   => $country,
-                'type'    => 'CHAR',
-                'compare' => '=',
+                'taxonomy'      => 'property_country',
+                'field'         => 'slug',
+                'terms'         => $country
             );
 
-            $meta_query[] = array(
+            $tax_query[] = array(
                 'relation' => $country_query_type,
                 $country_array
             );
 
         } else {
 
-            $meta_query[] = array(
-                'key' => 'fave_property_country',
-                'value'   => $country,
-                'type'    => 'CHAR',
-                'compare' => '=',
-            );
+            $tax_query[] = array(
+    	        'taxonomy'      => 'property_country',
+        	    'field'         => 'slug',
+            	'terms'         => $country
+	        );
         }
     }
 
