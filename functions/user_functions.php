@@ -1035,7 +1035,7 @@ function userCurrentPackage() {
     $seconds = 0;
     $pack_title = get_the_title( $package_id );
     $pack_listings = get_post_meta( $package_id, 'fave_package_listings', true );
-    $pack_unmilited_listings = get_post_meta( $package_id, 'fave_unlimited_listings', true );
+    $pack_unlimited_listings = get_post_meta( $package_id, 'fave_unlimited_listings', true );
     $pack_featured_listings = get_post_meta( $package_id, 'fave_package_featured_listings', true );
     $pack_billing_period = get_post_meta( $package_id, 'fave_billing_time_unit', true );
     $pack_billing_frequency = get_post_meta( $package_id, 'fave_billing_unit', true );
