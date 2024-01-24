@@ -101,7 +101,8 @@ function reportContent(){
     }
     global $current_user; wp_get_current_user();
     $userID       = get_current_user_id();
-    $contactName = $current_user->display_name;
+    // $contactName = $current_user->display_name;
+    $contactName = empty($_POST['name']) ? $current_user->display_name : $_POST['name'];
 
     $content_type = $_POST['content_type'];
     $content_id = $_POST['content_id'];
@@ -116,14 +117,28 @@ function reportContent(){
     $author_id = get_post_field ('post_author', $content_id);
     $content_author = get_the_author_meta( 'nickname' , $author_id ); 
 
+    $message = empty($_POST['message']) ? "" : $_POST['message'];
+    $reason  = empty($_POST['reason']) ? "" : $_POST['reason'];
+    $email  = empty($_POST['email']) ? "" : $_POST['email'];
+
     $subject = "$contactName reported about a $content_type";
     $body = "<p><b>Reporter ID:</b> $userID</p>";
     $body .= "<p><b>Reporter Name:</b> $contactName</p>";
+    if (!empty($email)) {
+        $body .= "<p><b>Reporter Email:</b> $email</p>";
+    }
     $body .= "<p><b>$content_type ID:</b> $content_id</p>";
     $body .= "<p><b>$content_type title:</b> $contentTitle</p>";
     $body .= "<p><b>$content_type content:</b> $contentDescription</p>";
     $body .= "<p><b>$content_type author:</b> $content_author</p>";
     $body .= "<p><b>Permalink:</b> $contentLink</p>";
+    if (!empty($reason)) {
+        $body .= "<p><b>Reported reason:</b> $reason</p>";
+    }
+    if (!empty($message)) {
+        $body .= "<p><b>Message:</b> $message</p>";
+    }
+    
 
     $to = get_option( 'admin_email' );
     $headers = array(
