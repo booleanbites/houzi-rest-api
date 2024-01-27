@@ -714,26 +714,67 @@ function appendPostAddress(&$response)
 }
 function appendPostAttr(&$response)
 {
-  $property_attr = wp_get_post_terms(
-    $response->ID,
-    ['property_type', 'property_status', 'property_label']
+    $property_attr_taxonomies = array();
+    $property_attr_taxonomies = ['property_type', 'property_status', 'property_label'];
 
-  );
-  $current_lang = apply_filters( 'wpml_current_language', "en" );
-  $property_attributes = array();
-  $property_attributes_all = array();
-  foreach ($property_attr as $attribute) :
-    $localizez_term_id = apply_filters( 'wpml_object_id', $attribute->term_id, $attribute->taxonomy, FALSE, $current_lang );
-    $term = get_term( $localizez_term_id );
-    if (empty($property_attributes[$attribute->taxonomy])) {
-      $property_attributes[$attribute->taxonomy] = $term->name;
+    if (taxonomy_exists('property_country')) {
+        array_push($property_attr_taxonomies, 'property_country');
     }
-    $property_attributes_all[$attribute->taxonomy][] = $term->name;
-  endforeach;
-  $response->property_attr = $property_attributes;
-  $response->property_type_text = !empty($property_attributes_all["property_type"]) ? $property_attributes_all["property_type"] : []; 
-  $response->property_status_text = !empty($property_attributes_all["property_status"]) ? $property_attributes_all["property_status"] : [];
-  $response->property_label_text = !empty($property_attributes_all["property_label"]) ? $property_attributes_all["property_label"] : [];
+
+    if (taxonomy_exists('property_state')) {
+        array_push($property_attr_taxonomies, 'property_state');
+    }
+
+    if (taxonomy_exists('property_city')) {
+        array_push($property_attr_taxonomies, 'property_city');
+    }
+
+    if (taxonomy_exists('property_area')) {
+        array_push($property_attr_taxonomies, 'property_area');
+    }
+
+    //   $property_attr = wp_get_post_terms(
+//     $response->ID,
+//     ['property_type', 'property_status', 'property_label']
+
+    //   );
+//   
+    $property_attr = wp_get_post_terms(
+        $response->ID,
+        $property_attr_taxonomies
+    );
+
+    $current_lang = apply_filters('wpml_current_language', "en");
+    $property_attributes = array();
+    $property_attributes_all = array();
+    foreach ($property_attr as $attribute):
+        $localizez_term_id = apply_filters('wpml_object_id', $attribute->term_id, $attribute->taxonomy, FALSE, $current_lang);
+        $term = get_term($localizez_term_id);
+        if (empty($property_attributes[$attribute->taxonomy])) {
+            $property_attributes[$attribute->taxonomy] = $term->name;
+        }
+        $property_attributes_all[$attribute->taxonomy][] = $term->name;
+    endforeach;
+    $response->property_attr = $property_attributes;
+    $response->property_type_text = !empty($property_attributes_all["property_type"]) ? $property_attributes_all["property_type"] : [];
+    $response->property_status_text = !empty($property_attributes_all["property_status"]) ? $property_attributes_all["property_status"] : [];
+    $response->property_label_text = !empty($property_attributes_all["property_label"]) ? $property_attributes_all["property_label"] : [];
+
+    if (taxonomy_exists('property_country')) {
+        $response->property_country_text = !empty($property_attributes_all["property_country"]) ? $property_attributes_all["property_country"] : [];
+    }
+
+    if (taxonomy_exists('property_state')) {
+        $response->property_state_text = !empty($property_attributes_all["property_state"]) ? $property_attributes_all["property_state"] : [];
+    }
+
+    if (taxonomy_exists('property_city')) {
+        $response->property_city_text = !empty($property_attributes_all["property_city"]) ? $property_attributes_all["property_city"] : [];
+    }
+
+    if (taxonomy_exists('property_area')) {
+        $response->property_area_text = !empty($property_attributes_all["property_area"]) ? $property_attributes_all["property_area"] : [];
+    }
 }
 function getCurrentLanguageTermsOnly($postId, $term_name) {
     $current_lang = apply_filters( 'wpml_current_language', "en" );
