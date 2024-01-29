@@ -633,7 +633,10 @@ function editProfile() {
     wp_send_json($ajax_response, 403);
     return; 
   }
-  $userID = get_current_user_id();
+  // $userID = get_current_user_id();
+  global $current_user;
+        wp_get_current_user();
+        $userID  = $current_user->ID;
   
   $user_agent_id = get_the_author_meta('fave_author_agent_id', $userID);
   $user_agency_id = get_the_author_meta('fave_author_agency_id', $userID);
@@ -654,8 +657,251 @@ function editProfile() {
     return;
   }
 
+  $user_company = $userlangs = $latitude = $longitude = $tax_number = $user_location = $license = $user_address = $fax_number = $firstname = $lastname = $title = $about = $userphone = $usermobile = $userskype = $facebook = $tiktok = $telegram = $twitter = $linkedin = $instagram = $pinterest = $profile_pic = $profile_pic_id = $website = $useremail = $service_areas = $specialties = $whatsapp = '';
 
-  do_action("wp_ajax_houzez_ajax_update_profile");
+        // Update first name
+        if ( !empty( $_POST['firstname'] ) ) {
+            $firstname = sanitize_text_field( $_POST['firstname'] );
+            update_user_meta( $userID, 'first_name', $firstname );
+        }
+
+        // Update GDPR
+        if ( !empty( $_POST['gdpr_agreement'] ) ) {
+            $gdpr_agreement = sanitize_text_field( $_POST['gdpr_agreement'] );
+            update_user_meta( $userID, 'gdpr_agreement', $gdpr_agreement );
+        }
+
+        // Update last name
+        if ( !empty( $_POST['lastname'] ) ) {
+            $lastname = sanitize_text_field( $_POST['lastname'] );
+            update_user_meta( $userID, 'last_name', $lastname );
+        }
+
+        // Update Language
+        if ( !empty( $_POST['userlangs'] ) ) {
+            $userlangs = sanitize_text_field( $_POST['userlangs'] );
+            update_user_meta( $userID, 'fave_author_language', $userlangs );
+        }
+
+
+        // Update user_company
+        if ( !empty( $_POST['user_company'] ) ) {
+            $agency_id = get_user_meta($userID, 'fave_author_agency_id', true);
+            $user_company = sanitize_text_field( $_POST['user_company'] );
+            if( !empty($agency_id) ) {
+                $user_company = get_the_title($agency_id);
+            }
+            update_user_meta( $userID, 'fave_author_company', $user_company );
+        } else {
+            $agency_id = get_user_meta($userID, 'fave_author_agency_id', true);
+            if( !empty($agency_id) ) {
+                update_user_meta( $userID, 'fave_author_company', get_the_title($agency_id) );
+            }
+        }
+
+        // Update Title
+        if ( !empty( $_POST['title'] ) ) {
+            $title = sanitize_text_field( $_POST['title'] );
+            update_user_meta( $userID, 'fave_author_title', $title );
+        }
+
+        // Update About
+        if ( !empty( $_POST['bio'] ) ) {
+            $about = wp_kses_post( wpautop( wptexturize( $_POST['bio'] ) ) );
+            update_user_meta( $userID, 'description', $about );
+            update_option('Test description', $about);
+        } 
+
+        // Update Phone
+        if ( !empty( $_POST['userphone'] ) ) {
+            $userphone = sanitize_text_field( $_POST['userphone'] );
+            update_user_meta( $userID, 'fave_author_phone', $userphone );
+        }
+
+        // Update Fax
+        if ( !empty( $_POST['fax_number'] ) ) {
+            $fax_number = sanitize_text_field( $_POST['fax_number'] );
+            update_user_meta( $userID, 'fave_author_fax', $fax_number );
+        }
+
+        // fave_author_service_areas
+        if ( !empty( $_POST['service_areas'] ) ) {
+            $service_areas = sanitize_text_field( $_POST['service_areas'] );
+            update_user_meta( $userID, 'fave_author_service_areas', $service_areas );
+        }
+
+        // Specialties
+        if ( !empty( $_POST['specialties'] ) ) {
+            $specialties = sanitize_text_field( $_POST['specialties'] );
+            update_user_meta( $userID, 'fave_author_specialties', $specialties );
+        }
+
+        // Update Mobile
+        if ( !empty( $_POST['usermobile'] ) ) {
+            $usermobile = sanitize_text_field( $_POST['usermobile'] );
+            update_user_meta( $userID, 'fave_author_mobile', $usermobile );
+        }
+
+        // Update WhatsApp
+        if ( !empty( $_POST['whatsapp'] ) ) {
+            $whatsapp = sanitize_text_field( $_POST['whatsapp'] );
+            update_user_meta( $userID, 'fave_author_whatsapp', $whatsapp );
+        }
+
+        // Update Skype
+        if ( !empty( $_POST['userskype'] ) ) {
+            $userskype = sanitize_text_field( $_POST['userskype'] );
+            update_user_meta( $userID, 'fave_author_skype', $userskype );
+        }
+
+        // Update facebook
+        if ( !empty( $_POST['facebook'] ) ) {
+            $facebook = sanitize_text_field( $_POST['facebook'] );
+            update_user_meta( $userID, 'fave_author_facebook', $facebook );
+        }
+
+        // Update twitter
+        if ( !empty( $_POST['twitter'] ) ) {
+            $twitter = sanitize_text_field( $_POST['twitter'] );
+            update_user_meta( $userID, 'fave_author_twitter', $twitter );
+        }
+
+        // Update linkedin
+        if ( !empty( $_POST['linkedin'] ) ) {
+            $linkedin = sanitize_text_field( $_POST['linkedin'] );
+            update_user_meta( $userID, 'fave_author_linkedin', $linkedin );
+        }
+
+        // Update instagram
+        if ( !empty( $_POST['instagram'] ) ) {
+            $instagram = sanitize_text_field( $_POST['instagram'] );
+            update_user_meta( $userID, 'fave_author_instagram', $instagram );
+        }
+
+        // Update pinterest
+        if ( !empty( $_POST['pinterest'] ) ) {
+            $pinterest = sanitize_text_field( $_POST['pinterest'] );
+            update_user_meta( $userID, 'fave_author_pinterest', $pinterest );
+        }
+
+        // Update youtube
+        if ( !empty( $_POST['youtube'] ) ) {
+            $youtube = sanitize_text_field( $_POST['youtube'] );
+            update_user_meta( $userID, 'fave_author_youtube', $youtube );
+        }
+
+        // Update tiktok
+        if ( !empty( $_POST['tiktok'] ) ) {
+            $tiktok = sanitize_text_field( $_POST['tiktok'] );
+            update_user_meta( $userID, 'fave_author_tiktok', $tiktok );
+        }
+
+        // Update telegram
+        if ( !empty( $_POST['telegram'] ) ) {
+            $telegram = sanitize_text_field( $_POST['telegram'] );
+            update_user_meta( $userID, 'fave_author_telegram', $telegram );
+        }
+
+        // Update vimeo
+        if ( !empty( $_POST['vimeo'] ) ) {
+            $vimeo = sanitize_text_field( $_POST['vimeo'] );
+            update_user_meta( $userID, 'fave_author_vimeo', $vimeo );
+        }
+
+        // Update Googleplus
+        if ( !empty( $_POST['googleplus'] ) ) {
+            $googleplus = sanitize_text_field( $_POST['googleplus'] );
+            update_user_meta( $userID, 'fave_author_googleplus', $googleplus );
+        }
+
+        // Update website
+        if ( !empty( $_POST['website'] ) ) {
+            $website = sanitize_text_field( $_POST['website'] );
+            wp_update_user( array( 'ID' => $userID, 'user_url' => $website ) );
+        }
+
+        if ( !empty( $_POST['display_name'] ) ) {
+          wp_update_user( array ('ID' => $userID, 'display_name' => $_POST['display_name'] ) );
+        }
+
+        
+
+        //For agency Role
+
+        if ( !empty( $_POST['license'] ) ) {
+            $license = sanitize_text_field( $_POST['license'] );
+            update_user_meta( $userID, 'fave_author_license', $license );
+        }
+
+        if ( !empty( $_POST['tax_number'] ) ) {
+            $tax_number = sanitize_text_field( $_POST['tax_number'] );
+            update_user_meta( $userID, 'fave_author_tax_no', $tax_number );
+        }
+
+        if ( !empty( $_POST['user_address'] ) ) {
+            $user_address = sanitize_text_field( $_POST['user_address'] );
+            update_user_meta( $userID, 'fave_author_address', $user_address );
+        }
+
+        if ( !empty( $_POST['user_location'] ) ) {
+            $user_location = sanitize_text_field( $_POST['user_location'] );
+            update_user_meta( $userID, 'fave_author_google_location', $user_location );
+        }
+
+        if ( !empty( $_POST['latitude'] ) ) {
+            $latitude = sanitize_text_field( $_POST['latitude'] );
+            update_user_meta( $userID, 'fave_author_google_latitude', $latitude );
+        }
+
+        if ( !empty( $_POST['longitude'] ) ) {
+            $longitude = sanitize_text_field( $_POST['longitude'] );
+            update_user_meta( $userID, 'fave_author_google_longitude', $longitude );
+        }
+
+        // Update email
+        if( !empty( $_POST['useremail'] ) ) {
+            $useremail = sanitize_email( $_POST['useremail'] );
+            $useremail = is_email( $useremail );
+            if( !$useremail ) {
+                echo json_encode( array( 'success' => false, 'msg' => esc_html__('The Email you entered is not valid. Please try again.', 'houzez') ) );
+                wp_die();
+            } else {
+                $email_exists = email_exists( $useremail );
+                if( $email_exists ) {
+                    if( $email_exists != $userID ) {
+                        echo json_encode( array( 'success' => false, 'msg' => esc_html__('This Email is already used by another user. Please try a different one.', 'houzez') ) );
+                        wp_die();
+                    }
+                } else {
+                    $return = wp_update_user( array ('ID' => $userID, 'user_email' => $useremail ) );
+                    if ( is_wp_error( $return ) ) {
+                        $error = $return->get_error_message();
+                        echo esc_attr( $error );
+                        wp_die();
+                    }
+                }
+
+                if( !empty( $_POST['profile-pic-id'] ) ) {
+                  $profile_pic_id = intval( $_POST['profile-pic-id'] );
+                }
+
+                $agent_id = get_user_meta( $userID, 'fave_author_agent_id', true );
+                $agency_id = get_user_meta( $userID, 'fave_author_agency_id', true );
+                $user_as_agent = houzez_option('user_as_agent');
+
+                if (in_array('houzez_agent', (array)$current_user->roles)) {
+                    houzez_update_user_agent ( $agent_id, $firstname, $lastname, $title, $about, $userphone, $usermobile, $whatsapp, $userskype, $facebook, $twitter, $linkedin, $instagram, $pinterest, $youtube, $vimeo, $googleplus, $profile_pic, $profile_pic_id, $website, $useremail, $license, $tax_number, $fax_number, $userlangs, $user_address, $user_company, $service_areas, $specialties, $tiktok, $telegram );
+                } elseif(in_array('houzez_agency', (array)$current_user->roles)) {
+                    houzez_update_user_agency ( $agency_id, $firstname, $lastname, $title, $about, $userphone, $usermobile, $whatsapp, $userskype, $facebook, $twitter, $linkedin, $instagram, $pinterest, $youtube, $vimeo, $googleplus, $profile_pic, $profile_pic_id, $website, $useremail, $license, $tax_number, $user_address, $user_location, $latitude, $longitude, $fax_number, $userlangs, $tiktok, $telegram );
+                }
+
+            }
+        }
+
+    $ajax_response = array( 'success' => true, 'message' => esc_html__('Profile updated', 'houzez') );
+    wp_send_json($ajax_response, 200);
+
+  // do_action("wp_ajax_houzez_ajax_update_profile");
 }
 // on some houzez instances, post type agent or agency photo get cleared after profile fields update (eg, name phone etc).
 // not sure about the reason, too complex to edit theme, so fix on app side.
