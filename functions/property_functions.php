@@ -714,26 +714,28 @@ function appendPostAddress(&$response)
 }
 function appendPostAttr(&$response)
 {
-  $property_attr = wp_get_post_terms(
-    $response->ID,
-    ['property_type', 'property_status', 'property_label']
 
-  );
-  $current_lang = apply_filters( 'wpml_current_language', "en" );
-  $property_attributes = array();
-  $property_attributes_all = array();
-  foreach ($property_attr as $attribute) :
-    $localizez_term_id = apply_filters( 'wpml_object_id', $attribute->term_id, $attribute->taxonomy, FALSE, $current_lang );
-    $term = get_term( $localizez_term_id );
-    if (empty($property_attributes[$attribute->taxonomy])) {
-      $property_attributes[$attribute->taxonomy] = $term->name;
-    }
-    $property_attributes_all[$attribute->taxonomy][] = $term->name;
-  endforeach;
-  $response->property_attr = $property_attributes;
-  $response->property_type_text = !empty($property_attributes_all["property_type"]) ? $property_attributes_all["property_type"] : []; 
-  $response->property_status_text = !empty($property_attributes_all["property_status"]) ? $property_attributes_all["property_status"] : [];
-  $response->property_label_text = !empty($property_attributes_all["property_label"]) ? $property_attributes_all["property_label"] : [];
+      $property_attr = wp_get_post_terms(
+        $response->ID,
+        ['property_type', 'property_status', 'property_label']
+
+      );
+  
+    $current_lang = apply_filters('wpml_current_language', "en");
+    $property_attributes = array();
+    $property_attributes_all = array();
+    foreach ($property_attr as $attribute):
+        $localizez_term_id = apply_filters('wpml_object_id', $attribute->term_id, $attribute->taxonomy, FALSE, $current_lang);
+        $term = get_term($localizez_term_id);
+        if (empty($property_attributes[$attribute->taxonomy])) {
+            $property_attributes[$attribute->taxonomy] = $term->name;
+        }
+        $property_attributes_all[$attribute->taxonomy][] = $term->name;
+    endforeach;
+    $response->property_attr = $property_attributes;
+    $response->property_type_text = !empty($property_attributes_all["property_type"]) ? $property_attributes_all["property_type"] : [];
+    $response->property_status_text = !empty($property_attributes_all["property_status"]) ? $property_attributes_all["property_status"] : [];
+    $response->property_label_text = !empty($property_attributes_all["property_label"]) ? $property_attributes_all["property_label"] : [];
 }
 function getCurrentLanguageTermsOnly($postId, $term_name) {
     $current_lang = apply_filters( 'wpml_current_language', "en" );
