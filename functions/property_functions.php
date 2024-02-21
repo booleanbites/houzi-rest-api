@@ -603,6 +603,8 @@ function sendPropertyJson($args) {
 
         //$property = $query_args->post;
         $post_id = $property->ID;
+
+        houzez_count_property_views( $post_id );
         
         $property->is_fav = isFavoriteProperty($post_id);
         $property->link = get_permalink();
@@ -725,7 +727,7 @@ function appendPostAttr(&$response)
     $property_attributes = array();
     $property_attributes_all = array();
     foreach ($property_attr as $attribute):
-        $localizez_term_id = apply_filters('wpml_object_id', $attribute->term_id, $attribute->taxonomy, FALSE, $current_lang);
+        $localizez_term_id = apply_filters('wpml_object_id', $attribute->term_id, $attribute->taxonomy, true, $current_lang);
         $term = get_term($localizez_term_id);
         if (empty($property_attributes[$attribute->taxonomy])) {
             $property_attributes[$attribute->taxonomy] = $term->name;
@@ -747,7 +749,7 @@ function getCurrentLanguageTermsOnly($postId, $term_name) {
     $property_attributes = array();
     if (! empty($property_feature_terms)){
         foreach ($property_feature_terms as $feature) :
-        $localizez_term_id = apply_filters( 'wpml_object_id', $feature->term_id, $feature->taxonomy, FALSE, $current_lang );
+        $localizez_term_id = apply_filters( 'wpml_object_id', $feature->term_id, $feature->taxonomy, true, $current_lang );
         $term = get_term( $localizez_term_id );
         if (!in_array($term->name,$property_attributes)) {
             $property_attributes[] = $term->name;
