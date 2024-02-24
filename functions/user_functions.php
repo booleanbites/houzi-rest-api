@@ -580,7 +580,13 @@ function fetchProfile() {
   $user->specialties            =   get_the_author_meta( 'fave_author_specialties' , $userID );
   $user->license                =   get_the_author_meta( 'fave_author_license' , $userID );
   $user->gdpr_agreement         =   get_the_author_meta( 'gdpr_agreement' , $userID );
-  $user->author_picture_id         =   $author_picture_id;
+  $user->facebook               =   get_the_author_meta( 'fave_author_facebook' , $userID );
+  $user->twitter                =   get_the_author_meta( 'fave_author_twitter' , $userID );
+  $user->linkedin               =   get_the_author_meta( 'fave_author_linkedin' , $userID );
+  $user->instagram              =   get_the_author_meta( 'fave_author_instagram' , $userID );
+  $user->youtube                =   get_the_author_meta( 'fave_author_youtube' , $userID );
+  $user->website                =   get_the_author_meta( 'user_url' , $userID );
+  $user->author_picture_id      =   $author_picture_id;
   
   unset($user->user_pass);
   unset($user->user_activation_key);
