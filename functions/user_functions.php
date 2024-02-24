@@ -1056,6 +1056,7 @@ function paymentStatus($request) {
   $response['featured_remaining_listings'] = $featured_remaining_listings;
   $response['payment_page'] = $payment_page;
   $response['user_has_membership'] = $user_has_membership;
+  $response['user_had_free_package'] = houzez_user_had_free_package($userID);
   wp_send_json($response, 200);
 }
 
@@ -1103,10 +1104,15 @@ function proceedWithPayment($request) {
   $paymentMethod              = $request['iap'] ?? '';
   $iap_response               = $request['iap_response'] ?? [];
   $pack_id                    = $request['pack_id'] ?? '';
+  $pack_price = get_post_meta( $pack_id, 'fave_package_price', true );
+  $is_featured = 0;
+  $is_upgrade = 0;
+  $time = time();
+  $date = date( 'Y-m-d H:i:s', $time );
+  // $total_taxes = 0;
+  // $pack_tax = get_post_meta( $selected_package_id, 'fave_package_tax', true );
 
   if ($enable_paid_submission == 'free_paid_listing') {
-    $time = time();
-    $date = date( 'Y-m-d H:i:s', $time );
 
       if (empty($prop_id)) {
           $ajax_response = array( 'success' => false, 'reason' => 'Please provide property id.' );
@@ -1145,8 +1151,6 @@ function proceedWithPayment($request) {
       wp_send_json($ajax_response, 200);
 
   } else if ($enable_paid_submission == 'per_listing') {
-    $time = time();
-    $date = date( 'Y-m-d H:i:s', $time );
       if (empty($prop_id)) {
           $ajax_response = array( 'success' => false, 'reason' => 'Please provide property id.' );
           wp_send_json($ajax_response, 403);
@@ -1210,17 +1214,31 @@ function proceedWithPayment($request) {
       wp_send_json($ajax_response, 403);
       return; 
     }
-      
-    houzez_save_user_packages_record($userID, $pack_id);
 
-    if (houzez_check_user_existing_package_status($current_user->ID, $pack_id)) {
-        houzez_downgrade_package($current_user->ID, $pack_id);
+    // Will handle tax in future
+    // if( !empty($pack_tax) && !empty($pack_price) ) {
+    //   $total_taxes = intval($pack_tax)/100 * $pack_price;
+    //   $total_taxes = round($total_taxes, 2);
+    // }
+  
+  
+    // if( !empty($total_taxes) ) {
+    //   $pack_price = $pack_price + $total_taxes;
+    // }
+
+    // First check if price zero then it's a trial package.
+    $check_if_price_zero = floatval($pack_price);
+    if( $check_if_price_zero > 0 ) {
+      houzez_save_user_packages_record($userID, $pack_id);
+
+    if (houzez_check_user_existing_package_status($userID, $pack_id)) {
+        houzez_downgrade_package($userID, $pack_id);
         houzez_update_membership_package($userID, $pack_id);
     } else {
         houzez_update_membership_package($userID, $pack_id);
     }
 
-    $invoiceID = houzez_generate_invoice('package', 'one_time', $pack_id, $date, $userID, 0, 0, '', $paymentMethod, 1);
+    $invoiceID = houzez_generate_invoice('package', 'one_time', $pack_id, $date, $userID, $is_featured, $is_upgrade, '', $paymentMethod, 1);
     update_post_meta($invoiceID, 'invoice_payment_status', 1); 
     update_user_meta($userID, 'houzez_is_recurring_membership', 0);
     update_user_meta($userID, 'houzez_payment_method', $paymentMethod);
@@ -1237,7 +1255,27 @@ function proceedWithPayment($request) {
     // houzez_email_type($user_email, 'purchase_activated_pack', $args);
     $ajax_response = array( 'success' => true, 'message' => 'Congratulation! membership added.' );
     wp_send_json($ajax_response, 200);
+    } else {
+      if (houzez_user_had_free_package($userID)) {
+ 
+        $invoiceID = houzez_generate_invoice('package', 'one_time', $pack_id, $date, $userID, $is_featured, $is_upgrade, '', $paymentMethod, 1);
 
+        houzez_save_user_packages_record($userID, $pack_id);
+
+        houzez_update_membership_package($userID, $pack_id);
+        update_post_meta( $invoiceID, 'invoice_payment_status', 1 );
+        update_user_meta( $userID, 'user_had_free_package', 'yes' );
+
+        $ajax_response = array( 'success' => true, 'message' => 'Congratulation! Free trial activated' );
+        wp_send_json($ajax_response, 200);
+        return;
+      } else {
+
+        $ajax_response = array( 'success' => false, 'reason' => 'You have already used your free package, please choose different package.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+      }
+    }
   }
 
 }
