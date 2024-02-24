@@ -1945,7 +1945,13 @@ function getSimilarProperties() {
     }
 
     $sort_by = houzez_option( 'similar_order', 'd_date' );
-    if ( $sort_by == 'a_price' ) {
+	if ( $sort_by == 'a_title' ) {
+        $properties_args['orderby'] = 'title';
+        $properties_args['order'] = 'ASC';
+    } else if ( $sort_by == 'd_title' ) {
+        $properties_args['orderby'] = 'title';
+        $properties_args['order'] = 'DESC';
+    } else if ( $sort_by == 'a_price' ) {
         $properties_args['orderby'] = 'meta_value_num';
         $properties_args['meta_key'] = 'fave_property_price';
         $properties_args['order'] = 'ASC';
@@ -1961,6 +1967,9 @@ function getSimilarProperties() {
         $properties_args['order'] = 'DESC';
     } else if ( $sort_by == 'featured_first' ) {
         $properties_args['orderby'] = 'meta_value date';
+        $properties_args['meta_key'] = 'fave_featured';
+    } else if ( $sort_by == 'featured_first_random' ) {
+        $properties_args['orderby'] = 'meta_value DESC rand';
         $properties_args['meta_key'] = 'fave_featured';
     } else if ( $sort_by == 'random' ) {
         $properties_args['orderby'] = 'rand date';
@@ -2024,6 +2033,12 @@ function propertyNode($property){
 
     if (!empty($should_add_contact_info) && $should_add_contact_info == 'yes') {
         $property->property_meta['agent_info'] = houzez20_property_contact_form();
+    }
+
+    $should_add_address = isset($_REQUEST['add_address']) ? $_REQUEST['add_address'] : '';
+
+    if (!empty($should_add_address) && $should_add_address == 'yes') {
+        $property->property_meta['property_address'] = appendPostAddress($property);
     }
     
     return $property;
