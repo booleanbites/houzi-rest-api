@@ -585,6 +585,8 @@ function fetchProfile() {
   $user->linkedin               =   get_the_author_meta( 'fave_author_linkedin' , $userID );
   $user->instagram              =   get_the_author_meta( 'fave_author_instagram' , $userID );
   $user->youtube                =   get_the_author_meta( 'fave_author_youtube' , $userID );
+  $user->telegram               =   get_the_author_meta( 'fave_author_telegram' , $userID );
+  $user->line_id                =   get_the_author_meta( 'fave_author_line_id' , $userID );
   $user->website                =   get_the_author_meta( 'user_url' , $userID );
   $user->author_picture_id      =   $author_picture_id;
   
