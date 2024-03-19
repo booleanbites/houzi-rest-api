@@ -220,7 +220,7 @@ function add_roles_to_response(&$response){
   if( $show_hide_roles['seller'] != 1 ) {
     array_push($roles, array( 'value' => 'houzez_seller', 'option' => houzez_option('seller_role') ) );
   }
-  if( $show_hide_roles['manager'] != 1 ) {
+  if( isset($show_hide_roles['manager']) && $show_hide_roles['manager'] != 1 ) {
     array_push($roles, array( 'value' => 'houzez_manager', 'option' => houzez_option('manager_role') ) );
   }
 
