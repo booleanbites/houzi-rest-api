@@ -3,7 +3,7 @@
  * Extends api for review. Exposes api to add review via rest api.
  *
  *
- * @package Houzez Mobile Api
+ * @package Houzi Mobile Api
  * @since Houzi 1.0
  * @author Adil Soomro
  */

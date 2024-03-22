@@ -3,7 +3,7 @@
  * Extends api for property post type, it appends many data that's not available in default wp-rest-api.
  *
  *
- * @package Houzez Mobile Api
+ * @package Houzi Mobile Api
  * @since Houzi 1.0
  * @author Adil Soomro
  */

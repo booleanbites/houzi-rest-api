@@ -3,7 +3,7 @@
  * Exposing Houzez Partners.
  *
  *
- * @package Houzez Mobile Api
+ * @package Houzi Mobile Api
  * @since Houzi 1.0
  * @author Hassan Ali @ BooleanBites Ltd.
  */

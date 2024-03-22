@@ -3,7 +3,7 @@
  * Functions to handle property search related apis, save searches.
  *
  *
- * @package Houzez Mobile Api
+ * @package Houzi Mobile Api
  * @since Houzi 1.0
  * @author Adil Soomro
  */
