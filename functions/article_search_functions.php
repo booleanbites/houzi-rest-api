@@ -53,6 +53,18 @@ add_action( 'rest_api_init', function () {
     'permission_callback' => '__return_true'
   ));
 
+  register_rest_route( 'houzez-mobile-api/v1', '/all-categories', array(
+    'methods' => 'GET',
+    'callback' => 'all_categories',
+    'permission_callback' => '__return_true'
+  ));
+
+  register_rest_route( 'houzez-mobile-api/v1', '/all-tags', array(
+    'methods' => 'GET',
+    'callback' => 'all_tags',
+    'permission_callback' => '__return_true'
+  ));
+
 });
 
 function search_articles() {
@@ -420,4 +432,67 @@ function query_comment_and_send_json($query_actual) {
     }
 
     wp_send_json( array( 'success' => true ,'count' => $comment_count , 'result' => $comments), 200);
+}
+
+
+function all_categories() {
+    $orderby = isset($_GET['orderby']) ? ($_GET['orderby']) : '';
+    $order = isset($_GET['order']) ? ($_GET['order']) : '';
+    
+    $args = array("hide_empty" => 0,
+                    "type"      => "post",      
+                    "orderby"   => "name",
+                    "order"     => "ASC" );
+    if( !empty( $orderby )) { 
+        $args['orderby']  = $orderby;
+    }
+    if( !empty( $order )) { 
+        $args['order']  = $order;
+    }
+    $current_lang = apply_filters( 'wpml_current_language', "en" );
+    $post_categories = get_categories($args);
+    $localized_categories = array();
+    if (! empty($post_categories)){
+        foreach ($post_categories as $category) :
+        $localized_term_id = apply_filters( 'wpml_object_id', $category, "category", true, $current_lang );
+        $term = get_term( $localized_term_id );
+        
+        $localized_categories[] = $term;
+        
+        endforeach;
+    }
+    
+
+    wp_send_json( array( 'success' => true ,  'result' => $localized_categories), 200);
+}
+
+function all_tags() {
+    $orderby = isset($_GET['orderby']) ? ($_GET['orderby']) : '';
+    $order = isset($_GET['order']) ? ($_GET['order']) : '';
+    
+    $args = array("hide_empty" => 0,
+                    "type"      => "post",      
+                    "orderby"   => "name",
+                    "order"     => "ASC" );
+    if( !empty( $orderby )) { 
+        $args['orderby']  = $orderby;
+    }
+    if( !empty( $order )) { 
+        $args['order']  = $order;
+    }
+
+    $current_lang = apply_filters( 'wpml_current_language', "en" );
+
+    $post_tags = get_tags($args);
+    $localized_tags = array();
+    if (! empty($post_tags)){
+        foreach ($post_tags as $tag) :
+        $localized_term_id = apply_filters( 'wpml_object_id', $tag, "post_tag", true, $current_lang );
+        $term = get_term( $localized_term_id );
+        
+        $localized_tags[] = $term;
+        
+        endforeach;
+    }
+    wp_send_json( array( 'success' => true ,  'result' => $localized_tags), 200);
 }
