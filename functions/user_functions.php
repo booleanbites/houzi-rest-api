@@ -48,10 +48,10 @@ add_action('rest_api_init', function () {
   );
   register_rest_route(
     'houzez-mobile-api/v1',
-    '/admin-user-signup',
+    '/add-user',
     array (
       'methods' => 'POST',
-      'callback' => 'adminUserSignup',
+      'callback' => 'adminAddUser',
       'permission_callback' => '__return_true'
     )
   );
@@ -507,7 +507,7 @@ function signupUser()
   do_action("wp_ajax_nopriv_houzez_register");//houzez_register();
 }
 
-function adminUserSignup()
+function adminAddUser()
 {
   if (!class_exists('Houzez_login_register')) {
     wp_send_json(array('error' => 'Houzez_login_register plugin dont exist'), 403);
