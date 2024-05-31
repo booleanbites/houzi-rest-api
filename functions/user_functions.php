@@ -1130,6 +1130,6 @@ function userCurrentPackage() {
       'success' => false,
       'reason' => "You don't have any membership.",
     );
-    wp_send_json($ajax_response, 403);
+    wp_send_json($ajax_response, 200);
   }
 }
