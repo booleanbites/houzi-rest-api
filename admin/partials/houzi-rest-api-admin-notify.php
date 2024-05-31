@@ -123,6 +123,17 @@ class RestApiNotify
 
                 $this->send_push_notification($title, $message, $notif_to, array("type" => $type, "search_url" => $args['search_url']));
                 break;
+
+            case 'admin_free_submission_listing':
+                $title = str_replace(get_option('siteurl'), get_option('blogname'), $title);
+                $this->send_push_notification($title, $this->remove_html_tags($message), $notif_to, array("type" => $type, "listing_id" => $args['listing_id'], "listing_title" => $args['listing_title'], "listing_url" => $args['listing_url']));
+                break;
+
+            case 'admin_update_listing':
+                $title = str_replace(get_option('siteurl'), get_option('blogname'), $title);
+                $this->send_push_notification($title, $this->remove_html_tags($message), $notif_to, array("type" => $type, "listing_id" => $args['listing_id'], "listing_title" => $args['listing_title'], "listing_url" => $args['listing_url']));
+                break;
+
             default:
                 $this->send_push_notification($title, $this->remove_html_tags($message), $notif_to, array("type" => $type));
                 break;

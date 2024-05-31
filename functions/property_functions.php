@@ -184,11 +184,7 @@ function addPropertyWithAuth() {
     if ($response_editing == 'true') {
         $email_type = 'admin_update_listing';
     } else {
-        if ($userEmail == $admin_email) {
-            $email_type = 'admin_free_submission_listing';
-        } else {
-            $email_type = 'free_submission_listing';   
-        }
+        $email_type = 'admin_free_submission_listing';
     }
 
     $args = array(
