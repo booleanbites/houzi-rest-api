@@ -59,6 +59,8 @@ class RestApiNotify
 
         add_action('send_houzi_notification', array($this, 'parse_notification_data'), 10, 1);
 
+        add_action('houzez_send_notification', array($this, 'parse_notification_data'), 10, 1);
+
         // add_action('wp_mail', array($this, 'houzi_notify_email_handler'), 10, 1);
 
         add_action('update_option_houzi_notify_options', function ($old_value, $value) {
@@ -75,43 +77,65 @@ class RestApiNotify
 
     function parse_notification_data($args)
     {
-        if (strlen($args['title']) < 1) {
-            $args['title'] = fave_option('houzez_subject_' . $args['type']);
-            $args['title'] = apply_filters('wpml_translate_single_string', $args['title'], 'admin_texts_houzez_options', 'houzez_email_subject_' . $args['title']);
+        $title = $args["title"];
+        $type = $args["type"];
+        $notif_to = $args["to"];
+
+        if (strlen($title) < 1) {
+            $title = fave_option('houzez_subject_' . $type);
+            $title = apply_filters('wpml_translate_single_string', $title, 'admin_texts_houzez_options', 'houzez_email_subject_' . $title);
         }
 
-        $user = get_user_by('email', $args['to']);
+        $user = get_user_by('email', $notif_to);
         if ($user) {
             $args['username'] = $user->user_login;
         }
 
         $args['website_name'] = get_option('blogname');
         $args['website_url'] = get_option('siteurl');
-        $args['user_email'] = $args['to'];
+        $args['user_email'] = $notif_to;
+
+        
+        $message = $args["message"];
 
         foreach ($args as $key => $val) {
-            $args["title"] = str_replace('%' . $key, $val, $args["title"]);
-            $args["message"] = str_replace('%' . $key, $val, $args["message"]);
+            $title= str_replace('%' . $key, $val, $title);
+            $message= str_replace('%' . $key, $val, $message);
         }
+
+        // remove %abc type strings from the message
+        $message = preg_replace('/%[^ ]*[\s]?/', '', $message);
+
 
         error_log($this->remove_html_tags(json_encode($args)));
 
-        switch ($args['type']) {
+        switch ($type) {
             case 'review':
                 $author_id = get_post_field('post_author', $args['listing_id']);
                 $author_email = get_the_author_meta('user_email', $author_id);
 
-                $this->send_push_notification($args['title'], $this->remove_html_tags($args["message"]), $author_email, array("type" => $args['type'], "listing_id" => $args['listing_id'], "listing_title" => $args['listing_title'], "review_post_type" => $args['review_post_type']));
+                $this->send_push_notification($title, $this->remove_html_tags($message), $author_email, array("type" => $type, "listing_id" => $args['listing_id'], "listing_title" => $args['listing_title'], "review_post_type" => $args['review_post_type']));
                 break;
 
             case 'matching_submissions':
-                $title = str_replace(get_option('siteurl'), get_option('blogname'), $args['title']);
-                $message = trim(substr($this->remove_html_tags($args["message"]), 0, 100)) . "...";
+                $title = str_replace(get_option('siteurl'), get_option('blogname'), $title);
+                $message = trim(substr($this->remove_html_tags($message), 0, 100)) . "...";
 
-                $this->send_push_notification($title, $message, $args['to'], array("type" => $args['type'], "search_url" => $args['search_url']));
+                $this->send_push_notification($title, $message, $notif_to, array("type" => $type, "search_url" => $args['search_url']));
                 break;
+
+            case 'admin_free_submission_listing':
+                $title = str_replace(get_option('siteurl'), get_option('blogname'), $title);
+                $this->send_push_notification($title, $this->remove_html_tags($message), $notif_to, array("type" => $type, "listing_id" => $args['listing_id'], "listing_title" => $args['listing_title'], "listing_url" => $args['listing_url']));
+                break;
+
+            case 'admin_update_listing':
+                $title = str_replace(get_option('siteurl'), get_option('blogname'), $title);
+                $this->send_push_notification($title, $this->remove_html_tags($message), $notif_to, array("type" => $type, "listing_id" => $args['listing_id'], "listing_title" => $args['listing_title'], "listing_url" => $args['listing_url']));
+                break;
+
             default:
-                $this->send_push_notification($args['title'], $this->remove_html_tags($args["message"]), $args['to'], array("type" => $args['type']));
+                $this->send_push_notification($title, $this->remove_html_tags($message), $notif_to, array("type" => $type));
                 break;
         }
     }

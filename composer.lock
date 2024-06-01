@@ -603,7 +603,7 @@
                 "shasum": ""
             },
             "require": {
-                "php": ">=8.0.2"
+                "php": "^7.2.5 || ^8.0"
             },
             "type": "library",
             "extra": {

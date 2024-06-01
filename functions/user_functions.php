@@ -116,6 +116,13 @@ add_action( 'rest_api_init', function () {
       'callback' => 'userCurrentPackage',
     ));
 
+
+
+  register_rest_route('houzez-mobile-api/v1', '/save-searches-routine', array (
+    'methods' => 'GET',
+    'callback' => 'save_searches_routine_func',
+  ));
+
     
 
     register_rest_route( 'contact-us/v1', 'send-message', array(
@@ -150,6 +157,18 @@ add_action( 'rest_api_init', function () {
    * Adds a website parameter to the auth.
    *
    */
+
+  function save_searches_routine_func() {
+  houzez_check_new_listing();
+
+    $temp = array(
+      'success' => true
+    );
+
+    wp_send_json($temp, 200);
+    return;
+  }
+
   function add_user_info_to_login( $data, $user ) {
     $userID = $user->ID;
     $data['user_id'] = $userID;
