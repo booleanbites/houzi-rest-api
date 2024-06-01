@@ -220,13 +220,18 @@ function add_roles_to_response(&$response){
   if( $show_hide_roles['seller'] != 1 ) {
     array_push($roles, array( 'value' => 'houzez_seller', 'option' => houzez_option('seller_role') ) );
   }
-  if( isset($show_hide_roles['manager']) && $show_hide_roles['manager'] != 1 ) {
+  if(array_key_exists("manager",$show_hide_roles) && isset($show_hide_roles['manager']) && $show_hide_roles['manager'] != 1 ) {
     array_push($roles, array( 'value' => 'houzez_manager', 'option' => houzez_option('manager_role') ) );
   }
 
-
   $response['user_roles'] = $roles;
-  $response['all_user_roles'] = ["houzez_agent", "houzez_agency", "houzez_owner", "houzez_buyer", "houzez_seller", "houzez_manager"];
+
+  $all_roles = ["houzez_agent", "houzez_agency", "houzez_owner", "houzez_buyer", "houzez_seller"];
+
+  if(array_key_exists("manager",$show_hide_roles) && isset($show_hide_roles['manager']) && $show_hide_roles['manager'] != 1 ) {
+    array_push($all_roles, "houzez_manager");
+  }
+  $response['all_user_roles'] = $all_roles;
   
 }
 
