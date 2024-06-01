@@ -154,12 +154,13 @@ add_action( 'rest_api_init', function () {
   add_filter( 'jwt_auth_token_before_dispatch', 'add_user_info_to_login', 10, 2 );
 
   /**
-   * Adds a website parameter to the auth.
-   *
+   * Triggers the function to look for saved searches of users and start sending emails
+   * and it also triggers houzez_send_notifications, which helps us send push notifications.
    */
 
   function save_searches_routine_func() {
-  houzez_check_new_listing();
+    //houzez_check_new_listing();
+	  do_action("houzez_check_new_listing_action_hook");
 
     $temp = array(
       'success' => true
