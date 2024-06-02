@@ -210,6 +210,14 @@ class RestApiNotify
 
     public function send_push_notification($title, $message, $email, $data = [])
     {
+        
+        if (!empty($data)) {
+            $type = (array_key_exists("type",$data) && isset($data['type'])) ? $data["type"] : "general";
+            UserNotification::create_notification($email, $title, $message, $type, $data);
+        }
+        
+        
+
         $config = Configuration::getDefaultConfiguration()
             ->setAppKeyToken($this->houzi_notify_options['onesingnal_api_key_token'])
             ->setUserKeyToken($this->houzi_notify_options['onesingnal_user_key_token']);

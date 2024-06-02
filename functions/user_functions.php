@@ -236,6 +236,7 @@ add_action('rest_api_init', function () {
   register_rest_route('houzez-mobile-api/v1', '/save-searches-routine', array (
     'methods' => 'GET',
     'callback' => 'save_searches_routine_func',
+    'permission_callback' => '__return_true',
   ));
 
 });

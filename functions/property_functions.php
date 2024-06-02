@@ -471,7 +471,7 @@ function getAllProperties() {
         $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
         wp_send_json($ajax_response, 403);
         return; 
-      }
+    }
     $userID       = get_current_user_id();
     $user_role = houzez_user_role_by_user_id($userID);
     if ($user_role != 'administrator') {
