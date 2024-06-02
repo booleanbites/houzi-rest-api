@@ -3,7 +3,7 @@
  * Functions to handle property search related apis, save searches.
  *
  *
- * @package Houzez Mobile Api
+ * @package Houzi Mobile Api
  * @since Houzi 1.0
  * @author Adil Soomro
  */
@@ -116,43 +116,52 @@ add_action( 'rest_api_init', function () {
   register_rest_route( 'houzez-mobile-api/v1', '/search-properties', array(
     'methods' => 'POST',
     'callback' => 'searchProperties',
+    'permission_callback' => '__return_true'
   ));
 
   register_rest_route( 'houzez-mobile-api/v1', '/search-test', array(
     'methods' => 'POST',
     'callback' => 'searchPropertiesTest',
+    'permission_callback' => '__return_true'
   ));
 
   register_rest_route( 'houzez-mobile-api/v1', '/get-property-detail', array(
     'methods' => 'GET',
     'callback' => 'getPropertDetail',
+    'permission_callback' => '__return_true'
   ));
 
   register_rest_route( 'houzez-mobile-api/v1', '/similar-properties', array(
     'methods' => 'GET',
     'callback' => 'getSimilarProperties',
+    'permission_callback' => '__return_true'
   ));
 
   register_rest_route( 'houzez-mobile-api/v1', '/favorite-properties', array(
     'methods' => 'GET',
     'callback' => 'getFavoriteProperties',
+    'permission_callback' => '__return_true'
   ));
 
   register_rest_route( 'houzez-mobile-api/v1', '/save-search', array(
     'methods' => 'POST',
     'callback' => 'saveSearch',
+    'permission_callback' => '__return_true'
   ));
   register_rest_route( 'houzez-mobile-api/v1', '/saved-searches', array(
     'methods' => 'GET',
     'callback' => 'listSavedSearches',
+    'permission_callback' => '__return_true'
   ));
   register_rest_route( 'houzez-mobile-api/v1', '/view-saved-search', array(
     'methods' => 'POST',
     'callback' => 'viewSavedSearch',
+    'permission_callback' => '__return_true'
   ));
   register_rest_route( 'houzez-mobile-api/v1', '/delete-saved-search', array(
     'methods' => 'POST',
     'callback' => 'deleteSearch',
+    'permission_callback' => '__return_true'
   ));
 
 });
@@ -619,25 +628,23 @@ function setupSearchQuery() {
         if( !empty($country_query_type) ) {
 
             $country_array = array(
-                'key' => 'fave_property_country',
-                'value'   => $country,
-                'type'    => 'CHAR',
-                'compare' => '=',
+                'taxonomy'      => 'property_country',
+                'field'         => 'slug',
+                'terms'         => $country
             );
 
-            $meta_query[] = array(
+            $tax_query[] = array(
                 'relation' => $country_query_type,
                 $country_array
             );
 
         } else {
 
-            $meta_query[] = array(
-                'key' => 'fave_property_country',
-                'value'   => $country,
-                'type'    => 'CHAR',
-                'compare' => '=',
-            );
+            $tax_query[] = array(
+    	        'taxonomy'      => 'property_country',
+        	    'field'         => 'slug',
+            	'terms'         => $country
+	        );
         }
     }
 
@@ -889,9 +896,9 @@ function setupSearchQuery() {
                 $minRange = isset( $obj["min_range_value"] ) ? $obj["min_range_value"] : '';
                 $maxRange = isset( $obj["max_range_value"] ) ? $obj["max_range_value"] : '';
 
-                if ( !empty( $apiKey ) && gettype( $apiKey ) == string ) {
+                if ( !empty( $apiKey ) && is_string( $apiKey ) ) {
                     # string_picker & dropdown logic
-                    if ( ( $pickerType == 'string_picker' || $pickerType == 'dropdown' ) && !empty( $value ) && gettype( $value ) == string && $value != 'any' ) {
+                    if ( ( $pickerType == 'string_picker' || $pickerType == 'dropdown' ) && !empty( $value ) && is_string( $value ) && $value != 'any' ) {
         
                         $apiKey = sanitize_text_field($apiKey);
                         $value = sanitize_text_field($value);
@@ -943,7 +950,7 @@ function setupSearchQuery() {
                     
 
                     # text_field logic
-                    if ( $pickerType == 'text_field' && !empty( $value ) && gettype( $value ) == string && $value != 'any' ) {
+                    if ( $pickerType == 'text_field' && !empty( $value ) && is_string( $value ) && $value != 'any' ) {
         
                         $apiKey = sanitize_text_field($apiKey);
                         $value = sanitize_text_field($value);
@@ -1631,9 +1638,9 @@ function setupSearchQueryForTesting() {
                 $minRange = isset( $obj["min_range_value"] ) ? $obj["min_range_value"] : '';
                 $maxRange = isset( $obj["max_range_value"] ) ? $obj["max_range_value"] : '';
 
-                if ( !empty( $apiKey ) && gettype( $apiKey ) == string ) {
+                if ( !empty( $apiKey ) && is_string( $apiKey ) ) {
                     # string_picker & dropdown logic
-                    if ( ( $pickerType == 'string_picker' || $pickerType == 'dropdown' ) && !empty( $value ) && gettype( $value ) == string && $value != 'any' ) {
+                    if ( ( $pickerType == 'string_picker' || $pickerType == 'dropdown' ) && !empty( $value ) && is_string( $value ) && $value != 'any' ) {
         
                         $apiKey = sanitize_text_field($apiKey);
                         $value = sanitize_text_field($value);
@@ -1685,7 +1692,7 @@ function setupSearchQueryForTesting() {
                     
 
                     # text_field logic
-                    if ( $pickerType == 'text_field' && !empty( $value ) && gettype( $value ) == string && $value != 'any' ) {
+                    if ( $pickerType == 'text_field' && !empty( $value ) && is_string( $value ) && $value != 'any' ) {
         
                         $apiKey = sanitize_text_field($apiKey);
                         $value = sanitize_text_field($value);
@@ -1913,7 +1920,7 @@ function getSimilarProperties() {
 
         for ( $i = 0; $i < $similar_taxonomies_count; $i ++ ) {
             
-            $similar_terms = get_the_terms( get_the_ID(), $similer_criteria[ $i ] );
+            $similar_terms = get_the_terms( $property_id, $similer_criteria[ $i ] );
             if ( ! empty( $similar_terms ) && is_array( $similar_terms ) ) {
                 $terms_array = array();
                 foreach ( $similar_terms as $property_term ) {
@@ -1938,7 +1945,13 @@ function getSimilarProperties() {
     }
 
     $sort_by = houzez_option( 'similar_order', 'd_date' );
-    if ( $sort_by == 'a_price' ) {
+	if ( $sort_by == 'a_title' ) {
+        $properties_args['orderby'] = 'title';
+        $properties_args['order'] = 'ASC';
+    } else if ( $sort_by == 'd_title' ) {
+        $properties_args['orderby'] = 'title';
+        $properties_args['order'] = 'DESC';
+    } else if ( $sort_by == 'a_price' ) {
         $properties_args['orderby'] = 'meta_value_num';
         $properties_args['meta_key'] = 'fave_property_price';
         $properties_args['order'] = 'ASC';
@@ -1954,6 +1967,9 @@ function getSimilarProperties() {
         $properties_args['order'] = 'DESC';
     } else if ( $sort_by == 'featured_first' ) {
         $properties_args['orderby'] = 'meta_value date';
+        $properties_args['meta_key'] = 'fave_featured';
+    } else if ( $sort_by == 'featured_first_random' ) {
+        $properties_args['orderby'] = 'meta_value DESC rand';
         $properties_args['meta_key'] = 'fave_featured';
     } else if ( $sort_by == 'random' ) {
         $properties_args['orderby'] = 'rand date';
@@ -2002,6 +2018,10 @@ function propertyNode($property){
     $property->price = strip_tags($priceHTML);
     $property->priceSimple = houzez_listing_price_map_pins();
 
+    $should_add_all_images_list = isset($_REQUEST['add_all_images_list']) ? $_REQUEST['add_all_images_list'] : '';
+    if (!empty($should_add_all_images_list) && $should_add_all_images_list == 'yes') {
+        $property->property_meta['property_images'] = appendPostImages($property);
+    }
 
     $should_add_agent_agency_info = isset($_REQUEST['agent_agency_info']) ? $_REQUEST['agent_agency_info'] : '';
     
@@ -2013,6 +2033,12 @@ function propertyNode($property){
 
     if (!empty($should_add_contact_info) && $should_add_contact_info == 'yes') {
         $property->property_meta['agent_info'] = houzez20_property_contact_form();
+    }
+
+    $should_add_address = isset($_REQUEST['add_address']) ? $_REQUEST['add_address'] : '';
+
+    if (!empty($should_add_address) && $should_add_address == 'yes') {
+        $property->property_meta['property_address'] = appendPostAddress($property);
     }
     
     return $property;

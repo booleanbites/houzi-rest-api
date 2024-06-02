@@ -3,7 +3,7 @@
  * Extends api for agency and agents.
  *
  *
- * @package Houzez Mobile Api
+ * @package Houzi Mobile Api
  * @since Houzi 1.0
  * @author Adil Soomro
  */
@@ -39,7 +39,9 @@ function prepareAgencyData($response, $post, $request)
   // $agency_id_from_url = $params["id"];
   // $should_append_extra_data = !empty( $agency_id_from_url);
 
-  $imgID = $response->data['agency_meta']['_thumbnail_id'][0];
+  // $imgID = $response->data['agency_meta']['_thumbnail_id'][0];
+  $thumb_id = $response->data['agency_meta']['_thumbnail_id'] ?? null;
+  $imgID = !empty ($thumb_id) ? $thumb_id[0] : null;
   
   $response->data['thumbnail'] = wp_get_attachment_url($imgID);
 
@@ -73,30 +75,37 @@ add_action( 'rest_api_init', function () {
   register_rest_route( 'houzez-mobile-api/v1', '/contact-realtor', array(
     'methods' => 'POST',
     'callback' => 'contactRealtor',
+    'permission_callback' => '__return_true'
   ));
   register_rest_route( 'houzez-mobile-api/v1', '/schedule-tour', array(
     'methods' => 'POST',
     'callback' => 'scheduleATour',
+    'permission_callback' => '__return_true'
   ));
   register_rest_route( 'houzez-mobile-api/v1', '/contact-property-agent', array(
     'methods' => 'POST',
     'callback' => 'contactPropertyRealtor',
+    'permission_callback' => '__return_true'
   ));
   register_rest_route( 'houzez-mobile-api/v1', '/add-new-agent', array(
     'methods' => 'POST',
     'callback' => 'addAgent',
+    'permission_callback' => '__return_true'
   ));
   register_rest_route( 'houzez-mobile-api/v1', '/edit-an-agent', array(
     'methods' => 'POST',
     'callback' => 'editAgent',
+    'permission_callback' => '__return_true'
   ));
   register_rest_route( 'houzez-mobile-api/v1', '/agency-all-agents', array(
     'methods' => 'GET',
     'callback' => 'allAgencyAgents',
+    'permission_callback' => '__return_true'
   ));
   register_rest_route( 'houzez-mobile-api/v1', '/delete-an-agent', array(
     'methods' => 'POST',
     'callback' => 'deleteAgent',
+    'permission_callback' => '__return_true'
   ));
 });
 

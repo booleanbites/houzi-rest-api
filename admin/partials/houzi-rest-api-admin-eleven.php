@@ -52,6 +52,7 @@ class RestApiElevenSettings {
 			register_rest_route( 'houzez-mobile-api/v1', '/eleven-config', array(
 				'methods' => 'POST',
 				'callback' => array( $this, 'lets_eleven_config'),
+				'permission_callback' => '__return_true'
 			));
 		});
 
@@ -59,6 +60,7 @@ class RestApiElevenSettings {
 			register_rest_route( 'houzez-mobile-api/v1', '/create-eleven-nonce', array(
 				'methods' => 'POST',
 				'callback' => array( $this, 'create_eleven_nonce'),
+				'permission_callback' => '__return_true'
 			));
 		});
 	}

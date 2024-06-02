@@ -3,7 +3,7 @@
  * Functions to add delete update favorite properties.
  *
  *
- * @package Houzez Mobile Api
+ * @package Houzi Mobile Api
  * @since Houzi 1.0
  * @author Adil Soomro
  */
@@ -48,16 +48,19 @@ add_action( 'rest_api_init', function () {
     register_rest_route( 'houzez-mobile-api/v1', '/save-property', array(
         'methods' => 'POST',
         'callback' => 'addPropertyWithAuth',
+        'permission_callback' => '__return_true'
       ));
     
     register_rest_route( 'houzez-mobile-api/v1', '/delete-property', array(
         'methods' => 'GET',
         'callback' => 'deleteProperty',
+        'permission_callback' => '__return_true'
       ));
   
     register_rest_route( 'houzez-mobile-api/v1', '/update-property', array(
       'methods' => 'POST',
       'callback' => 'addPropertyWithAuth',
+      'permission_callback' => '__return_true'
     ));
 
     // register_rest_route( 'houzez-mobile-api/v1', '/upload-property-image', array(
@@ -67,45 +70,90 @@ add_action( 'rest_api_init', function () {
     register_rest_route( 'houzez-mobile-api/v1', '/save-property-image', array(
         'methods' => 'POST',
         'callback' => 'uploadPropertyImageWithAuth',
+        'permission_callback' => '__return_true'
     ));
     register_rest_route( 'houzez-mobile-api/v1', '/delete-property-image', array(
         'methods' => 'POST',
         'callback' => 'deleteImageForProperty',
+        'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/like-property', array(
         'methods' => 'POST',
         'callback' => 'likeProperty',
+        'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/is-fav-property', array(
         'methods' => 'GET',
         'callback' => 'isFavProperty',
+        'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/my-properties', array(
         'methods' => 'GET',
         'callback' => 'getMyProperties',
+        'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/property', array(
         'methods' => 'GET',
         'callback' => 'getProperty',
+        'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/property-by-permalink', array(
         'methods' => 'GET',
         'callback' => 'getPropertyByPermalink',
+        'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/print-pdf-property', array(
         'methods' => 'GET',
         'callback' => 'printPdfProperty',
+        'permission_callback' => '__return_true'
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/property-by-meta-key', array(
         'methods' => 'GET',
         'callback' => 'getPropertyByMetaKey',
+        'permission_callback' => '__return_true'
+    ));
+
+    register_rest_route( 'houzez-mobile-api/v1', '/admin-approve-disapprove', array(
+        'methods' => 'POST',
+        'callback' => 'adminApproveDisapproveListing',
+        'permission_callback' => '__return_true'
+    ));
+
+    register_rest_route( 'houzez-mobile-api/v1', '/toggle-featured', array(
+        'methods' => 'POST',
+        'callback' => 'toggleFeatured',
+        'permission_callback' => '__return_true'
+    ));
+
+    register_rest_route( 'houzez-mobile-api/v1', '/all-properties', array(
+        'methods' => 'GET',
+        'callback' => 'getAllProperties',
+        'permission_callback' => '__return_true'
+    ));
+
+    register_rest_route( 'houzez-mobile-api/v1', '/expire-listing', array(
+        'methods' => 'POST',
+        'callback' => 'expireListing',
+        'permission_callback' => '__return_true'
+    ));
+
+    register_rest_route( 'houzez-mobile-api/v1', '/sold-listing', array(
+        'methods' => 'POST',
+        'callback' => 'soldListing',
+        'permission_callback' => '__return_true'
+    ));
+
+    register_rest_route( 'houzez-mobile-api/v1', '/pending-listing', array(
+        'methods' => 'POST',
+        'callback' => 'pendingListing',
+        'permission_callback' => '__return_true'
     ));
   
   });
@@ -158,9 +206,43 @@ function addPropertyWithAuth() {
         wp_send_json($ajax_response, 403);
         return;
     }
+    if( isset( $_POST['fave_private_note'] ) && !empty( $_POST['fave_private_note'] ) ){
+        $_POST['private_note'] =  $_POST['fave_private_note']; 
+     }
+
+    if (isset($_POST['fave_property_disclaimer']) && !empty($_POST['fave_property_disclaimer'])) {
+        $_POST['property_disclaimer'] = $_POST['fave_property_disclaimer'];
+    }
 
     $new_property = apply_filters( 'houzez_submit_listing', $new_property );
     houzez_update_property_from_draft( $new_property );
+
+    global $current_user;
+
+    wp_get_current_user();
+    $userID = $current_user->ID;
+
+    $user_email = $current_user->user_email;
+    $admin_email =  get_bloginfo('admin_email');
+
+    $args = array(
+        'listing_title'  =>  get_the_title($new_property),
+        'listing_id'     =>  $new_property,
+        'listing_url'    =>  get_permalink($new_property),
+    );
+
+    $submission_action = $_POST['action'];
+
+    /*
+     * Send email
+     * */
+    if( $submission_action != 'update_property' ) {
+        houzez_email_type( $user_email, 'free_submission_listing', $args);
+        houzez_email_type( $admin_email, 'admin_free_submission_listing', $args);
+        
+    } else if($submission_action == 'update_property' && houzez_option('edit_listings_admin_approved') == 'yes' ) {
+        houzez_email_type( $admin_email, 'admin_update_listing', $args);
+    }
 
     //if fave_multi_units_ids was set, update property meta data.
     if( isset( $_POST['fave_multi_units_ids'] ) ) {
@@ -383,6 +465,63 @@ function getMyProperties() {
     $args = houzez_prop_sort ( $args );
     queryPropertiesAndSendJSON($args);
 }
+
+function getAllProperties() {
+    if (! is_user_logged_in() ) {
+        $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+      }
+    $userID       = get_current_user_id();
+    $user_role = houzez_user_role_by_user_id($userID);
+    if ($user_role != 'administrator') {
+        $ajax_response = array( 'success' => false, 'reason' => 'User is not an administrator.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+    }
+    $qry_status = 'any';
+
+    if( isset( $_GET['status'] ) && !empty( $_GET['status'] )) {
+        $qry_status = $_GET['status'];
+    }
+
+    $sortby = '';
+    if( isset( $_GET['sortby'] ) ) {
+        $sortby = $_GET['sortby'];
+    }
+    $no_of_prop   =  5;
+    $paged = 1;
+
+    if( isset( $_GET['per_page'] ) ) {
+        $no_of_prop = $_GET['per_page'];
+    }
+    if( isset( $_GET['page'] ) ) {
+        $paged = $_GET['page'];
+    }
+
+    if ( get_query_var( 'paged' ) ) {
+        $paged = get_query_var( 'paged' );
+    } elseif ( get_query_var( 'page' ) ) { // if is static front page
+        $paged = get_query_var( 'page' );
+    }
+    
+    $args = array(
+        'post_type'        =>  'property',
+        'paged'             => $paged,
+        'posts_per_page'    => $no_of_prop,
+        'post_status'      =>  array( $qry_status ),
+        'suppress_filters' => false
+    );
+    if( isset ( $_GET['keyword'] ) ) {
+        $keyword = trim( $_GET['keyword'] );
+        if ( ! empty( $keyword ) ) {
+            $args['s'] = $keyword;
+        }
+    }
+    $args = houzez_prop_sort ( $args );
+    queryPropertiesAndSendJSON($args);
+}
+
 function getPropertyByPermalink($request) {
     if ( !isset( $_GET['perm']) || empty( $_GET['perm']) ) {
         $ajax_response = array( 'success' => false , 'reason' => esc_html__( 'No permalink found', 'houzez' ) );
@@ -487,6 +626,8 @@ function sendPropertyJson($args) {
 
         //$property = $query_args->post;
         $post_id = $property->ID;
+
+        houzez_count_property_views( $post_id );
         
         $property->is_fav = isFavoriteProperty($post_id);
         $property->link = get_permalink();
@@ -598,26 +739,28 @@ function appendPostAddress(&$response)
 }
 function appendPostAttr(&$response)
 {
-  $property_attr = wp_get_post_terms(
-    $response->ID,
-    ['property_type', 'property_status', 'property_label']
 
-  );
-  $current_lang = apply_filters( 'wpml_current_language', "en" );
-  $property_attributes = array();
-  $property_attributes_all = array();
-  foreach ($property_attr as $attribute) :
-    $localizez_term_id = apply_filters( 'wpml_object_id', $attribute->term_id, $attribute->taxonomy, FALSE, $current_lang );
-    $term = get_term( $localizez_term_id );
-    if (empty($property_attributes[$attribute->taxonomy])) {
-      $property_attributes[$attribute->taxonomy] = $term->name;
-    }
-    $property_attributes_all[$attribute->taxonomy][] = $term->name;
-  endforeach;
-  $response->property_attr = $property_attributes;
-  $response->property_type_text = !empty($property_attributes_all["property_type"]) ? $property_attributes_all["property_type"] : []; 
-  $response->property_status_text = !empty($property_attributes_all["property_status"]) ? $property_attributes_all["property_status"] : [];
-  $response->property_label_text = !empty($property_attributes_all["property_label"]) ? $property_attributes_all["property_label"] : [];
+      $property_attr = wp_get_post_terms(
+        $response->ID,
+        ['property_type', 'property_status', 'property_label']
+
+      );
+  
+    $current_lang = apply_filters('wpml_current_language', "en");
+    $property_attributes = array();
+    $property_attributes_all = array();
+    foreach ($property_attr as $attribute):
+        $localizez_term_id = apply_filters('wpml_object_id', $attribute->term_id, $attribute->taxonomy, true, $current_lang);
+        $term = get_term($localizez_term_id);
+        if (empty($property_attributes[$attribute->taxonomy])) {
+            $property_attributes[$attribute->taxonomy] = $term->name;
+        }
+        $property_attributes_all[$attribute->taxonomy][] = $term->name;
+    endforeach;
+    $response->property_attr = $property_attributes;
+    $response->property_type_text = !empty($property_attributes_all["property_type"]) ? $property_attributes_all["property_type"] : [];
+    $response->property_status_text = !empty($property_attributes_all["property_status"]) ? $property_attributes_all["property_status"] : [];
+    $response->property_label_text = !empty($property_attributes_all["property_label"]) ? $property_attributes_all["property_label"] : [];
 }
 function getCurrentLanguageTermsOnly($postId, $term_name) {
     $current_lang = apply_filters( 'wpml_current_language', "en" );
@@ -629,7 +772,7 @@ function getCurrentLanguageTermsOnly($postId, $term_name) {
     $property_attributes = array();
     if (! empty($property_feature_terms)){
         foreach ($property_feature_terms as $feature) :
-        $localizez_term_id = apply_filters( 'wpml_object_id', $feature->term_id, $feature->taxonomy, FALSE, $current_lang );
+        $localizez_term_id = apply_filters( 'wpml_object_id', $feature->term_id, $feature->taxonomy, true, $current_lang );
         $term = get_term( $localizez_term_id );
         if (!in_array($term->name,$property_attributes)) {
             $property_attributes[] = $term->name;
@@ -666,6 +809,235 @@ function getPropertyByMetaKey($request) {
 
     sendPropertyJson($args);
 }
+
+function adminApproveDisapproveListing() {
+    if (! is_user_logged_in() ) {
+        $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+    }
+
+    $userID       = get_current_user_id();
+    $user_role = houzez_user_role_by_user_id($userID);
+    if ($user_role != 'administrator') {
+        $ajax_response = array( 'success' => false, 'reason' => 'User is not an administrator.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+    }
+
+    $action = $_REQUEST['action'];
+    if (!( isset($_POST['listing_id']) || (isset($_REQUEST['action']) ))) {
+        $ajax_response = array( 'success' => false , 'reason' => esc_html__( 'No Property ID (listing_id) found', 'houzez' ) );
+        wp_send_json($ajax_response,400);
+        return;
+    }
+
+    /*
+     * get the original listing id
+     */
+    $listing_id = $_POST['listing_id'];
+
+    $post_id = absint($listing_id);
+
+    $post_status = ($action == 'approve') ? 'publish' : 'disapproved';
+
+    $listing_data = array(
+        'ID' => $post_id,
+        'post_status' => $post_status
+    );
+    wp_update_post($listing_data);
+
+    $author_id = get_post_field('post_author', $post_id);
+    $user = get_user_by('id', $author_id);
+    $user_email = $user->user_email;
+
+    $args = array(
+        'listing_title' => get_the_title($post_id),
+        'listing_url' => get_permalink($post_id)
+    );
+
+    $email_type = ($action == 'approve') ? 'listing_approved' : 'listing_disapproved';
+    houzez_email_type($user_email, $email_type, $args);
+
+    $ajax_response = array( 'success' => true, 'message' => 'Listing ' . $action );
+    wp_send_json($ajax_response, 200);
+}
+
+function toggleFeatured() {
+    if (! is_user_logged_in() ) {
+        $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+    }
+
+    $userID       = get_current_user_id();
+    $user_role = houzez_user_role_by_user_id($userID);
+    if ($user_role != 'administrator') {
+        $ajax_response = array( 'success' => false, 'reason' => 'User is not an administrator.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+    }
+
+    if (! (isset( $_POST['listing_id'])  || ( isset($_REQUEST['action']) && in_array($_REQUEST['action'], array('houzez_mark_featured', 'houzez_remove_featured')) ) ) ) {
+        $ajax_response = array( 'success' => false , 'reason' => esc_html__( 'No Property ID (listing_id) found', 'houzez' ) );
+        wp_send_json($ajax_response,400);
+        return;
+    }
+
+    /*
+     * get the original listing id
+     */
+    $listing_id = $_POST['listing_id'];
+    $post_id = absint($listing_id);
+    $action = $_REQUEST['action'];
+
+    $featured_value = ($action == 'houzez_mark_featured') ? 1 : 0;
+    update_post_meta($post_id, 'fave_featured', $featured_value);
+
+    $ajax_response = array( 'success' => true, 'message' => 'Listing ' . $action );
+    wp_send_json($ajax_response, 200);
+}
+
+function expireListing() {
+    if (! is_user_logged_in() ) {
+        $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+    }
+
+    $userID       = get_current_user_id();
+    $user_role = houzez_user_role_by_user_id($userID);
+    if ($user_role != 'administrator') {
+        $ajax_response = array( 'success' => false, 'reason' => 'User is not an administrator.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+    }
+
+    if (! ( isset( $_POST['listing_id'])  || ( isset($_REQUEST['action']) && 'houzez_expire_listing' == $_REQUEST['action'] ) ) ) {
+        $ajax_response = array( 'success' => false , 'reason' => esc_html__( 'No property exist', 'houzez' ) );
+        wp_send_json($ajax_response,400);
+        return;
+    }
+ 
+    /*
+     * get the original listing id
+     */
+    $listing_id = $_POST['listing_id'];
+    $post_id = absint($listing_id);
+
+    $listing_data = array(
+        'ID' => $post_id,
+        'post_status' => 'expired'
+    );
+    wp_update_post($listing_data);
+
+    update_post_meta($post_id, 'fave_featured', '0');
+
+    $author_id   = get_post_field ('post_author', $post_id);
+    $user        = get_user_by('id', $author_id );
+    $user_email  = $user->user_email;
+
+    $args = array(
+        'listing_title' => get_the_title($post_id),
+        'listing_url' => get_permalink($post_id)
+    );
+    houzez_email_type( $user_email,'listing_expired', $args );
+
+    $ajax_response = array( 'success' => true, 'message' => 'Listing expired' );
+    wp_send_json($ajax_response, 200);
+}
+
+function soldListing() {
+    if (! is_user_logged_in() ) {
+        $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+    }
+
+    $userID       = get_current_user_id();
+    $user_role = houzez_user_role_by_user_id($userID);
+    if ($user_role != 'administrator') {
+        $ajax_response = array( 'success' => false, 'reason' => 'User is not an administrator.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+    }
+
+    if (! ( isset( $_POST['listing_id'])  || ( isset($_REQUEST['action']) && 'houzez_mark_as_sold' == $_REQUEST['action'] ) ) ) {
+        $ajax_response = array( 'success' => false , 'reason' => esc_html__( 'No property exist', 'houzez' ) );
+        wp_send_json($ajax_response,400);
+        return;
+    }
+ 
+    /*
+     * get the original listing id
+     */
+    $listing_id = $_POST['listing_id'];
+    $post_id = absint($listing_id);
+
+    $listing_data = array(
+        'ID' => $post_id,
+        'post_status' => 'houzez_sold'
+    );
+    wp_update_post($listing_data);
+
+    $mark_sold_status = houzez_option('mark_sold_status');
+
+    if( $mark_sold_status != '' ) {
+        $mark_sold_status = intval($mark_sold_status);
+        wp_set_object_terms( $post_id, $mark_sold_status, 'property_status' );
+    }
+
+    $ajax_response = array( 'success' => true, 'message' => 'Listing marked as sold' );
+    wp_send_json($ajax_response, 200);
+    
+}
+
+function pendingListing() {
+    if (! is_user_logged_in() ) {
+        $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+    }
+
+    $userID       = get_current_user_id();
+    $user_role = houzez_user_role_by_user_id($userID);
+    if ($user_role != 'administrator') {
+        $ajax_response = array( 'success' => false, 'reason' => 'User is not an administrator.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+    }
+
+    if (! ( isset( $_POST['listing_id'])  || ( isset($_REQUEST['action']) && 'pending' == $_REQUEST['action'] ) ) ) {
+        $ajax_response = array( 'success' => false , 'reason' => esc_html__( 'No property exist', 'houzez' ) );
+        wp_send_json($ajax_response,400);
+        return;
+    }
+ 
+    /*
+     * get the original listing id
+     */
+    $listing_id = $_POST['listing_id'];
+    $post_id = absint($listing_id);
+
+    $listings_admin_approved = houzez_option('listings_admin_approved');
+
+    if( $listings_admin_approved != 'yes' ) {
+        $prop_status = 'publish';
+    } else {
+        $prop_status = 'pending';
+    }
+
+    $listing_data = array(
+        'ID' => $post_id,
+        'post_status' => $prop_status
+    );
+    wp_update_post($listing_data);
+
+    $ajax_response = array( 'success' => true, 'message' => 'Listing marked as' . $prop_status );
+    wp_send_json($ajax_response, 200);
+    
+}
+
 
 //-----------------------------Add custom print property endpoint-------------------------------------
 
