@@ -177,7 +177,7 @@ class RestApiNotify
         $result = $apiInstance->createNotification($notification);
     }
 
-    function prepareNotification($enHeading, $enContent, $externalIds, $data = []): Notification
+    function prepareNotification($enHeading, $enContent, $externalIds, $data = [], $badge=0): Notification
     {
         $headingContent = new StringMap();
         $headingContent->setEn($enHeading);
@@ -190,7 +190,8 @@ class RestApiNotify
         $notification->setHeadings($headingContent);
         $notification->setContents($messageContent);
         $notification->setCollapseId(strval(time()));
-
+        $notification->setIosBadgeType('SetTo');
+        $notification->setIosBadgeCount($badge);
         if (count($data) > 0) {
             $notification->setData($data);
         }
@@ -226,10 +227,11 @@ class RestApiNotify
             new GuzzleHttp\Client(),
             $config
         );
-
+        $notif_data = UserNotification::get_user_new_notifications($email);
+        $notif_count = $notif_data['num_notification'];
         // $notification = $this->prepareNotification($title, $message, array(sha1($email)));
         $aliases = array("external_id" => array(sha1($email)));
-        $notification = $this->prepareNotification($title, $message, $aliases, $data);
+        $notification = $this->prepareNotification($title, $message, $aliases, $data, $notif_count);
 
         $result = $apiInstance->createNotification($notification);
         return $result;

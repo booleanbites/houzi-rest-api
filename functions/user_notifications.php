@@ -80,41 +80,39 @@ class UserNotification {
             200
         );
     }
-    public function get_user_new_notifications() {
-        if (! is_user_logged_in() ) {
-            $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
-            wp_send_json($ajax_response, 403);
-            return; 
-        }
-        $user_id = get_current_user_id();
-        $last_checked_time = get_user_meta( $user_id, 'last_checked_notification_time', true );
+    public function get_user_new_notifications($user_email = null) {
+        if ($user_email == null) {
+            if (! is_user_logged_in() ) {
+                $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+                wp_send_json($ajax_response, 403);
+                return; 
+            }
+            $user_id = get_current_user_id();
+            $last_checked_time = get_user_meta( $user_id, 'last_checked_notification_time', true );
 
-        // Check if last_checked_time exists
-        if ( ! $last_checked_time ) {
-            // Consider all posts as new if no last checked time exists (default behavior)
-            wp_send_json(
-                array(
-                    'success' => true ,
-                    'has_notification' => true,
-                    'last_checked_time' => $last_checked_time,
-                ),
-                200
-            );
+            $current_user = wp_get_current_user();
+            $user_email = $current_user->user_email;
+        } else {
+            $user = get_user_by( 'email', $user_email );
+            $user_id = $user->ID;
+            $last_checked_time = get_user_meta( $user_id, 'last_checked_notification_time', true );
         }
-        $current_user = wp_get_current_user();
-        $user_email = $current_user->user_email;
         // Use WP_Query to get notifications for the user
         $args = [
             'post_type' => self::POST_TYPE,
             'meta_key' => 'user_email',
             'meta_value' => $user_email,
-            'date_query' => [
+        ];
+        // Check if last_checked_time exists
+        if ($last_checked_time && !empty($last_checked_time)) {
+            // only query if last_checked_time exists.
+            $args['date_query'] = [
                 [
                     'after' => date('Y-m-d H:i:s', $last_checked_time),
                     'inclusive' => false,
                 ],
-            ],
-        ];
+            ];
+        }
         
         $query = new WP_Query( $args );
         $have_posts = $query->have_posts();
