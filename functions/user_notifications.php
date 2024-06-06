@@ -35,16 +35,16 @@ class UserNotification {
         $posts_per_page   =  20;
         $paged = 1;
     
-        if( isset( $_GET['per_page'] ) ) {
-            $posts_per_page = $_GET['per_page'];
+        if( isset( $_POST['per_page'] ) ) {
+            $posts_per_page = $_POST['per_page'];
         }
-        if( isset( $_GET['page'] ) ) {
-            $paged = $_GET['page'];
+        if( isset( $_POST['page'] ) ) {
+            $paged = $_POST['page'];
         }
 
         $current_user = wp_get_current_user();
         $user_email = $current_user->user_email;
-
+        
         $notifications = $this->get_notifications_for_email($user_email, $paged, $posts_per_page);
         $this->save_last_checked_notification_time_for_current_user();
         wp_send_json(
