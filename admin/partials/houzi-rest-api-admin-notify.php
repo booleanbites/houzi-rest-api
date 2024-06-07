@@ -77,11 +77,6 @@ class RestApiNotify
 
     function parse_notification_data($args)
     {
-        $onesingnal_api_key_token = (
-                                        array_key_exists("onesingnal_api_key_token", $this->houzi_notify_options) &&
-                                        isset($this->houzi_notify_options['onesingnal_api_key_token'])
-                                    )   ?   $this->houzi_notify_options['onesingnal_api_key_token']     :       "";
-        if (empty($onesingnal_api_key_token)) return;
         $title = $args["title"];
         $type = $args["type"];
         $notif_to = $args["to"];
@@ -197,12 +192,24 @@ class RestApiNotify
 
     public function test_notification()
     {
+        $onesingnal_app_id = (
+            array_key_exists("onesingnal_app_id", $this->houzi_notify_options) &&
+            isset($this->houzi_notify_options['onesingnal_app_id'])
+        )   ?   $this->houzi_notify_options['onesingnal_app_id']     :       "";
+        if (empty($onesingnal_app_id)) return;
+
         $onesingnal_api_key_token = (
             array_key_exists("onesingnal_api_key_token", $this->houzi_notify_options) &&
             isset($this->houzi_notify_options['onesingnal_api_key_token'])
         )   ?   $this->houzi_notify_options['onesingnal_api_key_token']     :       "";
         if (empty($onesingnal_api_key_token)) return;
-        
+
+        $onesingnal_user_key_token = (
+            array_key_exists("onesingnal_user_key_token", $this->houzi_notify_options) &&
+            isset($this->houzi_notify_options['onesingnal_user_key_token'])
+        )   ?   $this->houzi_notify_options['onesingnal_user_key_token']     :       "";
+        if (empty($onesingnal_user_key_token)) return;
+
         $config = Configuration::getDefaultConfiguration()
             ->setAppKeyToken($this->houzi_notify_options['onesingnal_api_key_token'])
             ->setUserKeyToken($this->houzi_notify_options['onesingnal_user_key_token']);
@@ -278,7 +285,23 @@ class RestApiNotify
             UserNotification::create_notification($email, $title, $message_full, $type, $data);
         }
         
-        
+        $onesingnal_app_id = (
+            array_key_exists("onesingnal_app_id", $this->houzi_notify_options) &&
+            isset($this->houzi_notify_options['onesingnal_app_id'])
+        )   ?   $this->houzi_notify_options['onesingnal_app_id']     :       "";
+        if (empty($onesingnal_app_id)) return;
+
+        $onesingnal_api_key_token = (
+            array_key_exists("onesingnal_api_key_token", $this->houzi_notify_options) &&
+            isset($this->houzi_notify_options['onesingnal_api_key_token'])
+        )   ?   $this->houzi_notify_options['onesingnal_api_key_token']     :       "";
+        if (empty($onesingnal_api_key_token)) return;
+
+        $onesingnal_user_key_token = (
+            array_key_exists("onesingnal_user_key_token", $this->houzi_notify_options) &&
+            isset($this->houzi_notify_options['onesingnal_user_key_token'])
+        )   ?   $this->houzi_notify_options['onesingnal_user_key_token']     :       "";
+        if (empty($onesingnal_user_key_token)) return;
 
         $config = Configuration::getDefaultConfiguration()
             ->setAppKeyToken($this->houzi_notify_options['onesingnal_api_key_token'])
