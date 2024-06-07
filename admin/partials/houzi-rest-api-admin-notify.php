@@ -77,6 +77,11 @@ class RestApiNotify
 
     function parse_notification_data($args)
     {
+        $onesingnal_api_key_token = (
+                                        array_key_exists("onesingnal_api_key_token", $this->houzi_notify_options) &&
+                                        isset($this->houzi_notify_options['onesingnal_api_key_token'])
+                                    )   ?   $this->houzi_notify_options['onesingnal_api_key_token']     :       "";
+        if (empty($onesingnal_api_key_token)) return;
         $title = $args["title"];
         $type = $args["type"];
         $notif_to = $args["to"];
@@ -108,40 +113,96 @@ class RestApiNotify
 
 
         error_log($this->remove_html_tags(json_encode($args)));
-
+        $message = $this->remove_html_tags($message);
         switch ($type) {
             case 'review':
                 $author_id = get_post_field('post_author', $args['listing_id']);
                 $author_email = get_the_author_meta('user_email', $author_id);
 
-                $this->send_push_notification($title, $this->remove_html_tags($message), $author_email, array("type" => $type, "listing_id" => $args['listing_id'], "listing_title" => $args['listing_title'], "review_post_type" => $args['review_post_type']));
+                $this->send_push_notification(
+                    $title,
+                    $message,
+                    $author_email, 
+                    array(
+                        "type" => $type,
+                        "listing_id" => $args['listing_id'],
+                        "listing_title" => $args['listing_title'],
+                        "review_post_type" => $args['review_post_type']
+                    ),
+                    $message
+                );
                 break;
 
             case 'matching_submissions':
                 $title = str_replace(get_option('siteurl'), get_option('blogname'), $title);
-                $message = trim(substr($this->remove_html_tags($message), 0, 100)) . "...";
+                $message_trim = trim(substr($message, 0, 100)) . "...";
 
-                $this->send_push_notification($title, $message, $notif_to, array("type" => $type, "search_url" => $args['search_url']));
+                $this->send_push_notification(
+                    $title,
+                    $message_trim,
+                    $notif_to,
+                    array(
+                        "type" => $type,
+                        "search_url" => $args['search_url']
+                    ),
+                    $message
+                );
                 break;
 
             case 'admin_free_submission_listing':
                 $title = str_replace(get_option('siteurl'), get_option('blogname'), $title);
-                $this->send_push_notification($title, $this->remove_html_tags($message), $notif_to, array("type" => $type, "listing_id" => $args['listing_id'], "listing_title" => $args['listing_title'], "listing_url" => $args['listing_url']));
+                $this->send_push_notification(
+                    $title,
+                    $message,
+                    $notif_to,
+                    array(
+                        "type" => $type,
+                        "listing_id" => $args['listing_id'],
+                        "listing_title" => $args['listing_title'],
+                        "listing_url" => $args['listing_url']
+                    ),
+                    $message,
+                );
                 break;
 
             case 'admin_update_listing':
                 $title = str_replace(get_option('siteurl'), get_option('blogname'), $title);
-                $this->send_push_notification($title, $this->remove_html_tags($message), $notif_to, array("type" => $type, "listing_id" => $args['listing_id'], "listing_title" => $args['listing_title'], "listing_url" => $args['listing_url']));
+                $this->send_push_notification(
+                    $title,
+                    $message,
+                    $notif_to,
+                    array(
+                        "type" => $type,
+                        "listing_id" => $args['listing_id'],
+                        "listing_title" => $args['listing_title'],
+                        "listing_url" => $args['listing_url']
+                    ),
+                    $message
+                );
                 break;
 
             default:
-                $this->send_push_notification($title, $this->remove_html_tags($message), $notif_to, array("type" => $type));
+                $this->send_push_notification(
+                    $title,
+                    $message,
+                    $notif_to,
+                    array(
+                        "type" => $type
+                    ),
+                    $message
+                );
                 break;
         }
     }
 
     public function test_notification()
     {
+        $onesingnal_api_key_token = (
+            array_key_exists("onesingnal_api_key_token", $this->houzi_notify_options) &&
+            isset($this->houzi_notify_options['onesingnal_api_key_token'])
+        )   ?   $this->houzi_notify_options['onesingnal_api_key_token']     :       "";
+        if (empty($onesingnal_api_key_token)) return;
+        
         $config = Configuration::getDefaultConfiguration()
             ->setAppKeyToken($this->houzi_notify_options['onesingnal_api_key_token'])
             ->setUserKeyToken($this->houzi_notify_options['onesingnal_user_key_token']);
@@ -209,12 +270,12 @@ class RestApiNotify
         return $notification;
     }
 
-    public function send_push_notification($title, $message, $email, $data = [])
+    public function send_push_notification($title, $message, $email, $data = [], $message_full)
     {
         
         if (!empty($data)) {
             $type = (array_key_exists("type",$data) && isset($data['type'])) ? $data["type"] : "general";
-            UserNotification::create_notification($email, $title, $message, $type, $data);
+            UserNotification::create_notification($email, $title, $message_full, $type, $data);
         }
         
         
