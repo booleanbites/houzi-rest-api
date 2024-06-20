@@ -42,25 +42,11 @@ function getTerms() {
 }
 function getMetaData() {
 
-  $houziPluginVersionStatusForNotifcations = -1;
   $houzezThemeVersionStatusForNotifcations = -1;
 
-  $HouziPluginMinReqVerNoti = "1.4.0";
   $HouzezThemeMinReqVerNoti = "3.1.0";
 
-  $HouziPluginVersion = HOUZI_REST_API_VERSION;
   $HouzezThemeVersion = HOUZEZ_THEME_VERSION;
-
-  if (isset($HouziPluginVersion)) {
-    // if Houzi plugin version contains any sub-version e.g. 1.0.0_1, remove the sub-version
-    if (strpos($HouziPluginVersion, '_') !== false) {
-      $versionParts = explode('_', $HouziPluginVersion);
-      $HouziPluginVersion = $versionParts[0];
-    }
-
-    $houziPluginVersionStatusForNotifcations = version_compare($HouziPluginVersion, $HouziPluginMinReqVerNoti);
-
-  }
 
   if (isset($HouzezThemeVersion)) {
     // if Houzez Theme version contains any sub-version e.g. 1.0.0_1, remove the sub-version
@@ -79,11 +65,7 @@ function getMetaData() {
     $response['version'] = HOUZI_REST_API_VERSION;
     $response['houzez_ver'] = HOUZEZ_THEME_VERSION;
 
-    if (
-      isset($houziPluginVersionStatusForNotifcations) &&
-      isset($houziPluginVersionStatusForNotifcations) &&
-      ($houziPluginVersionStatusForNotifcations == 0 ||
-        $houziPluginVersionStatusForNotifcations >= 1) &&
+    if (isset($houzezThemeVersionStatusForNotifcations) &&
       ($houzezThemeVersionStatusForNotifcations == 0 ||
         $houzezThemeVersionStatusForNotifcations >= 1)
     ) {
