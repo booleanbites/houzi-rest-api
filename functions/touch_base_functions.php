@@ -66,8 +66,7 @@ function getMetaData() {
     $response['houzez_ver'] = HOUZEZ_THEME_VERSION;
 
     if (isset($houzezThemeVersionStatusForNotifcations) &&
-      ($houzezThemeVersionStatusForNotifcations == 0 ||
-        $houzezThemeVersionStatusForNotifcations >= 1)
+      ($houzezThemeVersionStatusForNotifcations >= 0)
     ) {
       $response['notification'] = true;
     } else {
