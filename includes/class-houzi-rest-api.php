@@ -151,11 +151,12 @@ class Houzi_Rest_Api {
 	 * @access   private
 	 */
 	private function define_admin_hooks() {
-
+		require_once( HOUZI_REST_API_PLUGIN_PATH . 'functions/user_notifications.php');
 		$plugin_admin = new Houzi_Rest_Api_Admin( $this->get_plugin_name(), $this->get_version() );
 
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_styles' );
 		$this->loader->add_action( 'admin_enqueue_scripts', $plugin_admin, 'enqueue_scripts' );
+
 		$plugin_admin->load_admin_settings();
 	}
 
@@ -190,7 +191,7 @@ class Houzi_Rest_Api {
 		require_once( HOUZI_REST_API_PLUGIN_PATH . 'functions/houzez_partners.php');
 		require_once( HOUZI_REST_API_PLUGIN_PATH . 'functions/houzez_packages.php');
 		require_once( HOUZI_REST_API_PLUGIN_PATH . 'functions/article_search_functions.php');
-		require_once( HOUZI_REST_API_PLUGIN_PATH . 'functions/user_notifications.php');
+		//require_once( HOUZI_REST_API_PLUGIN_PATH . 'functions/user_notifications.php');
         
     }
 	/**
