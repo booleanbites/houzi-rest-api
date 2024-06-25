@@ -41,6 +41,15 @@ class RestApiNotify
     private $version;
 
     /**
+     * The UserNotification class instance
+     *
+     * @since    1.4.0.1
+     * @access   private
+     * @var      UserNotification    $user_notifications  user notificaition object.
+     */
+    private $user_notification;
+
+    /**
      * Initialize the class and set its properties.
      *
      * @since    1.1.5
@@ -68,6 +77,9 @@ class RestApiNotify
         }, 10, 2);
 
         $this->houzi_notify_options = get_option('houzi_notify_options');
+
+        // Initialize the UserNotification class
+        $this->$user_notification = new UserNotification();
     }
 
     function houzi_notify_email_handler($args)
@@ -282,7 +294,7 @@ class RestApiNotify
         
         if (!empty($data)) {
             $type = (array_key_exists("type",$data) && isset($data['type'])) ? $data["type"] : "general";
-            UserNotification::create_notification($email, $title, $message_full, $type, $data);
+            $this->$user_notification->create_notification($email, $title, $message_full, $type, $data);
         }
         
         $onesingnal_app_id = (
@@ -311,7 +323,7 @@ class RestApiNotify
             new GuzzleHttp\Client(),
             $config
         );
-        $notif_data = UserNotification::get_user_new_notifications($email);
+        $notif_data = $this->$user_notification->get_user_new_notifications($email);
         $notif_count = $notif_data['num_notification'];
         // $notification = $this->prepareNotification($title, $message, array(sha1($email)));
         $aliases = array("external_id" => array(sha1($email)));

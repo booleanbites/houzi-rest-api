@@ -305,5 +305,3 @@ class UserNotification {
         ];
     }
 }
-// Initialize the UserNotification class
-$user_notification = new UserNotification();
