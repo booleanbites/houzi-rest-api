@@ -188,6 +188,20 @@ class RestApiNotify
                 );
                 break;
 
+            case 'report':
+                $message_trim = trim(substr($message, 0, 100)) . "...";
+
+                $this->send_push_notification(
+                    $title,
+                    $message_trim,
+                    $notif_to,
+                    array(
+                        "type" => $type,
+                    ),
+                    $message
+                );
+                break;
+
             default:
                 $this->send_push_notification(
                     $title,
