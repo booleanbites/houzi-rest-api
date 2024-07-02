@@ -191,6 +191,7 @@ class Houzi_Rest_Api {
 		require_once( HOUZI_REST_API_PLUGIN_PATH . 'functions/houzez_partners.php');
 		require_once( HOUZI_REST_API_PLUGIN_PATH . 'functions/houzez_packages.php');
 		require_once( HOUZI_REST_API_PLUGIN_PATH . 'functions/article_search_functions.php');
+		require_once (HOUZI_REST_API_PLUGIN_PATH . 'functions/messages_functions.php');
 		//require_once( HOUZI_REST_API_PLUGIN_PATH . 'functions/user_notifications.php');
         
     }
