@@ -37,6 +37,12 @@ add_action('rest_api_init', function () {
 function getMessageThreads()
 {
 
+    if (!is_user_logged_in()) {
+        $ajax_response = array('success' => false, 'reason' => 'Please provide user auth.');
+        wp_send_json($ajax_response, 403);
+        return;
+    }
+
     global $wpdb, $current_user;
 
     $current_user_id = get_current_user_id();
