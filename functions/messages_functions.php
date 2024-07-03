@@ -69,7 +69,8 @@ function getMessageThreads()
 
     $current_user_id = get_current_user_id();
     $table = $wpdb->prefix . 'houzez_threads';
-    $user_status = 'Offline';
+    $sender_status = 'Offline';
+    $receiver_status = 'Offline';
     $filtered_threads = [];
     $current_page = isset($_GET['page']) ? intval($_GET['page']) : 1; // Current page number, default to 1 if not set
     $per_page = isset($_GET['per_page']) ? intval($_GET['per_page']) : 10; // Number of threads per page, default to 10
@@ -174,11 +175,8 @@ function getMessageThreads()
         }
     }
 
-    wp_send_json(
-        array(
-            'success' => true,
-            'results' => $filtered_threads,
-        ), 200);
+    $ajax_response = array('success' => true, 'results' => $filtered_threads);
+    wp_send_json($ajax_response, 200);
 }
 
 function deleteMessageThread()
