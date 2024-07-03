@@ -111,38 +111,64 @@ function getMessageThreads()
                 $temp_thread["last_message"] = $houzez_messages[0]->message;
             }
 
-            $thread_author = $thread->sender_id;
-            $thread_author_first_name = get_the_author_meta('first_name', $thread_author);
-            $thread_author_last_name = get_the_author_meta('last_name', $thread_author);
-            $thread_author_display_name = get_the_author_meta('display_name', $thread_author);
-            if (!empty($thread_author_first_name) && !empty($thread_author_last_name)) {
-                $thread_author_display_name = $thread_author_first_name . ' ' . $thread_author_last_name;
+            $sender_id = $thread->sender_id;
+            $sender_first_name = get_the_author_meta('first_name', $sender_id);
+            $sender_last_name = get_the_author_meta('last_name', $sender_id);
+            $sender_display_name = get_the_author_meta('display_name', $sender_id);
+            if (!empty($sender_first_name) && !empty($sender_last_name)) {
+                $sender_display_name = $sender_first_name . ' ' . $sender_last_name;
             }
 
-            $user_custom_picture = get_the_author_meta('fave_author_custom_picture', $thread_author);
+            $sender_picture = get_the_author_meta('fave_author_custom_picture', $sender_id);
 
-            if (empty($user_custom_picture)) {
-                $user_custom_picture = get_template_directory_uri() . '/img/profile-avatar.png';
+            if (empty($sender_picture)) {
+                $sender_picture = get_template_directory_uri() . '/img/profile-avatar.png';
             }
 
-            if (houzez_is_user_online($thread_author)) {
-                $user_status = 'Online';
+            if (houzez_is_user_online($sender_id)) {
+                $sender_status = 'Online';
             }
+
+            $receiver_id = $thread->receiver_id;
+            $receiver_first_name = get_the_author_meta('first_name', $receiver_id);
+            $receiver_last_name = get_the_author_meta('last_name', $receiver_id);
+            $receiver_display_name = get_the_author_meta('display_name', $receiver_id);
+            if (!empty($receiver_first_name) && !empty($receiver_last_name)) {
+                $receiver_display_name = $receiver_first_name . ' ' . $receiver_last_name;
+            }
+
+            $receiver_picture = get_the_author_meta('fave_author_custom_picture', $receiver_id);
+
+            if (empty($receiver_custom_picture)) {
+                $receiver_picture = get_template_directory_uri() . '/img/profile-avatar.png';
+            }
+
+            if (houzez_is_user_online($receiver_id)) {
+                $receiver_status = 'Online';
+            }
+
+            $temp_thread["seen"] = $thread->seen;
+            $temp_thread["time"] = $thread->time;
 
             $temp_thread["property_id"] = $thread->property_id;
             $temp_thread["property_title"] = get_post_field('post_title', $thread->property_id);
-            $temp_thread["thread_author_id"] = $thread_author;
-            $temp_thread["thread_author_first_name"] = $thread_author_first_name;
-            $temp_thread["thread_author_last_name"] = $thread_author_last_name;
-            $temp_thread["thread_author_display_name"] = $thread_author_display_name;
-            $temp_thread["user_custom_picture"] = $user_custom_picture;
-            $temp_thread["user_status"] = $user_status;
-            $temp_thread["time"] = $thread->time;
-            $temp_thread["sender_id"] = $thread->sender_id;
-            $temp_thread["receiver_id"] = $thread->receiver_id;
-            $temp_thread["seen"] = $thread->seen;
-            $temp_thread["receiver_delete"] = $thread->receiver_delete;
+
+            $temp_thread["sender_id"] = $sender_id;
+            $temp_thread["sender_first_name"] = $sender_first_name;
+            $temp_thread["sender_last_name"] = $sender_last_name;
+            $temp_thread["sender_display_name"] = $sender_display_name;
+            $temp_thread["sender_picture"] = $sender_picture;
+            $temp_thread["sender_status"] = $sender_status;
+
+            $temp_thread["receiver_id"] = $receiver_id;
+            $temp_thread["receiver_first_name"] = $receiver_first_name;
+            $temp_thread["receiver_last_name"] = $receiver_last_name;
+            $temp_thread["receiver_display_name"] = $receiver_display_name;
+            $temp_thread["receiver_picture"] = $receiver_picture;
+            $temp_thread["receiver_status"] = $receiver_status;
+
             $temp_thread["sender_delete"] = $thread->sender_delete;
+            $temp_thread["receiver_delete"] = $thread->receiver_delete;
 
             $filtered_threads[] = $temp_thread;
         }
