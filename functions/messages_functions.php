@@ -8,7 +8,8 @@ add_action('litespeed_init', function () {
     $exclude_url_list = array(
         "message_threads",
         "delete_message_thread",
-        "start_message_thread"
+        "start_message_thread",
+        "thread_messages"
     );
     foreach ($exclude_url_list as $exclude_url) {
         if (strpos($_SERVER['REQUEST_URI'], $exclude_url) !== FALSE) {
@@ -51,6 +52,16 @@ add_action('rest_api_init', function () {
         array(
             'methods' => 'POST',
             'callback' => 'startMessageThread',
+            'permission_callback' => '__return_true'
+        )
+    );
+});
+
+add_action('rest_api_init', function () {
+    register_rest_route( 'houzez-mobile-api/v1', '/thread_messages',
+        array(
+            'methods' => 'GET',
+            'callback' => 'getThreadMessages',
             'permission_callback' => '__return_true'
         )
     );
@@ -261,5 +272,70 @@ function startMessageThread()
     } else {
         $ajax_response = array('success' => true, 'msg' => 'Some errors occurred! Please try again.');
         wp_send_json($ajax_response, 422);
+    }
+}
+
+function getThreadMessages()
+{
+
+    if (!is_user_logged_in()) {
+        $ajax_response = array('success' => false, 'reason' => 'Please provide user auth.');
+        wp_send_json($ajax_response, 403);
+        return;
+    }
+
+    global $wpdb, $current_user;
+
+    $current_user_id = get_current_user_id();
+
+    $thread_id = $_REQUEST['thread_id'];
+
+    if (isset($thread_id) && !empty($thread_id)) {
+
+        $sender_id = $_GET['sender_id'];
+        $receiver_id = $_GET['receiver_id'];
+        $sender_status = 'Offline';
+        $receiver_status = 'Offline';
+        $current_page = isset($_GET['page']) ? intval($_GET['page']) : 1; // Current page number, default to 1 if not set
+        $per_page = isset($_GET['per_page']) ? intval($_GET['per_page']) : 10; // Number of threads per page, default to 10
+
+        // Calculate the offset
+        $offset = ($current_page - 1) * $per_page;
+
+        if (isset($_GET['seen']) && $_GET['seen'] == 1) {
+            houzez_update_message_status($current_user_id, $thread_id);
+        }
+
+        $table = $wpdb->prefix . 'houzez_thread_messages';
+        $houzez_messages = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$table} WHERE thread_id = %d ORDER BY id DESC LIMIT %d OFFSET %d",
+                $thread_id,
+                $per_page,
+                $offset
+            )
+        );
+
+        if (isset($sender_id) && !empty($sender_id) && houzez_is_user_online($sender_id)) {
+            $sender_status = 'Online';
+        }
+
+        if (isset($receiver_id) && !empty($receiver_id) && houzez_is_user_online($receiver_id)) {
+            $receiver_status = 'Online';
+        }
+
+        $ajax_response = array(
+            'success' => true,
+            'sender_status' => $sender_status,
+            'receiver_status' => $receiver_status,
+            'results' => $houzez_messages
+        );
+
+        wp_send_json($ajax_response, 200);
+
+    } else {
+        $ajax_response = array('success' => false, 'reason' => 'Please provide the Thread id!');
+        wp_send_json($ajax_response, 422);
+        return;
     }
 }
