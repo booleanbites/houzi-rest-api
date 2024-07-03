@@ -7,7 +7,7 @@ add_action('litespeed_init', function () {
     //these URLs need to be excluded from lightspeed caches
     $exclude_url_list = array(
         "message_threads",
-        "delete_thread",
+        "delete_message_thread",
     );
     foreach ($exclude_url_list as $exclude_url) {
         if (strpos($_SERVER['REQUEST_URI'], $exclude_url) !== FALSE) {
@@ -36,10 +36,10 @@ add_action('rest_api_init', function () {
 });
 
 add_action('rest_api_init', function () {
-    register_rest_route('houzez-mobile-api/v1', '/delete_thread',
+    register_rest_route('houzez-mobile-api/v1', '/delete_message_thread',
         array(
             'methods' => 'POST',
-            'callback' => 'deleteThread',
+            'callback' => 'deleteMessageThread',
             'permission_callback' => '__return_true'
         )
     );
@@ -144,7 +144,7 @@ function getMessageThreads()
         ), 200);
 }
 
-function deleteThread()
+function deleteMessageThread()
 {
 
     if (!is_user_logged_in()) {
