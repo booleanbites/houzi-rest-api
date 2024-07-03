@@ -8,6 +8,7 @@ add_action('litespeed_init', function () {
     $exclude_url_list = array(
         "message_threads",
         "delete_message_thread",
+        "start_message_thread"
     );
     foreach ($exclude_url_list as $exclude_url) {
         if (strpos($_SERVER['REQUEST_URI'], $exclude_url) !== FALSE) {
@@ -40,6 +41,16 @@ add_action('rest_api_init', function () {
         array(
             'methods' => 'POST',
             'callback' => 'deleteMessageThread',
+            'permission_callback' => '__return_true'
+        )
+    );
+});
+
+add_action('rest_api_init', function () {
+    register_rest_route('houzez-mobile-api/v1', '/start_message_thread',
+        array(
+            'methods' => 'POST',
+            'callback' => 'startMessageThread',
             'permission_callback' => '__return_true'
         )
     );
@@ -191,5 +202,40 @@ function deleteMessageThread()
         $ajax_response = array('success' => false, 'reason' => 'Please provide the required data correctly!');
         wp_send_json($ajax_response, 422);
         return;
+    }
+}
+
+function startMessageThread()
+{
+
+    if (!is_user_logged_in()) {
+        $ajax_response = array('success' => false, 'reason' => 'Please provide user auth.');
+        wp_send_json($ajax_response, 403);
+        return;
+    }
+
+    $nonce = $_POST['start_thread_form_ajax'];
+
+    if (!wp_verify_nonce($nonce, 'property_agent_contact_nonce')) {
+        $ajax_response = array('success' => false, 'msg' => 'Unverified Nonce!');
+        wp_send_json($ajax_response, 401);
+        return;
+    }
+
+    if (isset($_POST['property_id']) && !empty($_POST['property_id']) && 
+        isset($_POST['message']) && !empty($_POST['message'])) {
+
+        $message = $_POST['message'];
+        $thread_id = apply_filters('houzez_start_thread', $_POST);
+        $message_id = apply_filters('houzez_thread_message', $thread_id, $message, array());
+
+        if ($message_id) {
+            $ajax_response = array('success' => true, 'msg' => 'Message sent successfully!');
+            wp_send_json($ajax_response, 200);
+        }
+
+    } else {
+        $ajax_response = array('success' => true, 'msg' => 'Some errors occurred! Please try again.');
+        wp_send_json($ajax_response, 422);
     }
 }
