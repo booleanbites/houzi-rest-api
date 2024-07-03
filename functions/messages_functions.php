@@ -7,6 +7,7 @@ add_action('litespeed_init', function () {
     //these URLs need to be excluded from lightspeed caches
     $exclude_url_list = array(
         "message_threads",
+        "delete_thread",
     );
     foreach ($exclude_url_list as $exclude_url) {
         if (strpos($_SERVER['REQUEST_URI'], $exclude_url) !== FALSE) {
@@ -31,6 +32,16 @@ add_action('rest_api_init', function () {
         'callback' => 'getMessageThreads',
         'permission_callback' => '__return_true'
     )
+    );
+});
+
+add_action('rest_api_init', function () {
+    register_rest_route('houzez-mobile-api/v1', '/delete_thread',
+        array(
+            'methods' => 'POST',
+            'callback' => 'deleteThread',
+            'permission_callback' => '__return_true'
+        )
     );
 });
 
@@ -131,4 +142,54 @@ function getMessageThreads()
             'success' => true,
             'results' => $filtered_threads,
         ), 200);
+}
+
+function deleteThread()
+{
+
+    if (!is_user_logged_in()) {
+        $ajax_response = array('success' => false, 'reason' => 'Please provide user auth.');
+        wp_send_json($ajax_response, 403);
+        return;
+    }
+
+    global $wpdb, $current_user;
+    wp_get_current_user();
+    $userID = $current_user->ID;
+    $column = '';
+
+    $thread_id = $_POST['thread_id'];
+    $sender_id = $_POST['sender_id'];
+    $receiver_id = $_POST['receiver_id'];
+
+    if (isset($thread_id) && !empty($thread_id) &&
+        isset($sender_id) && !empty($sender_id) &&
+        isset($receiver_id) && !empty($receiver_id) ) {
+
+        if ($userID == $sender_id) {
+            $column = 'sender_delete';
+        } elseif ($userID == $receiver_id) {
+            $column = 'receiver_delete';
+        }
+
+
+        if (!empty($column) && !empty($thread_id)) {
+            $table = $wpdb->prefix . 'houzez_threads';
+            $wpdb->update(
+                $table,
+                array($column => 1),
+                array('id' => $thread_id),
+                array('%d'),
+                array('%d')
+            );
+        }
+
+        $ajax_response = array('success' => true, 'msg' => 'Thread deleted successfully!' );
+        wp_send_json( $ajax_response, 200 );
+
+    }  else {
+        $ajax_response = array('success' => false, 'reason' => 'Please provide the required data correctly!');
+        wp_send_json($ajax_response, 422);
+        return;
+    }
 }
