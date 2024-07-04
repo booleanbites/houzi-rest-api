@@ -9,7 +9,8 @@ add_action('litespeed_init', function () {
         "message_threads",
         "delete_message_thread",
         "start_message_thread",
-        "thread_messages"
+        "thread_messages",
+        "send_message"
     );
     foreach ($exclude_url_list as $exclude_url) {
         if (strpos($_SERVER['REQUEST_URI'], $exclude_url) !== FALSE) {
@@ -62,6 +63,16 @@ add_action('rest_api_init', function () {
         array(
             'methods' => 'GET',
             'callback' => 'getThreadMessages',
+            'permission_callback' => '__return_true'
+        )
+    );
+});
+
+add_action('rest_api_init', function () {
+    register_rest_route('houzez-mobile-api/v1', '/send_message',
+        array(
+            'methods' => 'POST',
+            'callback' => 'sendMessage',
             'permission_callback' => '__return_true'
         )
     );
@@ -338,4 +349,40 @@ function getThreadMessages()
         wp_send_json($ajax_response, 422);
         return;
     }
+}
+
+function sendMessage()
+{
+
+    if (!is_user_logged_in()) {
+        $ajax_response = array('success' => false, 'reason' => 'Please provide user auth.');
+        wp_send_json($ajax_response, 403);
+        return;
+    }
+
+    $nonce = $_POST['start_thread_message_form_ajax'];
+
+    if (!wp_verify_nonce($nonce, 'start-thread-message-form-nonce')) {
+        $ajax_response = array('success' => false, 'msg' => 'Unverified Nonce!');
+        wp_send_json($ajax_response, 401);
+        return;
+    }
+
+    if (isset($_POST['thread_id']) && !empty($_POST['thread_id']) && isset($_POST['message']) && !empty($_POST['message'])) {
+
+        $thread_id = $_POST['thread_id'];
+        $message = $_POST['message'];
+
+        $message_id = apply_filters('houzez_thread_message', $thread_id, $message, array());
+
+        if ($message_id) {
+            $ajax_response = array('success' => true, 'msg' => 'The message has been sent');
+            wp_send_json($ajax_response, 200);
+        }
+
+    } else {
+        $ajax_response = array('success' => true, 'msg' => 'Some errors occurred! Please try again.');
+        wp_send_json($ajax_response, 422);
+    }
+
 }
