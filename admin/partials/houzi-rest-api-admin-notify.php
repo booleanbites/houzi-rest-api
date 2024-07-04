@@ -202,6 +202,22 @@ class RestApiNotify
                 );
                 break;
 
+            case 'messages':
+                $clean_message = strip_tags($message);
+                $clean_message = str_replace('Click here to see message on website dashboard.', '', $message);
+                $clean_message = trim($clean_message);
+
+                $this->send_push_notification(
+                    $title,
+                    $clean_message,
+                    $notif_to,
+                    array(
+                        "type" => $type,
+                    ),
+                    $clean_message
+                );
+                break;
+
             default:
                 $this->send_push_notification(
                     $title,
