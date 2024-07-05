@@ -102,7 +102,7 @@ function getMessageThreads()
 
     $houzez_threads = $wpdb->get_results(
         $wpdb->prepare(
-            "SELECT * FROM {$table} WHERE sender_id = %d OR receiver_id = %d LIMIT %d OFFSET %d",
+            "SELECT * FROM {$table} WHERE (sender_id = %d AND sender_delete = 0) OR (receiver_id = %d AND receiver_delete = 0) LIMIT %d OFFSET %d",
             $current_user_id,
             $current_user_id,
             $per_page,
