@@ -123,16 +123,17 @@ function getMessageThreads()
                 $temp_thread["thread_id"] = $thread_id;
             }
 
-            $houzez_messages = $wpdb->get_results(
+            $houzez_latest_message = $wpdb->get_row(
                 $wpdb->prepare(
-                    "SELECT * FROM {$messages_table} WHERE thread_id = %d ORDER BY id DESC",
+                    "SELECT * FROM {$messages_table} WHERE thread_id = %d ORDER BY id DESC LIMIT 1",
                     $thread_id
                 )
             );
 
-            if (isset($houzez_messages) && !empty($houzez_messages)) {
-                $temp_thread["last_message"] = $houzez_messages[0]->message;
-                $last_message_author_id = $houzez_messages[0]->created_by;
+            if (isset($$houzez_latest_message) && !empty($$houzez_latest_message)) {
+                $temp_thread["last_message"] = $houzez_latest_message->message;
+                $temp_thread["last_message_time"] = $houzez_latest_message->time;
+                $last_message_author_id = $houzez_latest_message->created_by;
 
                 if (isset($last_message_author_id) && !empty($last_message_author_id)) {
                     $temp_thread["last_message_author_id"] = $last_message_author_id;
