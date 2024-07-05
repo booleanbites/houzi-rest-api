@@ -241,11 +241,11 @@ function deleteMessageThread()
             );
         }
 
-        $ajax_response = array('success' => true, 'msg' => 'Thread deleted successfully!' );
+        $ajax_response = array('success' => true, 'message' => 'Thread deleted successfully!' );
         wp_send_json( $ajax_response, 200 );
 
     }  else {
-        $ajax_response = array('success' => false, 'reason' => 'Please provide the required data correctly!');
+        $ajax_response = array('success' => false, 'reason' => 'Some errors occurred! Please try again.');
         wp_send_json($ajax_response, 422);
         return;
     }
@@ -263,7 +263,7 @@ function startMessageThread()
     $nonce = $_POST['start_thread_form_ajax'];
 
     if (!wp_verify_nonce($nonce, 'property_agent_contact_nonce')) {
-        $ajax_response = array('success' => false, 'msg' => 'Unverified Nonce!');
+        $ajax_response = array('success' => false, 'reason' => 'Unverified Nonce!');
         wp_send_json($ajax_response, 401);
         return;
     }
@@ -276,12 +276,12 @@ function startMessageThread()
         $message_id = apply_filters('houzez_thread_message', $thread_id, $message, array());
 
         if ($message_id) {
-            $ajax_response = array('success' => true, 'msg' => 'Message sent successfully!');
+            $ajax_response = array('success' => true, 'message' => 'Message sent successfully!');
             wp_send_json($ajax_response, 200);
         }
 
     } else {
-        $ajax_response = array('success' => true, 'msg' => 'Some errors occurred! Please try again.');
+        $ajax_response = array('success' => false, 'reason' => 'Some errors occurred! Please try again.');
         wp_send_json($ajax_response, 422);
     }
 }
@@ -363,7 +363,7 @@ function sendMessage()
     $nonce = $_POST['start_thread_message_form_ajax'];
 
     if (!wp_verify_nonce($nonce, 'start-thread-message-form-nonce')) {
-        $ajax_response = array('success' => false, 'msg' => 'Unverified Nonce!');
+        $ajax_response = array('success' => false, 'reason' => 'Unverified Nonce!');
         wp_send_json($ajax_response, 401);
         return;
     }
@@ -376,12 +376,12 @@ function sendMessage()
         $message_id = apply_filters('houzez_thread_message', $thread_id, $message, array());
 
         if ($message_id) {
-            $ajax_response = array('success' => true, 'msg' => 'The message has been sent');
+            $ajax_response = array('success' => true, 'message' => 'The message has been sent');
             wp_send_json($ajax_response, 200);
         }
 
     } else {
-        $ajax_response = array('success' => true, 'msg' => 'Some errors occurred! Please try again.');
+        $ajax_response = array('success' => false, 'reason' => 'Some errors occurred! Please try again.');
         wp_send_json($ajax_response, 422);
     }
 
