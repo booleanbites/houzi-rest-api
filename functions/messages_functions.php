@@ -132,16 +132,33 @@ function getMessageThreads()
 
             if (isset($houzez_messages) && !empty($houzez_messages)) {
                 $temp_thread["last_message"] = $houzez_messages[0]->message;
+                $last_message_author_id = $houzez_messages[0]->created_by;
+
+                if (isset($last_message_author_id) && !empty($last_message_author_id)) {
+                    $temp_thread["last_message_author_id"] = $last_message_author_id;
+
+                    $last_message_author_first_name = get_the_author_meta('first_name', $last_message_author_id);
+                    $last_message_author_last_name = get_the_author_meta('last_name', $last_message_author_id);
+                    $last_message_author_display_name = get_the_author_meta('display_name', $last_message_author_id);
+
+                    if (isset($last_message_author_display_name) && !empty($last_message_author_display_name)) {
+                        $temp_thread["last_message_author_display_name"] = $last_message_author_display_name;
+                    } else {
+                        if (!empty($last_message_author_first_name) && !empty($last_message_author_last_name)) {
+                            $last_message_author_display_name = $last_message_author_first_name . ' ' . $last_message_author_last_name;
+                            $temp_thread["last_message_author_display_name"] = $last_message_author_display_name;
+                        } else {
+                            $temp_thread["last_message_author_first_name"] = $last_message_author_first_name;
+                            $temp_thread["last_message_author_last_name"] = $last_message_author_last_name;
+                        }
+                    }
+                }
             }
 
             $sender_id = $thread->sender_id;
             $sender_first_name = get_the_author_meta('first_name', $sender_id);
             $sender_last_name = get_the_author_meta('last_name', $sender_id);
             $sender_display_name = get_the_author_meta('display_name', $sender_id);
-            if (!empty($sender_first_name) && !empty($sender_last_name)) {
-                $sender_display_name = $sender_first_name . ' ' . $sender_last_name;
-            }
-
             $sender_picture = get_the_author_meta('fave_author_custom_picture', $sender_id);
 
             if (empty($sender_picture)) {
@@ -156,10 +173,6 @@ function getMessageThreads()
             $receiver_first_name = get_the_author_meta('first_name', $receiver_id);
             $receiver_last_name = get_the_author_meta('last_name', $receiver_id);
             $receiver_display_name = get_the_author_meta('display_name', $receiver_id);
-            if (!empty($receiver_first_name) && !empty($receiver_last_name)) {
-                $receiver_display_name = $receiver_first_name . ' ' . $receiver_last_name;
-            }
-
             $receiver_picture = get_the_author_meta('fave_author_custom_picture', $receiver_id);
 
             if (empty($receiver_custom_picture)) {
@@ -177,16 +190,35 @@ function getMessageThreads()
             $temp_thread["property_title"] = get_post_field('post_title', $thread->property_id);
 
             $temp_thread["sender_id"] = $sender_id;
-            $temp_thread["sender_first_name"] = $sender_first_name;
-            $temp_thread["sender_last_name"] = $sender_last_name;
-            $temp_thread["sender_display_name"] = $sender_display_name;
+
+            if (isset($sender_display_name) && !empty($sender_display_name)) {
+                $temp_thread["sender_display_name"] = $sender_display_name;
+            } else {
+                if (!empty($sender_first_name) && !empty($sender_last_name)) {
+                    $sender_display_name = $sender_first_name . ' ' . $sender_last_name;
+                    $temp_thread["sender_display_name"] = $sender_display_name;
+                } else {
+                    $temp_thread["sender_first_name"] = $sender_first_name;
+                    $temp_thread["sender_last_name"] = $sender_last_name;
+                }
+            }
+
             $temp_thread["sender_picture"] = $sender_picture;
             $temp_thread["sender_status"] = $sender_status;
 
             $temp_thread["receiver_id"] = $receiver_id;
-            $temp_thread["receiver_first_name"] = $receiver_first_name;
-            $temp_thread["receiver_last_name"] = $receiver_last_name;
-            $temp_thread["receiver_display_name"] = $receiver_display_name;
+            if (isset($receiver_display_name) && !empty($receiver_display_name)) {
+                $temp_thread["receiver_display_name"] = $receiver_display_name;
+            } else {
+                if (!empty($receiver_first_name) && !empty($receiver_last_name)) {
+                    $receiver_display_name = $receiver_first_name . ' ' . $receiver_last_name;
+                    $temp_thread["receiver_display_name"] = $receiver_display_name;
+                } else {
+                    $temp_thread["receiver_first_name"] = $receiver_first_name;
+                    $temp_thread["receiver_last_name"] = $receiver_last_name;
+                }
+            }
+
             $temp_thread["receiver_picture"] = $receiver_picture;
             $temp_thread["receiver_status"] = $receiver_status;
 
