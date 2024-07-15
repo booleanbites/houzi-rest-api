@@ -150,6 +150,15 @@ function reportContent(){
         // $response['message'] = 'Message sent successfully.';
         //$response['test'] = $body;
     }
+
+    $notifArgs = array(
+        "title" => $subject,
+        "message" => $body,
+        "type" => 'report',
+        "to" => $to,
+    );
+
+    do_action('houzez_send_notification', $notifArgs);
     
     $ajax_response = array( 'success' => true , 'message' => esc_html__( 'Thank you for reporting, our support will review your report.', 'houzi' ) );
     wp_send_json($ajax_response, 200);
