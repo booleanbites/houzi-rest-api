@@ -120,7 +120,7 @@ class UserNotification {
         return array(
             'has_notification' => $have_posts,
             'num_notification' => $post_count,
-            'last_checked_notification' => gmdate('Y-m-d H:i:s', $last_checked_time)
+            'last_checked_notification' => ($last_checked_time && !empty($last_checked_time)) ? gmdate('Y-m-d H:i:s', $last_checked_time) : ""
         );
     }
     function time_ago( $timestamp ) {
