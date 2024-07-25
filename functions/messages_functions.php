@@ -189,7 +189,7 @@ function getMessageThreads()
             $receiver_display_name = get_the_author_meta('display_name', $receiver_id);
             $receiver_picture = get_the_author_meta('fave_author_custom_picture', $receiver_id);
 
-            if (empty($receiver_custom_picture)) {
+            if (empty($receiver_picture)) {
                 $receiver_picture = get_template_directory_uri() . '/img/profile-avatar.png';
             }
 
