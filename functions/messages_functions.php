@@ -97,18 +97,31 @@ function getMessageThreads()
     $current_page = isset($_GET['page']) ? intval($_GET['page']) : 1; // Current page number, default to 1 if not set
     $per_page = isset($_GET['per_page']) ? intval($_GET['per_page']) : 10; // Number of threads per page, default to 10
 
+    $property_id = isset($_GET['property_id']) ? intval($_GET['property_id']) : null;
+
     // Calculate the offset
     $offset = ($current_page - 1) * $per_page;
 
-    $houzez_threads = $wpdb->get_results(
-        $wpdb->prepare(
-            "SELECT * FROM {$table} WHERE (sender_id = %d AND sender_delete = 0) OR (receiver_id = %d AND receiver_delete = 0) LIMIT %d OFFSET %d",
-            $current_user_id,
-            $current_user_id,
-            $per_page,
-            $offset
-        )
-    );
+    if (isset($property_id)) {
+        $houzez_threads = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$table} WHERE ((sender_id = %d AND sender_delete = 0) OR (receiver_id = %d AND receiver_delete = 0)) AND property_id = %d",
+                $current_user_id,
+                $current_user_id,
+                $property_id
+            )
+        );
+    } else {
+        $houzez_threads = $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM {$table} WHERE (sender_id = %d AND sender_delete = 0) OR (receiver_id = %d AND receiver_delete = 0) LIMIT %d OFFSET %d",
+                $current_user_id,
+                $current_user_id,
+                $per_page,
+                $offset
+            )
+        );
+    }
 
     $messages_table = $wpdb->prefix . 'houzez_thread_messages';
 
