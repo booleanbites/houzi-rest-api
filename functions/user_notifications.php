@@ -173,6 +173,9 @@ class UserNotification {
             'supports' => ['title', 'editor'],
             'show_ui' => true,
             'menu_icon' => 'dashicons-bell',
+            'capabilities' => array(
+                'create_posts' => false, // Removes the ability to add new
+            ),
         ]);
     }
 
