@@ -234,6 +234,9 @@ class RestApiNotify
 
     public function test_notification()
     {
+        if (!$this->houzi_notify_options || empty($this->houzi_notify_options)) {
+			return;
+		}
         $onesingnal_app_id = (
             array_key_exists("onesingnal_app_id", $this->houzi_notify_options) &&
             isset($this->houzi_notify_options['onesingnal_app_id'])
@@ -326,7 +329,9 @@ class RestApiNotify
             $type = (array_key_exists("type",$data) && isset($data['type'])) ? $data["type"] : "general";
             $this->$user_notification->create_notification($email, $title, $message_full, $type, $data);
         }
-        
+        if (!$this->houzi_notify_options || empty($this->houzi_notify_options)) {
+			return;
+		}
         $onesingnal_app_id = (
             array_key_exists("onesingnal_app_id", $this->houzi_notify_options) &&
             isset($this->houzi_notify_options['onesingnal_app_id'])

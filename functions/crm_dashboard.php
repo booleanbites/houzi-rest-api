@@ -630,7 +630,8 @@ function addPropertyRequest() {
 
   $_POST['is_estimation'] = 'yes';
   $_POST['email_to'] = get_option( 'admin_email' );
-
+  $email_subject = !empty($_POST['email_subject']) ? $_POST['email_subject'] : 'New Property Request';
+  $_POST['email_subject'] = $email_subject;
   global $houzez_options;
   $houzez_options['enable_reCaptcha'] = 0;
 
