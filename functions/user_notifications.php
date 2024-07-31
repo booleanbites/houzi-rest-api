@@ -21,6 +21,12 @@ class UserNotification {
 				'callback' => array( $this, 'check_for_new_notifications'),
 				'permission_callback' => '__return_true'
 			));
+
+            register_rest_route('houzez-mobile-api/v1', '/delete-notifications', array(
+                'methods' => 'POST',
+                'callback' => array($this, 'delete_notification'),
+                'permission_callback' => '__return_true'
+            ));
 		});
 
         add_action('manage_' . self::POST_TYPE . '_posts_columns', [$this, 'set_custom_columns']);
@@ -212,9 +218,59 @@ class UserNotification {
     }
 
     // Delete a notification
-    public function delete_notification($notification_id) {
-        $deleted = wp_delete_post($notification_id, true);
-        return $deleted;
+    public function delete_notification() {
+
+        if (!is_user_logged_in()) {
+            $ajax_response = array('success' => false, 'reason' => 'Please provide user auth.');
+            wp_send_json($ajax_response, 403);
+            return;
+        }
+
+        global $current_user;
+        $current_user = wp_get_current_user();
+        $current_user_email = $current_user->user_email;
+        $perform_delete_opertion = false;
+
+        $notification_id = $_POST['notification_id'];
+        $notification_user_email = $_POST['notification_user_email'];
+
+        if (isset($notification_id) && !empty($notification_id) &&
+            isset($notification_user_email) && !empty($notification_user_email)) {
+
+            if (current_user_can('manage_options')) {
+                /* A user with admin privileges */
+                $perform_delete_opertion = true;
+            } else {
+                /* A user without admin privileges */
+                if ($current_user_email == $notification_user_email) {
+                    $perform_delete_opertion = true;
+                } else {
+                    $perform_delete_opertion = false;
+                }
+            }
+        } else {
+            $ajax_response = array('success' => false, 'reason' => 'Some errors occurred! Please try again.');
+            wp_send_json($ajax_response, 422);
+            return;
+        }
+
+        
+        if ($perform_delete_opertion) {
+            $deleted = wp_delete_post($notification_id, true);
+            
+            if ($deleted == false || $deleted == null) {
+                $ajax_response = array('success' => false, 'reason' => 'Notification deletion failed! Please try again.');
+                wp_send_json($ajax_response, 422);
+                return;
+            } else {
+                $ajax_response = array('success' => true, 'message' => 'Notification deleted successfully!');
+                wp_send_json($ajax_response, 200);
+            }
+        } else {
+            $ajax_response = array('success' => false, 'reason' => 'You are not authorized to delete this notification.');
+            wp_send_json($ajax_response, 401);
+            return;
+        }
     }
 
     // Set custom columns for the post type list table
