@@ -22,7 +22,7 @@ class UserNotification {
 				'permission_callback' => '__return_true'
 			));
 
-            register_rest_route('houzez-mobile-api/v1', '/delete-notifications', array(
+            register_rest_route('houzez-mobile-api/v1', '/delete-notification', array(
                 'methods' => 'POST',
                 'callback' => array($this, 'delete_notification'),
                 'permission_callback' => '__return_true'
