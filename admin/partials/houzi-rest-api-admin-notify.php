@@ -246,6 +246,25 @@ class RestApiNotify
                     if (isset($thread) && !empty($thread)) {
                         $property_id = $thread->property_id;
                         $property_title = get_post_field('post_title', $thread->property_id);
+                        $sender_id = $thread->sender_id;
+                        $sender_first_name = get_the_author_meta('first_name', $sender_id);
+                        $sender_last_name = get_the_author_meta('last_name', $sender_id);
+                        $sender_display_name = get_the_author_meta('display_name', $sender_id);
+                        $sender_picture = get_the_author_meta('fave_author_custom_picture', $sender_id);
+
+                        if (empty($sender_picture)) {
+                            $sender_picture = get_template_directory_uri() . '/img/profile-avatar.png';
+                        }
+
+                        $receiver_id = $thread->receiver_id;
+                        $receiver_first_name = get_the_author_meta('first_name', $receiver_id);
+                        $receiver_last_name = get_the_author_meta('last_name', $receiver_id);
+                        $receiver_display_name = get_the_author_meta('display_name', $receiver_id);
+                        $receiver_picture = get_the_author_meta('fave_author_custom_picture', $receiver_id);
+
+                        if (empty($receiver_picture)) {
+                            $receiver_picture = get_template_directory_uri() . '/img/profile-avatar.png';
+                        }
                     }
                 }
 
@@ -266,6 +285,12 @@ class RestApiNotify
                         "thread_id" => $thread_id,
                         "property_id" => $property_id,
                         "property_title" => $property_title,
+                        "sender_id" => $sender_id,
+                        "sender_display_name" => $sender_display_name,
+                        "sender_picture" => $sender_picture,
+                        "receiver_id" => $receiver_id,
+                        "receiver_display_name" => $receiver_display_name,
+                        "receiver_picture" => $receiver_picture,
                     ),
                     $clean_message
                 );
