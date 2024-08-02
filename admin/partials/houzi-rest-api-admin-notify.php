@@ -109,6 +109,7 @@ class RestApiNotify
 
         
         $message = $args["message"];
+        $orignal_message = $args["message"];
 
         foreach ($args as $key => $val) {
             $title= str_replace('%' . $key, $val, $title);
@@ -121,6 +122,10 @@ class RestApiNotify
 
         error_log($this->remove_html_tags(json_encode($args)));
         $message = $this->remove_html_tags($message);
+
+        $title = str_replace(get_option('siteurl'), get_option('blogname'), $title);
+
+
         switch ($type) {
             case 'review':
                 $author_id = get_post_field('post_author', $args['listing_id']);
@@ -141,7 +146,6 @@ class RestApiNotify
                 break;
 
             case 'matching_submissions':
-                $title = str_replace(get_option('siteurl'), get_option('blogname'), $title);
                 $message_trim = trim(substr($message, 0, 100)) . "...";
 
                 $this->send_push_notification(
@@ -157,7 +161,6 @@ class RestApiNotify
                 break;
 
             case 'admin_free_submission_listing':
-                $title = str_replace(get_option('siteurl'), get_option('blogname'), $title);
                 $this->send_push_notification(
                     $title,
                     $message,
@@ -173,7 +176,6 @@ class RestApiNotify
                 break;
 
             case 'admin_update_listing':
-                $title = str_replace(get_option('siteurl'), get_option('blogname'), $title);
                 $this->send_push_notification(
                     $title,
                     $message,
@@ -203,6 +205,54 @@ class RestApiNotify
                 break;
 
             case 'messages':
+
+                global $wpdb, $current_user;
+                $current_user_id = get_current_user_id();
+                $table = $wpdb->prefix . 'houzez_threads';
+
+                $cleanThreadId = '';
+                $property_id = '';
+                $property_title = '';
+
+                // Split the string based on 'thread_id='
+                $strings_array = explode('thread_id=', $orignal_message);
+
+                // String before 'thread_id='
+                $beforeThreadId = $strings_array[0];
+
+                // String after 'thread_id=', if it exists
+                $afterThreadId = isset($strings_array[1]) ? $strings_array[1] : '';
+
+                if (isset($afterThreadId) && !empty($afterThreadId)) {
+                    // Further split the second part based on '&seen' to remove it and anything after it
+                    // $afterThreadIdString = explode('&seen', $afterThreadId);
+                    $afterThreadIdString = explode('&', $afterThreadId);
+
+                    // Part before '&seen'
+                    $cleanThreadId = $afterThreadIdString[0];
+                }
+
+                $thread_id = $cleanThreadId;
+                $thread_id_int = intval($thread_id);
+
+                $houzez_threads = $wpdb->get_results(
+                    $wpdb->prepare(
+                        "SELECT * FROM {$table} WHERE id = %d",
+                        $thread_id_int
+                    )
+                );
+
+                foreach ($houzez_threads as $thread) {
+                    if (isset($thread) && !empty($thread)) {
+                        $property_id = $thread->property_id;
+                        $property_title = get_post_field('post_title', $thread->property_id);
+                    }
+                }
+
+                if (isset($property_title) && !empty($property_title)) {
+                    $title = $property_title;
+                }
+
                 $clean_message = strip_tags($message);
                 $clean_message = str_replace('Click here to see message on website dashboard.', '', $message);
                 $clean_message = trim($clean_message);
@@ -213,6 +263,9 @@ class RestApiNotify
                     $notif_to,
                     array(
                         "type" => $type,
+                        "thread_id" => $thread_id,
+                        "property_id" => $property_id,
+                        "property_title" => $property_title,
                     ),
                     $clean_message
                 );
@@ -309,6 +362,17 @@ class RestApiNotify
             $notification->setData($data);
         }
 
+        $type = $data['type'];
+
+        if (isset($type) && !empty($type) && $type == 'messages') {
+            $thread_id = $data['thread_id'];
+
+            if (isset($thread_id) && !empty($thread_id)) {
+                $notification->setThreadId($thread_id);
+                $notification->setAndroidGroup($thread_id);
+            }
+        }
+
         error_log(json_encode($notification));
 
         // $notification->setIncludedSegments(['Subscribed Users']);
@@ -362,6 +426,7 @@ class RestApiNotify
         $notif_count = $notif_data['num_notification'];
         // $notification = $this->prepareNotification($title, $message, array(sha1($email)));
         $aliases = array("external_id" => array(sha1($email)));
+
         $notification = $this->prepareNotification($title, $message, $aliases, $data, $notif_count);
 
         $result = $apiInstance->createNotification($notification);
