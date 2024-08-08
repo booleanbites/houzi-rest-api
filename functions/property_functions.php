@@ -545,8 +545,15 @@ function getProperty($request) {
         return; 
     }
 
-	$propertyId     = $_GET['id'];
-    queryPropertyById($propertyId);
+    $propertyId     = $_GET['id'];
+    $args = array(
+        'post_type'        =>  'property',
+        'post__in'         =>  array($propertyId),
+        'posts_per_page'   =>  1,
+        'suppress_filters' =>  false,
+		'ignore_sticky_posts' => 1,
+    );
+    sendPropertyJson($args);
 }
 function queryPropertyById($propertyId) {   
     $args = array(
