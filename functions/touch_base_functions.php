@@ -74,6 +74,9 @@ function getMetaData() {
     }
 
     $response['messages'] = houzez_option('agent_direct_messages', 0);
+
+    $response['max_prop_images'] = houzez_option('max_prop_images', "50");
+    
     $response['payment_enabled'] = houzez_option( 'enable_paid_submission', 'no' );
     $response['default_currency'] = houzez_get_currency();
     $response['currency_position'] = houzez_option( 'currency_position', '$' );
