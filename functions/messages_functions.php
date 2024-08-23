@@ -143,7 +143,7 @@ function getMessageThreads()
                 )
             );
 
-            if (isset($$houzez_latest_message) && !empty($$houzez_latest_message)) {
+            if (isset($houzez_latest_message) && !empty($houzez_latest_message)) {
                 $temp_thread["last_message"] = $houzez_latest_message->message;
                 $temp_thread["last_message_time"] = $houzez_latest_message->time;
                 $last_message_author_id = $houzez_latest_message->created_by;
