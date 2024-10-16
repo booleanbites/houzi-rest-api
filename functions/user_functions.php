@@ -372,7 +372,7 @@ function socialSignOn()
 
   $email = $_POST['email'] ?? "";
   //source wasn't apple or phone, we need email or username.
-  if (strtolower($source) != 'phone' && (!isset($_POST['email']) || empty($email))) {
+  if ((strtolower($source) != 'phone' && strtolower($source) != 'apple') && (!isset($_POST['email']) || empty($email))) {
     $ajax_response = array('success' => false, 'reason' => "email not provided");
     wp_send_json($ajax_response, 403);
     return;
@@ -418,9 +418,23 @@ function socialSignOn()
 
     return;
   }
+  // there's a chance where the apple login may not send email. so we cannot get the
+  // email or generate username when there's no email.
+  // so simply set the display name if provided or user_id_social as username.
+  if ((strtolower($source) == 'apple') && empty($email)) {
+    if (isset($_POST['display_name']) && !empty($_POST['display_name'])) {
+      $display_n = $_POST['display_name'];
+      $username = convert_to_valid_username($display_n);;
+    } else {
+      
+      $username = convert_to_valid_username(substr($user_id_social, 0, 15));
+      //set display_name to Apple and a username, so it doesn't make problem if the display name wasn't provided.
+      $_POST['display_name'] = "Apple " . substr($username, 0, 8);
+    }
+  }
 
 
-  if (!isset($_POST['username']) || empty($username)) {
+  if (empty($username)) {
     $username = explode('@', $email)[0];
   }
 
@@ -1282,4 +1296,20 @@ function userCurrentPackage()
     );
     wp_send_json($ajax_response, 200);
   }
+}
+
+function convert_to_valid_username($string) {
+  // Convert the string to lowercase
+  $username = strtolower($string);
+  
+  // Remove all characters except letters, numbers, underscores, and dashes
+  $username = preg_replace('/[^a-z0-9_\-]/', '', $username);
+  
+  // Optionally, replace spaces with underscores (or you could use dashes)
+  $username = str_replace(' ', '_', $username);
+
+  // Trim underscores or dashes from the beginning or end
+  $username = trim($username, '_-');
+  
+  return $username;
 }
