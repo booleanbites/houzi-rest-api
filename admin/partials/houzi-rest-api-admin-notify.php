@@ -79,7 +79,7 @@ class RestApiNotify
         $this->houzi_notify_options = get_option('houzi_notify_options');
 
         // Initialize the UserNotification class
-        $this->$user_notification = new UserNotification();
+        $this->user_notification = new UserNotification();
     }
 
     function houzi_notify_email_handler($args)
@@ -411,12 +411,12 @@ class RestApiNotify
         return $notification;
     }
 
-    public function send_push_notification($title, $message, $email, $data = [], $message_full)
+    public function send_push_notification($title, $message, $email, $message_full, $data = [])
     {
         
         if (!empty($data)) {
             $type = (array_key_exists("type",$data) && isset($data['type'])) ? $data["type"] : "general";
-            $this->$user_notification->create_notification($email, $title, $message_full, $type, $data);
+            $this->user_notification->create_notification($email, $title, $message_full, $type, $data);
         }
         if (!$this->houzi_notify_options || empty($this->houzi_notify_options)) {
 			return;
@@ -447,7 +447,7 @@ class RestApiNotify
             new GuzzleHttp\Client(),
             $config
         );
-        $notif_data = $this->$user_notification->get_user_new_notifications($email);
+        $notif_data = $this->user_notification->get_user_new_notifications($email);
         $notif_count = $notif_data['num_notification'];
         // $notification = $this->prepareNotification($title, $message, array(sha1($email)));
         $aliases = array("external_id" => array(sha1($email)));
