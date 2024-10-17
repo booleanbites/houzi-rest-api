@@ -545,14 +545,26 @@ function getProperty($request) {
         return; 
     }
 
-    $propertyId     = $_GET['id'];
+    $property_id     = $_GET['id'];
     $args = array(
         'post_type'        =>  'property',
-        'post__in'         =>  array($propertyId),
+        'post__in'         =>  array($property_id),
         'posts_per_page'   =>  1,
         'suppress_filters' =>  false,
 		'ignore_sticky_posts' => 1,
     );
+
+    $user_id       = get_current_user_id();
+    if (is_user_logged_in()) {
+        $user_role = houzez_user_role_by_user_id($user_id);
+        $author_id = get_post_field('post_author', $property_id);
+        
+        // Append 'post_status' => 'any' if the user is an admin or the author of the post
+        if ($user_role == 'administrator' || $author_id == $user_id) {
+            $args['post_status'] = 'any';
+        }
+    }
+    
     sendPropertyJson($args);
 }
 function queryPropertyById($propertyId) {   
