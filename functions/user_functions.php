@@ -475,7 +475,7 @@ function socialSignOn()
 
   update_user_meta($wordpress_user_id, "user_id_social", $user_id_social);
   if (strtolower($source) == 'phone') {
-    update_user_meta($user->ID, "fave_author_mobile", $username);
+    update_user_meta($wordpress_user_id, "fave_author_mobile", $username);
   }
 
   doJWTAuth($username, $user_id_social);
