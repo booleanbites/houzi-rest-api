@@ -539,7 +539,7 @@ function getProperty($request) {
         wp_send_json($ajax_response,400);
         return;
     }
-    if (isset( $_GET['editing']) && !empty( $_GET['editing'] && $_GET['editing'] == "true") && ! is_user_logged_in() ) {
+    if (isset( $_GET['editing']) && !empty( $_GET['editing']) && $_GET['editing'] == "true" && ! is_user_logged_in() ) {
         $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
         wp_send_json($ajax_response, 403);
         return; 
