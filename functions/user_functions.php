@@ -67,6 +67,16 @@ add_action('rest_api_init', function () {
 
   register_rest_route(
     'houzez-mobile-api/v1',
+    '/try-phone-login',
+    array (
+      'methods' => 'POST',
+      'callback' => 'tryPhoneLogin',
+      'permission_callback' => '__return_true'
+    )
+  );
+
+  register_rest_route(
+    'houzez-mobile-api/v1',
     '/social-sign-on',
     array (
       'methods' => 'POST',
@@ -323,6 +333,65 @@ function signInUser()
   wp_send_json($data, $response->get_status());
   die;
 }
+
+function tryPhoneLogin()
+{
+  if (!create_nonce_or_throw_error('login_security', 'login_nonce')) {
+    return;
+  }
+  $nonce = $_POST['login_security'];
+  if (!wp_verify_nonce($nonce, 'login_nonce')) {
+    $ajax_response = array('success' => false, 'reason' => esc_html__('Security check failed!', 'houzi'));
+    wp_send_json($ajax_response, 403);
+    return;
+  }
+
+  if (!isset($_POST['source'])) {
+    $ajax_response = array('success' => false, 'reason' => "source not provided");
+    wp_send_json($ajax_response, 403);
+    return;
+  }
+  if (!isset($_POST['user_id'])) {
+    $ajax_response = array('success' => false, 'reason' => "user_id not provided");
+    wp_send_json($ajax_response, 403);
+    return;
+  }
+
+
+  $source = $_POST['source'];
+  if (strtolower($source) != 'phone') {
+    $ajax_response = array('success' => false, 'reason' => "source not phone");
+    wp_send_json($ajax_response, 403);
+    return;
+  }
+  $username = $_POST['username'] ?? "";
+  if (strtolower($source) == 'phone' && (!isset($_POST['username']) || empty($username))) {
+    $ajax_response = array('success' => false, 'reason' => "source is phone, but phone not provided in username");
+    wp_send_json($ajax_response, 403);
+    return;
+  }
+
+  $user_id_social = $_POST['user_id'];
+
+  if (strtolower($source) == 'phone') {
+    $user_query = array(
+      'meta_key' => 'user_id_social',
+      'meta_value' => $user_id_social,
+      'count' => 1,
+    );
+    $user_obj = get_users($user_query);
+    $user = reset($user_obj);
+    if ($user) {
+      doJWTAuthWithSecret($$user->user_login, $user->data->user_pass);
+      //we logged in, return from here.
+      return;
+    }
+  }
+
+  $ajax_response = array( 'success' => false , "Couldn't verify the user",  );
+  wp_send_json($ajax_response, 403);    
+
+}
 function socialSignOn()
 {
   if (!create_nonce_or_throw_error('login_security', 'login_nonce')) {
@@ -475,7 +544,11 @@ function socialSignOn()
 
   update_user_meta($wordpress_user_id, "user_id_social", $user_id_social);
   if (strtolower($source) == 'phone') {
-    update_user_meta($wordpress_user_id, "fave_author_mobile", $username);
+    $phonenum = $username;
+    if (strpos($phonenum, '+') !== 0) {
+        $phonenum = '+' . $phonenum;
+    }
+    update_user_meta($wordpress_user_id, "fave_author_mobile", $phonenum);
   }
 
   doJWTAuth($username, $user_id_social);
@@ -540,7 +613,23 @@ function signupUser()
   global $houzez_options;
   $houzez_options['enable_reCaptcha'] = 0;
 
+  if (isset( $_POST['user_id_social']) && !empty( $_POST['user_id_social'])) {
+    global $user_id_social_global;
+    $user_id_social_global = $_POST['user_id_social'];
+    add_action('houzez_after_register', 'set_newly_created_social_id');
+  }
+
+
   do_action("wp_ajax_nopriv_houzez_register");//houzez_register();
+
+}
+function set_newly_created_social_id($user_id) {
+  global $user_id_social_global;
+  if (isset($user_id_social_global) && !empty($user_id_social_global)) {
+    update_user_meta($user_id, "user_id_social", $user_id_social_global);
+    $user_id_social_global = null;
+  }
+  remove_action('houzez_after_register', 'set_newly_created_social_id');
 }
 
 function adminAddUser()
@@ -1064,9 +1153,13 @@ function proceedWithPayment($request)
         $args[$key] = $value;
       }
     }
-
-    houzez_email_type($admin_email, 'admin_featured_submission_listing', $args);
-    $ajax_response = array('success' => true, 'message' => 'Congratulation! your property is featured now');
+    try {
+      houzez_email_type($admin_email, 'admin_featured_submission_listing', $args);
+    } catch(Exception $e) {  
+      $args["email_error"] = $e->getMessage();  
+    } 
+    
+    $ajax_response = array('success' => true, 'message' => 'Congratulation! your property is featured now', "args" => $args);
     wp_send_json($ajax_response, 200);
 
   } else if ($enable_paid_submission == 'per_listing') {
@@ -1120,11 +1213,14 @@ function proceedWithPayment($request)
       }
     }
 
-    // houzez_email_type($user_email, 'paid_submission_listing', $args);
-    houzez_email_type($admin_email, 'admin_paid_submission_listing', $args);
+    try {
+      houzez_email_type($admin_email, 'admin_paid_submission_listing', $args);
+    } catch(Exception $e) {  
+      $args["email_error"] = $e->getMessage();  
+    } 
 
     $message = ($is_prop_featured == 1) ? 'Congratulation! your property is featured now' : 'Congratulation! your property is published now';
-    $ajax_response = array('success' => true, 'message' => $message);
+    $ajax_response = array('success' => true, 'message' => $message, "args" => $args);
     wp_send_json($ajax_response, 200);
 
   } else if ($enable_paid_submission == 'membership') {
