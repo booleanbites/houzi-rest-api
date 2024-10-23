@@ -135,13 +135,13 @@ class RestApiNotify
                     $title,
                     $message,
                     $author_email, 
+                    $message,
                     array(
                         "type" => $type,
                         "listing_id" => $args['listing_id'],
                         "listing_title" => $args['listing_title'],
                         "review_post_type" => $args['review_post_type']
-                    ),
-                    $message
+                    )
                 );
                 break;
 
@@ -152,11 +152,11 @@ class RestApiNotify
                     $title,
                     $message_trim,
                     $notif_to,
+                    $message,
                     array(
                         "type" => $type,
                         "search_url" => $args['search_url']
-                    ),
-                    $message
+                    )
                 );
                 break;
 
@@ -165,13 +165,13 @@ class RestApiNotify
                     $title,
                     $message,
                     $notif_to,
+                    $message,
                     array(
                         "type" => $type,
                         "listing_id" => $args['listing_id'],
                         "listing_title" => $args['listing_title'],
                         "listing_url" => $args['listing_url']
                     ),
-                    $message,
                 );
                 break;
 
@@ -180,13 +180,13 @@ class RestApiNotify
                     $title,
                     $message,
                     $notif_to,
+                    $message,
                     array(
                         "type" => $type,
                         "listing_id" => $args['listing_id'],
                         "listing_title" => $args['listing_title'],
                         "listing_url" => $args['listing_url']
-                    ),
-                    $message
+                    )
                 );
                 break;
 
@@ -197,10 +197,11 @@ class RestApiNotify
                     $title,
                     $message_trim,
                     $notif_to,
+                    $message,
                     array(
                         "type" => $type,
-                    ),
-                    $message
+                    )
+                    
                 );
                 break;
 
@@ -280,6 +281,7 @@ class RestApiNotify
                     $title,
                     $clean_message,
                     $notif_to,
+                    $clean_message,
                     array(
                         "type" => $type,
                         "thread_id" => $thread_id,
@@ -291,8 +293,7 @@ class RestApiNotify
                         "receiver_id" => $receiver_id,
                         "receiver_display_name" => $receiver_display_name,
                         "receiver_picture" => $receiver_picture,
-                    ),
-                    $clean_message
+                    )
                 );
                 break;
 
@@ -301,10 +302,10 @@ class RestApiNotify
                     $title,
                     $message,
                     $notif_to,
+                    $message,
                     array(
                         "type" => $type
-                    ),
-                    $message
+                    )
                 );
                 break;
         }
