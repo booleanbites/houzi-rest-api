@@ -1141,7 +1141,11 @@ function setupSearchQuery() {
     if( $tax_count > 0 ) {
         $query_args['tax_query']  = $tax_query;
     }
-    
+    //if it is an author, add it to query.
+    if( isset($_POST['author_id'] ) && !empty( $_POST['author_id'] )) {
+        $query_args['author'] = $_POST['author_id'];    
+    }
+
     $query_args['paged'] = $page;
 
     if( $per_page > 0 ) {
