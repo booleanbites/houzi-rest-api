@@ -696,10 +696,19 @@ function appendPostImages(&$property)
     $property_images_array = !empty($property->property_meta['fave_property_images']) ? $property->property_meta['fave_property_images'] : [];
 	if ($property_images_array == null || empty($property_images_array)) return;
 	
-  foreach ($property_images_array as $imgID) :
-    $property->property_images[] = wp_get_attachment_url($imgID);
-    $property->property_images_thumb[] = wp_get_attachment_image_src($imgID, 'thumbnail', true )[0];
-  endforeach;
+    foreach ($property_images_array as $imgID) :
+        $property->property_images[] = wp_get_attachment_url($imgID);
+        $property->property_images_thumb[] = wp_get_attachment_image_src($imgID, 'thumbnail', true )[0];
+    endforeach;
+
+    $realty_feed_images_array = isset($property->medias) && !empty($property->medias) ? $property->medias : [];
+    if ($realty_feed_images_array == null || empty($realty_feed_images_array)) return;
+    foreach ($realty_feed_images_array as $img_obj) :
+        $img_full = $img_obj["MediaURL"];
+        $img_thumb = $img_obj["Thumbnail"];
+        $property->property_images[] = $img_full;
+        $property->property_images_thumb[] = $img_thumb;
+    endforeach;
 }
 function appendPostAttachments(&$property)
 {
