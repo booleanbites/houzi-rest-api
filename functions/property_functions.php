@@ -662,6 +662,9 @@ function sendPropertyJson($args) {
         unset($property_meta['additional_features']);
         unset($property_meta['floor_plans']);    
         unset($property_meta['fave_multi_units']);
+
+        //unset realty_feed_raw_data since it is appended already in a seprate key
+        unset($property_meta['realty_feed_raw_data']);
         
   
         $property_meta['additional_features'] = $additional_features ? unserialize($additional_features[0]) : [];
