@@ -177,7 +177,7 @@ function addAgent($request){
   $results["data"] = $_POST;
   //wp_send_json($results,200);
   //using the existing theme method.
-  do_action("wp_ajax_nopriv_houzez_agency_agent");//houzez_agency_agent();
+  do_action("wp_ajax_houzez_agency_agent");//houzez_agency_agent();
 }
 function editAgent($request){
   if (! is_user_logged_in() ) {
