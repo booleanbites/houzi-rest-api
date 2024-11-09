@@ -120,7 +120,6 @@ class RestApiNotify
         $message = preg_replace('/%[^ ]*[\s]?/', '', $message);
 
 
-        error_log($this->remove_html_tags(json_encode($args)));
         $message = $this->remove_html_tags($message);
 
         $title = str_replace(get_option('siteurl'), get_option('blogname'), $title);
@@ -461,6 +460,13 @@ class RestApiNotify
 
     function remove_html_tags(string $text): string
     {
+        $text = html_entity_decode($text);
+
+        // Remove all HTML tags
+        $text = strip_tags($text, '<br>'); // Keep <br> tags if needed, or remove them
+
+        // Optional: Replace remaining <br> tags with actual newlines if desired
+        $text = str_replace('<br>', "\n", $text);   
         // Create a regular expression that matches all HTML tags.
         $pattern = '/<[^>]+>/';
 
