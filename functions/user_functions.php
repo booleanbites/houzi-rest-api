@@ -433,7 +433,8 @@ function socialSignOn()
       )
     );
     if ($user) {
-      doJWTAuthWithSecret($user->user_email, $user->data->user_pass);
+      //user_login will definitely exist on apple user. email may not.
+      doJWTAuthWithSecret($user->user_login, $user->data->user_pass);
       //we logged in, return from here.
       return;
     }
