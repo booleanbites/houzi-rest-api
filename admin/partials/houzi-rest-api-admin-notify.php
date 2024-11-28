@@ -327,15 +327,15 @@ class RestApiNotify
         )   ?   $this->houzi_notify_options['onesingnal_api_key_token']     :       "";
         if (empty($onesingnal_api_key_token)) return;
 
-        $onesingnal_user_key_token = (
-            array_key_exists("onesingnal_user_key_token", $this->houzi_notify_options) &&
-            isset($this->houzi_notify_options['onesingnal_user_key_token'])
-        )   ?   $this->houzi_notify_options['onesingnal_user_key_token']     :       "";
-        if (empty($onesingnal_user_key_token)) return;
+        // $onesingnal_user_key_token = (
+        //     array_key_exists("onesingnal_user_key_token", $this->houzi_notify_options) &&
+        //     isset($this->houzi_notify_options['onesingnal_user_key_token'])
+        // )   ?   $this->houzi_notify_options['onesingnal_user_key_token']     :       "";
+        // if (empty($onesingnal_user_key_token)) return;
 
         $config = Configuration::getDefaultConfiguration()
-            ->setAppKeyToken($this->houzi_notify_options['onesingnal_api_key_token'])
-            ->setUserKeyToken($this->houzi_notify_options['onesingnal_user_key_token']);
+            ->setAppKeyToken($this->houzi_notify_options['onesingnal_api_key_token']);
+            // ->setUserKeyToken($this->houzi_notify_options['onesingnal_user_key_token']);
 
         $apiInstance = new DefaultApi(
             new GuzzleHttp\Client(),
@@ -433,15 +433,16 @@ class RestApiNotify
         )   ?   $this->houzi_notify_options['onesingnal_api_key_token']     :       "";
         if (empty($onesingnal_api_key_token)) return;
 
-        $onesingnal_user_key_token = (
-            array_key_exists("onesingnal_user_key_token", $this->houzi_notify_options) &&
-            isset($this->houzi_notify_options['onesingnal_user_key_token'])
-        )   ?   $this->houzi_notify_options['onesingnal_user_key_token']     :       "";
-        if (empty($onesingnal_user_key_token)) return;
+        // $onesingnal_user_key_token = (
+        //     array_key_exists("onesingnal_user_key_token", $this->houzi_notify_options) &&
+        //     isset($this->houzi_notify_options['onesingnal_user_key_token'])
+        // )   ?   $this->houzi_notify_options['onesingnal_user_key_token']     :       "";
+        // if (empty($onesingnal_user_key_token)) return;
 
         $config = Configuration::getDefaultConfiguration()
-            ->setAppKeyToken($this->houzi_notify_options['onesingnal_api_key_token'])
-            ->setUserKeyToken($this->houzi_notify_options['onesingnal_user_key_token']);
+            ->setAppKeyToken($this->houzi_notify_options['onesingnal_api_key_token']);
+            //->setUserKeyToken($this->houzi_notify_options['onesingnal_user_key_token']);
+            
 
         $apiInstance = new DefaultApi(
             new GuzzleHttp\Client(),
@@ -523,17 +524,17 @@ class RestApiNotify
             // page
             'notify' // section
         );
-        add_settings_field(
-            'onesingnal_user_key_token',
-            // id
-            'OneSingnal User Key Token',
-            // title
-            array($this, 'onesingnal_user_key_token_callback'),
-            // callback
-            'houzi-rest-api&tab=notify',
-            // page
-            'notify' // section
-        );
+        // add_settings_field(
+        //     'onesingnal_user_key_token',
+        //     // id
+        //     'OneSingnal User Key Token',
+        //     // title
+        //     array($this, 'onesingnal_user_key_token_callback'),
+        //     // callback
+        //     'houzi-rest-api&tab=notify',
+        //     // page
+        //     'notify' // section
+        // );
 
         // $this->test_notification();
     }
@@ -543,9 +544,9 @@ class RestApiNotify
         // Initialize the sanitary_values array with all possible keys
         $sanitary_values = [
             'onesingnal_app_id' => '',
-            'onesingnal_api_key_token' => '',
-            'onesingnal_user_key_token' => ''
+            'onesingnal_api_key_token' => ''
         ];
+        //,'onesingnal_user_key_token' => ''
 
         if (isset($input['onesingnal_app_id'])) {
             $sanitary_values['onesingnal_app_id'] = sanitize_text_field($input['onesingnal_app_id']);
@@ -555,9 +556,9 @@ class RestApiNotify
             $sanitary_values['onesingnal_api_key_token'] = sanitize_text_field($input['onesingnal_api_key_token']);
         }
 
-        if (isset($input['onesingnal_user_key_token'])) {
-            $sanitary_values['onesingnal_user_key_token'] = sanitize_text_field($input['onesingnal_user_key_token']);
-        }
+        // if (isset($input['onesingnal_user_key_token'])) {
+        //     $sanitary_values['onesingnal_user_key_token'] = sanitize_text_field($input['onesingnal_user_key_token']);
+        // }
 
         return $sanitary_values;
     }
@@ -584,13 +585,13 @@ class RestApiNotify
         );
     }
 
-    public function onesingnal_user_key_token_callback()
-    {
-        printf(
-            '<input class="regular-text" type="password" name="houzi_notify_options[onesingnal_user_key_token]" id="onesingnal_user_key_token" value="%s" placeholder="••••••••••••••••••••••••••••••••••••••••••••"><button type="button" id="hide-token-key" class="button button-secondary wp-hide-pw hide-if-no-js" data-toggle="0" aria-label="Show password"><span class="dashicons dashicons-visibility" aria-hidden="true"></span></button> <br><p>Go to <a href="https://app.onesignal.com/profile">https://app.onesignal.com/profile</a> page and scroll down to the "User Auth Key" section.<br>If you don\'t have a key already generated, please generate a new one by clicking the "Generate New User Auth Key" button.</p>',
-            isset($this->houzi_notify_options['onesingnal_user_key_token']) ? $this->houzi_notify_options['onesingnal_user_key_token'] : ''
-        );
-    }
+    // public function onesingnal_user_key_token_callback()
+    // {
+    //     printf(
+    //         '<input class="regular-text" type="password" name="houzi_notify_options[onesingnal_user_key_token]" id="onesingnal_user_key_token" value="%s" placeholder="••••••••••••••••••••••••••••••••••••••••••••"><button type="button" id="hide-token-key" class="button button-secondary wp-hide-pw hide-if-no-js" data-toggle="0" aria-label="Show password"><span class="dashicons dashicons-visibility" aria-hidden="true"></span></button> <br><p>Go to <a href="https://app.onesignal.com/profile">https://app.onesignal.com/profile</a> page and scroll down to the "User Auth Key" section.<br>If you don\'t have a key already generated, please generate a new one by clicking the "Generate New User Auth Key" button.</p>',
+    //         isset($this->houzi_notify_options['onesingnal_user_key_token']) ? $this->houzi_notify_options['onesingnal_user_key_token'] : ''
+    //     );
+    // }
 
     public function houzi_notify_tab()
     {

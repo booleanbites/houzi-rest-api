@@ -1309,7 +1309,7 @@ class DefaultApi
         }
 
         if (!empty($this->config->getAppKeyToken())) {
-            $headers['Authorization'] = 'Bearer ' . $this->config->getAppKeyToken();
+            $headers['Authorization'] = 'Key ' . $this->config->getAppKeyToken();
         }
 
         $defaultHeaders = [];
