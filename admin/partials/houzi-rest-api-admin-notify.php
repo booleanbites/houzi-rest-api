@@ -115,12 +115,11 @@ class RestApiNotify
             $title= str_replace('%' . $key, $val, $title);
             $message= str_replace('%' . $key, $val, $message);
         }
+        
+        $message = $this->remove_html_tags($message);
 
         // remove %abc type strings from the message
         $message = preg_replace('/%[^ ]*[\s]?/', '', $message);
-
-
-        $message = $this->remove_html_tags($message);
 
         $title = str_replace(get_option('siteurl'), get_option('blogname'), $title);
 
@@ -272,13 +271,13 @@ class RestApiNotify
                     $title = $property_title;
                 }
 
-                $clean_message = strip_tags($message);
+
                 $clean_message = str_replace('Click here to see message on website dashboard.', '', $message);
                 $clean_message = trim($clean_message);
 
                 $this->send_push_notification(
                     $title,
-                    $clean_message,
+                    empty($clean_message) ? "new message" : $clean_message,
                     $notif_to,
                     $clean_message,
                     array(

@@ -1050,6 +1050,12 @@ function paymentStatus($request)
   }
   $userID = get_current_user_id();
 
+  $agent_agency_id = houzez_get_agent_agency_id( $userID );
+
+  if( $agent_agency_id ) {
+    $userID = $agent_agency_id;
+  }
+
   $enable_paid_submission = houzez_option('enable_paid_submission');
   $remaining_listings = houzez_get_remaining_listings($userID);
   $featured_remaining_listings = houzez_get_featured_remaining_listings($userID);
@@ -1063,6 +1069,7 @@ function paymentStatus($request)
   $response['payment_page'] = $payment_page;
   $response['user_has_membership'] = $user_has_membership;
   $response['user_had_free_package'] = houzez_user_had_free_package($userID);
+  $response['agent_agency_id'] = !$agent_agency_id ? "" : $agent_agency_id;
   wp_send_json($response, 200);
 }
 
@@ -1326,6 +1333,13 @@ function userCurrentPackage()
     return;
   }
   $user_id = get_current_user_id();
+
+  $agent_agency_id = houzez_get_agent_agency_id( $user_id );
+
+  if( $agent_agency_id ) {
+    $user_id = $agent_agency_id;
+  }
+
   $remaining_listings = houzez_get_remaining_listings($user_id);
   $pack_featured_remaining_listings = houzez_get_featured_remaining_listings($user_id);
   $package_id = houzez_get_user_package_id($user_id);
@@ -1382,7 +1396,8 @@ function userCurrentPackage()
       'pack_billing_period' => $pack_billing_period,
       'pack_billing_frequency' => $pack_billing_frequency,
       'pack_date' => $pack_date,
-      'expired_date' => $expired_date
+      'expired_date' => $expired_date,
+      'agent_agency_id' => !$agent_agency_id ? "" : $agent_agency_id,
     );
 
     wp_send_json($ajax_response, 200);
