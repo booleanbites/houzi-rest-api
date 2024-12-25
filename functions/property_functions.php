@@ -463,6 +463,19 @@ function getMyProperties() {
         }
     }
     $args = houzez_prop_sort ( $args );
+    $user_role = houzez_user_role_by_user_id($userID);
+    if ($user_role == 'houzez_agency') {
+        $agents = houzez_get_agency_agents($userID);
+
+        if ($agents) {
+            if (!in_array($userID, $agents)) {
+                $agents[] = $userID;
+            }
+            $args['author__in'] = $agents;
+        } else {
+            $args['author'] = $userID;
+        }
+    }
     queryPropertiesAndSendJSON($args);
 }
 

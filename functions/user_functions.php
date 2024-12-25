@@ -277,6 +277,7 @@ function add_user_info_to_login($data, $user)
   $userID = $user->ID;
   $data['user_id'] = $userID;
   $data['user_role'] = $user->roles;
+  $data['user_phone'] = get_the_author_meta('fave_author_phone', $userID);
   $user_custom_picture = get_the_author_meta('fave_author_custom_picture', $userID);
   $author_picture_id = get_the_author_meta('fave_author_picture_id', $userID);
   if (!empty($author_picture_id)) {
@@ -295,6 +296,8 @@ function add_user_info_to_login($data, $user)
   } else if (!empty($user_agency_id)) {
     $data['fave_author_agency_id'] = $user_agency_id;
   }
+	
+	
 
   return $data;
 }
@@ -1049,13 +1052,11 @@ function paymentStatus($request)
     return;
   }
   $userID = get_current_user_id();
-
   $agent_agency_id = houzez_get_agent_agency_id( $userID );
 
   if( $agent_agency_id ) {
     $userID = $agent_agency_id;
   }
-
   $enable_paid_submission = houzez_option('enable_paid_submission');
   $remaining_listings = houzez_get_remaining_listings($userID);
   $featured_remaining_listings = houzez_get_featured_remaining_listings($userID);
@@ -1339,7 +1340,7 @@ function userCurrentPackage()
   if( $agent_agency_id ) {
     $user_id = $agent_agency_id;
   }
-
+	
   $remaining_listings = houzez_get_remaining_listings($user_id);
   $pack_featured_remaining_listings = houzez_get_featured_remaining_listings($user_id);
   $package_id = houzez_get_user_package_id($user_id);
