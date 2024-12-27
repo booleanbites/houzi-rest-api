@@ -134,7 +134,7 @@ function getMetaData() {
     $houzi_eleven = get_option( 'houzi_eleven' );
     $eleven_text = get_option( 'houzi_eleven_text' );
   
-    $response['licensed'] = !empty($houzi_eleven) && !empty($eleven_text);
+    $response['elevened'] = !empty($houzi_eleven) && !empty($eleven_text);
     $response['property_reviews'] = houzez_option( 'property_reviews' );
     $response['property_area'] = [];
     $response['schedule_time_slots'] = houzez_option('schedule_time_slots');
@@ -142,11 +142,13 @@ function getMetaData() {
     add_custom_fields_to_response($response);
     add_roles_to_response($response);
     
-    $response['enquiry_type'] = hcrm_get_option('enquiry_type', 'hcrm_enquiry_settings', esc_html__('Purchase, Rent, Sell, Miss, Evaluation, Mortgage', 'houzez'));
-    $response['lead_prefix'] = hcrm_get_option('prefix', 'hcrm_lead_settings', esc_html__('Mr, Mrs, Ms, Miss, Dr, Prof, Mr & Mrs', 'houzez'));
-    $response['lead_source'] = hcrm_get_option('source', 'hcrm_lead_settings', esc_html__('Website, Newspaper, Friend, Google, Facebook', 'houzez'));
-    $response['deal_status'] = hcrm_get_option('status', 'hcrm_deals_settings', esc_html__('New Lead, Meeting Scheduled, Qualified, Proposal Sent, Called, Negotiation, Email Sent', 'houzez'));
-    $response['deal_next_action'] = hcrm_get_option('next_action', 'hcrm_deals_settings', esc_html__('Qualification, Demo, Call, Send a Proposal, Send an Email, Follow Up, Meeting', 'houzez'));
+    if (function_exists('hcrm_get_option')) {
+      $response['enquiry_type'] = hcrm_get_option('enquiry_type', 'hcrm_enquiry_settings', esc_html__('Purchase, Rent, Sell, Miss, Evaluation, Mortgage', 'houzez'));
+      $response['lead_prefix'] = hcrm_get_option('prefix', 'hcrm_lead_settings', esc_html__('Mr, Mrs, Ms, Miss, Dr, Prof, Mr & Mrs', 'houzez'));
+      $response['lead_source'] = hcrm_get_option('source', 'hcrm_lead_settings', esc_html__('Website, Newspaper, Friend, Google, Facebook', 'houzez'));
+      $response['deal_status'] = hcrm_get_option('status', 'hcrm_deals_settings', esc_html__('New Lead, Meeting Scheduled, Qualified, Proposal Sent, Called, Negotiation, Email Sent', 'houzez'));
+      $response['deal_next_action'] = hcrm_get_option('next_action', 'hcrm_deals_settings', esc_html__('Qualification, Demo, Call, Send a Proposal, Send an Email, Follow Up, Meeting', 'houzez'));
+    }
     wp_send_json($response, 200);
     //echo json_encode($response);
 }
