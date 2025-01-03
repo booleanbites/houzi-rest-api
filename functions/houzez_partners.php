@@ -33,6 +33,8 @@ class HouziPartners {
                 $data->data['featured_image_url'] = $featured_image_url;
             }
         }
+        $meta = get_post_meta($post->ID);
+        $data->meta = $meta;
         return $data;
     }
 
