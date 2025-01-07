@@ -338,6 +338,7 @@ function contactPropertyRealtor($request){
   // name
   // email
   // message
+  // listing_id - required.
   // user_type - buyer, tennant, agent, other
 
   //using the existing theme method.
