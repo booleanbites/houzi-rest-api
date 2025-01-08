@@ -628,9 +628,19 @@ function addCRMEnquiry() {
 }
 function addPropertyRequest() {
 
+  $form_id = 'houzi-inquiry-form';
+  $email_to = get_option( 'houzi_inquiry_form_email' ) ? get_option( 'houzi_inquiry_form_email' ) : get_option( 'admin_email' );
+  $email_subject = !empty($_POST['email_subject']) ? $_POST['email_subject'] : (get_option('houzi_inquiry_form_subject') ?: 'New Property Request from App');
+  $form_settings = array(
+      'email_to' => $email_to,
+      'email_subject' => $email_subject, 
+  );
+
+  update_option('houzez_form_' . $form_id, $form_settings);
+
   $_POST['is_estimation'] = 'yes';
+  $_POST['form_id'] = $form_id;
   $_POST['email_to'] = get_option( 'admin_email' );
-  $email_subject = !empty($_POST['email_subject']) ? $_POST['email_subject'] : 'New Property Request';
   $_POST['email_subject'] = $email_subject;
   global $houzez_options;
   $houzez_options['enable_reCaptcha'] = 0;

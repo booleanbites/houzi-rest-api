@@ -718,8 +718,7 @@ function sendContactMail(WP_REST_Request $request)
   $website = $request['website'];
   $phone = $request['phone'];
 
-
-  $subject = "[$source] New message from $contactName";
+  $subject = (get_option('houzi_contact_form_subject') ?: "[$source] New message from $contactName");
 
   $body = "<p><b>Name:</b> $contactName</p>";
   $body .= "<p><b>Email:</b> $contactEmail</p>";
@@ -732,8 +731,9 @@ function sendContactMail(WP_REST_Request $request)
   }
 
   $body .= "<p><b>Message:</b> $contactMessage</p>";
+  $body .= "<p><b>Source:</b> $source</p>";
 
-  $to = get_option('admin_email');
+  $to = get_option( 'houzi_contact_form_email' ) ? get_option( 'houzi_contact_form_email' ) : get_option( 'admin_email' );
   $headers = array(
     'Content-Type: text/html; charset=UTF-8',
     "Reply-To: $contactName <$contactEmail>",
