@@ -255,27 +255,27 @@ function addPropertyWithAuth() {
         $response_editing = 'true';
     }
 
-    $admin_email = get_option('admin_email');
-    $property_id = $new_property;
-    $email_type = '';
+    // $admin_email = get_option('admin_email');
+    // $property_id = $new_property;
+    // $email_type = '';
 
-    global $current_user;
-    wp_get_current_user();
-    $userEmail = $current_user->user_email;
+    // global $current_user;
+    // wp_get_current_user();
+    // $userEmail = $current_user->user_email;
 
-    if ($response_editing == 'true') {
-        $email_type = 'admin_update_listing';
-    } else {
-        $email_type = 'admin_free_submission_listing';
-    }
+    // if ($response_editing == 'true') {
+    //     $email_type = 'admin_update_listing';
+    // } else {
+    //     $email_type = 'admin_free_submission_listing';
+    // }
 
-    $args = array(
-        'listing_title' => get_the_title($property_id),
-        'listing_id' => $property_id,
-        'listing_url' => get_permalink($property_id)
-    );
+    // $args = array(
+    //     'listing_title' => get_the_title($property_id),
+    //     'listing_id' => $property_id,
+    //     'listing_url' => get_permalink($property_id)
+    // );
 
-    houzez_email_type($admin_email, $email_type, $args);
+    // houzez_email_type($admin_email, $email_type, $args);
     
     wp_send_json(['prop_id' => $new_property, 'purged' => $response_editing ],200);
 }
