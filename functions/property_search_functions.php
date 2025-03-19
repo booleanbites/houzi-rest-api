@@ -2069,6 +2069,15 @@ function getFavoriteProperties() {
     $userID  = get_current_user_id();
     $fav_ids = 'houzez_favorites-'.$userID;
     $fav_ids = get_option( $fav_ids );
+
+    //if it is empty from option, try from user meta.
+    if( empty( $fav_ids ) ) { 
+        $fav_ids = get_user_meta( $userID, 'houzez_favorites', true );
+        if ( empty( $fav_ids ) || ! is_array( $fav_ids ) ) {
+            $fav_ids = array();
+        }
+    }
+
     if( empty( $fav_ids ) ) { 
         $ajax_response = array( 'success' => false, 'reason' => esc_html__("You don't have any favorite listings yet!", 'houzez') );
          wp_send_json($ajax_response, 404);
@@ -2106,6 +2115,15 @@ function isFavoriteProperty($prop_id) {
     $userID  = get_current_user_id();
     $fav_ids = 'houzez_favorites-'.$userID;
     $fav_ids = get_option( $fav_ids );
+
+    //if it is empty from option, try from user meta.
+    if( empty( $fav_ids ) ) { 
+        $fav_ids = get_user_meta( $userID, 'houzez_favorites', true );
+        if ( empty( $fav_ids ) || ! is_array( $fav_ids ) ) {
+            $fav_ids = array();
+        }
+    }
+
     if( empty( $fav_ids ) ) {
         return false;
     }
