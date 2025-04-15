@@ -17,6 +17,32 @@ add_filter( 'rest_houzez_agent_query', function( $args, $request ){
 return $args;
 }, 10, 2 );
 
+// -------------------- Bug Fixed for visibility of agencies and agents--------------------
+add_filter( 'rest_houzez_agency_query', function( $args, $request ) {
+  $visible_only = $request->get_param( 'visible_only' );
+  
+  if ( $visible_only !== null ) {
+      $is_visible = filter_var( $visible_only, FILTER_VALIDATE_BOOLEAN );
+      $args['meta_key'] = 'fave_agency_visible';
+      $args['meta_value'] = $is_visible ? '0' : '1'; //  true(display) → '0', false(will not display) → '1'
+  }
+  
+  return $args;
+}, 10, 2 );
+
+add_filter( 'rest_houzez_agent_query', function( $args, $request ) {
+  $visible_only = $request->get_param( 'visible_only' );
+  
+  if ( $visible_only !== null ) {
+      $is_visible = filter_var( $visible_only, FILTER_VALIDATE_BOOLEAN );
+      $args['meta_key'] = 'fave_agent_visible';
+      $args['meta_value'] = $is_visible ? '0' : '1'; //  true(display) → '0', false(will not display) → '1'
+  }
+  
+  return $args;
+}, 10, 2 );
+
+// ------
 
 add_filter('rest_prepare_houzez_agent', 'prepareAgentData', 10, 3);
 
