@@ -2022,6 +2022,16 @@ function propertyNode($property){
     $property->price = strip_tags($priceHTML);
     $property->priceSimple = houzez_listing_price_map_pins();
 
+   /* Making changes in thumbnail, 
+   if thumbnail exits then show thumbnail 
+   else show first image from Media/property_Images. */
+   
+   if(!empty($property->thumbnail)) {
+        $property->thumbnail = $property->thumbnail;
+    } else {
+        $property->thumbnail = getThumbnailasPropertyImage($post_id, $property);
+    }
+
     $should_add_all_images_list = isset($_REQUEST['add_all_images_list']) ? $_REQUEST['add_all_images_list'] : '';
     if (!empty($should_add_all_images_list) && $should_add_all_images_list == 'yes') {
         $property->property_meta['property_images'] = appendPostImages($property);
@@ -2047,6 +2057,53 @@ function propertyNode($property){
     
     return $property;
 }
+
+/// Return the thumbnail image URL or the first image URL from the property images
+/// if the thumbnail is not available.
+function getThumbnailasPropertyImage(&$post_id, &$property) {
+    $property->thumbnail = get_the_post_thumbnail_url( $post_id, 'houzez-property-thumb-image' );
+    if(!empty($property->thumbnail)) {
+        return $property->thumbnail;
+    } else {
+        if(!empty(getPropertyImageFirstIndex($property)[0])){
+            return getPropertyImageFirstIndex($property)[0]; 
+        }else {
+            return getPropertyImageFirstIndex($property)[1];
+        }
+    }
+}
+/// Return the first image URL from the property images
+function getPropertyImageFirstIndex($property): array
+{
+    $fullImage = null;
+    $thumbImage = null;
+
+    /// Check property_meta images first
+    $property_images_array = !empty($property->property_meta['fave_property_images']) ? $property->property_meta['fave_property_images'] : [];
+    if (!empty($property_images_array)) {
+        $firstImgID = $property_images_array[0] ?? null;
+        if ($firstImgID) {
+            $fullImage = wp_get_attachment_url($firstImgID);
+            $thumbData = wp_get_attachment_image_src($firstImgID, 'thumbnail', true);
+            $thumbImage = $thumbData[0] ?? null;
+        }
+    }
+
+    /// If no images found in property_meta, check medias
+    if ($fullImage === null && $thumbImage === null) {
+        $realty_feed_images_array = isset($property->medias) && !empty($property->medias) ? $property->medias : [];
+        if (!empty($realty_feed_images_array)) {
+            $firstMedia = $realty_feed_images_array[0] ?? null;
+            if ($firstMedia) {
+                $fullImage = $firstMedia['MediaURL'] ?? null;
+                $thumbImage = $firstMedia['Thumbnail'] ?? null;
+            }
+        }
+    }
+
+    return [$fullImage, $thumbImage];
+}
+
 
 function getFavoriteProperties() {
     
