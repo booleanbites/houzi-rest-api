@@ -122,6 +122,7 @@ function getMetaData() {
     }
 
     add_term_to_response($response, 'property_country');
+    add_term_to_response($response, 'multi_currency');
     add_term_to_response($response, 'property_state');
     add_term_to_response($response, 'property_city');
     //add_term_to_response($response, 'property_area');
