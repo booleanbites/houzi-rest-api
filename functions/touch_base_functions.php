@@ -40,6 +40,69 @@ function getTerms() {
 
   wp_send_json($response, 200);
 }
+
+
+function get_base_currency(){
+	$base_currency = htf_get_base_currency();
+	return $base_currency;
+}
+
+function exchange_rate_currency_data(){
+    $currencies = Fcc_get_currencies();
+    $base_currency = htf_get_base_currency();
+    $rates = Fcc_get_exchange_rates($base_currency);
+    $supported_currency = houzez_get_list_of_supported_currencies();
+
+    $result = [];
+
+    if (!empty($supported_currency)) {
+        foreach ($rates as $key => $value) {
+            if (in_array($key, $supported_currency)) {
+                $result[$key] = $value; 
+            }
+        }
+    }
+
+    return $result;
+} 
+
+function exchange_rates_currency_data(){
+    $currencies = Fcc_get_currencies();
+    $base_currency = htf_get_base_currency();
+    $rates = Fcc_get_exchange_rates($base_currency);
+    $supported_currency = houzez_get_list_of_supported_currencies();
+
+    $result = [];
+
+    if (!empty($supported_currency)) {
+        foreach ($currencies as $key => $value) {
+            if (in_array($key, $supported_currency)) {
+                $result[$key] = $value; 
+            }
+        }
+    }
+
+    return $result;
+} 
+
+function combine_response() {
+    $list1 = exchange_rates_currency_data(); 
+    $list2 = exchange_rate_currency_data();  
+
+    $combined = [];
+
+    foreach ($list1 as $key => $data) {
+        if (isset($list2[$key])) {
+            $data['rate'] = $list2[$key];  // Add rate from list2 to list1
+        }
+        $combined[] = $data;  // Push into a numeric array .....
+    }
+
+    return $combined;
+}
+
+
+
 function getMetaData() {
 
   $houzezThemeVersionStatusForNotifcations = -1;
@@ -89,8 +152,11 @@ function getMetaData() {
     $response['register_last_name'] = houzez_option('register_last_name', 0);
     $response['register_mobile'] = houzez_option('register_mobile', 0);
     $response['enable_password'] = houzez_option('enable_password', 0);
-    
+    $response['get_currencies'] = get_rates();
     $response['measurement_unit_global']  = houzez_option('measurement_unit_global');
+    $response['currency_switcher_enabled'] = houzez_currency_switcher_enabled();
+	  $response['base_currency'] = get_base_currency();
+	  $response['currency_rates'] = combine_response();
     
     $prop_size_prefix = houzez_option('measurement_unit');
     $response['measurement_unit_global']  = $prop_size_prefix;
