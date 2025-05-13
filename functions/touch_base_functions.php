@@ -93,13 +93,16 @@ function combine_response() {
 
     foreach ($list1 as $key => $data) {
         if (isset($list2[$key])) {
-            $data['rate'] = $list2[$key];  // Add rate from list2 to list1
+            $data['rate'] = $list2[$key];  // Add rate
         }
-        $combined[] = $data;  // Push into a numeric array .....
+        $combined[] = $data;  // Push into a numeric array
     }
 
     return $combined;
 }
+
+
+
 
 
 
@@ -152,11 +155,30 @@ function getMetaData() {
     $response['register_last_name'] = houzez_option('register_last_name', 0);
     $response['register_mobile'] = houzez_option('register_mobile', 0);
     $response['enable_password'] = houzez_option('enable_password', 0);
-    $response['get_currencies'] = get_rates();
+	$response['currency_switcher_enabled'] = houzez_currency_switcher_enabled();
+	$response['base_currency'] = get_base_currency();
+	$response['currency_rates'] = combine_response();
+	/// ---- Start for Static Multi Currency     
+	if(houzez_option('multi_currency') == 1){
+		$currencies = houzez_available_currencies();
+
+    
+    if ( isset($currencies['']) ) {
+        unset($currencies['']);
+    }
+
+    $response['multi_currencies'] = $currencies;
+	} else {
+    $response['default_currency'] = houzez_get_currency();
+    $response['currency_position'] = houzez_option('currency_position', '$');
+    $response['thousands_separator'] = houzez_option('thousands_separator', ',');
+    $response['decimal_point_separator'] = houzez_option('decimal_point_separator', '.');
+    $response['num_decimals'] = houzez_option('decimals', '0');
+}
+/// ---- End for Static Multi Currency
+	
+ 	
     $response['measurement_unit_global']  = houzez_option('measurement_unit_global');
-    $response['currency_switcher_enabled'] = houzez_currency_switcher_enabled();
-	  $response['base_currency'] = get_base_currency();
-	  $response['currency_rates'] = combine_response();
     
     $prop_size_prefix = houzez_option('measurement_unit');
     $response['measurement_unit_global']  = $prop_size_prefix;
@@ -188,11 +210,8 @@ function getMetaData() {
     }
 
     add_term_to_response($response, 'property_country');
-    add_term_to_response($response, 'multi_currency');
     add_term_to_response($response, 'property_state');
     add_term_to_response($response, 'property_city');
-    //add_term_to_response($response, 'property_area');
-
     add_term_to_response($response, 'property_type');
     add_term_to_response($response, 'property_label');
     add_term_to_response($response, 'property_status');
@@ -201,21 +220,20 @@ function getMetaData() {
     $houzi_eleven = get_option( 'houzi_eleven' );
     $eleven_text = get_option( 'houzi_eleven_text' );
   
-    $response['elevened'] = !empty($houzi_eleven) && !empty($eleven_text);
+    $response['licensed'] = !empty($houzi_eleven) && !empty($eleven_text);
     $response['property_reviews'] = houzez_option( 'property_reviews' );
     $response['property_area'] = [];
     $response['schedule_time_slots'] = houzez_option('schedule_time_slots');
       
     add_custom_fields_to_response($response);
     add_roles_to_response($response);
-    
     if (function_exists('hcrm_get_option')) {
-      $response['enquiry_type'] = hcrm_get_option('enquiry_type', 'hcrm_enquiry_settings', esc_html__('Purchase, Rent, Sell, Miss, Evaluation, Mortgage', 'houzez'));
-      $response['lead_prefix'] = hcrm_get_option('prefix', 'hcrm_lead_settings', esc_html__('Mr, Mrs, Ms, Miss, Dr, Prof, Mr & Mrs', 'houzez'));
-      $response['lead_source'] = hcrm_get_option('source', 'hcrm_lead_settings', esc_html__('Website, Newspaper, Friend, Google, Facebook', 'houzez'));
-      $response['deal_status'] = hcrm_get_option('status', 'hcrm_deals_settings', esc_html__('New Lead, Meeting Scheduled, Qualified, Proposal Sent, Called, Negotiation, Email Sent', 'houzez'));
-      $response['deal_next_action'] = hcrm_get_option('next_action', 'hcrm_deals_settings', esc_html__('Qualification, Demo, Call, Send a Proposal, Send an Email, Follow Up, Meeting', 'houzez'));
-    }
+    	$response['enquiry_type'] = hcrm_get_option('enquiry_type', 'hcrm_enquiry_settings', esc_html__('Purchase, Rent, Sell, Miss, Evaluation, Mortgage', 'houzez'));
+	    $response['lead_prefix'] = hcrm_get_option('prefix', 'hcrm_lead_settings', esc_html__('Mr, Mrs, Ms, Miss, Dr, Prof, Mr & Mrs', 'houzez'));
+    	$response['lead_source'] = hcrm_get_option('source', 'hcrm_lead_settings', esc_html__('Website, Newspaper, Friend, Google, Facebook', 'houzez'));
+	    $response['deal_status'] = hcrm_get_option('status', 'hcrm_deals_settings', esc_html__('New Lead, Meeting Scheduled, Qualified, Proposal Sent, Called, Negotiation, Email Sent', 'houzez'));
+    	$response['deal_next_action'] = hcrm_get_option('next_action', 'hcrm_deals_settings', esc_html__('Qualification, Demo, Call, Send a Proposal, Send an Email, Follow Up, Meeting', 'houzez'));
+	}
     wp_send_json($response, 200);
     //echo json_encode($response);
 }
