@@ -92,6 +92,10 @@ class RestApiNotify
         $title = $args["title"];
         $type = $args["type"];
         $notif_to = $args["to"];
+        if (empty($notif_to)) {
+        error_log('Email is required to send a notification.');
+        return; 
+        }
 
         if (strlen($title) < 1) {
             $title = fave_option('houzez_subject_' . $type);
@@ -412,8 +416,11 @@ class RestApiNotify
 
     public function send_push_notification($title, $message, $email, $message_full, $data = [])
     {
-        
-        if (!empty($data)) {
+         if (empty($email)) {
+        error_log(message: 'Cannot send notification: Recipient email is empty.');
+        return; 
+    	}
+        if (!empty($data) ) {
             $type = (array_key_exists("type",$data) && isset($data['type'])) ? $data["type"] : "general";
             $this->user_notification->create_notification($email, $title, $message_full, $type, $data);
         }

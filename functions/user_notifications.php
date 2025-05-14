@@ -33,6 +33,13 @@ class UserNotification {
         add_action('manage_' . self::POST_TYPE . '_posts_custom_column', [$this, 'custom_column'], 10, 2);
     }
     public function get_user_notifications() {
+        $current_user = wp_get_current_user();
+        $user_email = $current_user->user_email;
+        if(empty($user_email) || $user_email == null || $user_email == ""){
+            $ajx_response = array( 'success' => false, 'reason' => 'Please provide user email to get Notification.' );
+            wp_send_json($ajx_response, 400);
+            return; 
+        }
         if (! is_user_logged_in() ) {
             $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
             wp_send_json($ajax_response, 403);
@@ -48,8 +55,6 @@ class UserNotification {
             $paged = $_POST['page'];
         }
 
-        $current_user = wp_get_current_user();
-        $user_email = $current_user->user_email;
         
         $notifications = $this->get_notifications_for_email($user_email, $paged, $posts_per_page);
         $this->save_last_checked_notification_time_for_current_user();
@@ -69,11 +74,19 @@ class UserNotification {
             wp_send_json($ajax_response, 403);
             return; 
         }
+        if(empty($email)){
+            $aja_response = array( 'success' => false, 'reason' => 'Please provide user email to get Notification.' );
+            wp_send_json($aja_response, 400);
+            return; 
+        }
         $user_id = get_current_user_id();
         $current_time = current_time('timestamp');
         update_user_meta( $user_id, 'last_checked_notification_time', $current_time );
     }
     public function check_for_new_notifications() {
+        // if($user_email == null){
+        //     $ajax_response = array( 'success'=> false, 'reason' => 'Please provide email for Notification.' );
+        // }
         $notif_data = $this->get_user_new_notifications();
         $array = [
             'success' => true ,
