@@ -416,9 +416,8 @@ class RestApiNotify
 
     public function send_push_notification($title, $message, $email, $message_full, $data = [])
     {
-         if (empty($email)) {
-        error_log(message: 'Cannot send notification: Recipient email is empty.');
-        return; 
+        if (empty($email)) {
+            return; 
     	}
         if (!empty($data) ) {
             $type = (array_key_exists("type",$data) && isset($data['type'])) ? $data["type"] : "general";

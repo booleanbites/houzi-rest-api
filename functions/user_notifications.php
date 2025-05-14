@@ -35,7 +35,7 @@ class UserNotification {
     public function get_user_notifications() {
         $current_user = wp_get_current_user();
         $user_email = $current_user->user_email;
-        if(empty($user_email) || $user_email == null || $user_email == ""){
+        if($user_email == null || empty($user_email)){
             $ajx_response = array( 'success' => false, 'reason' => 'Please provide user email to get Notification.' );
             wp_send_json($ajx_response, 400);
             return; 
@@ -84,9 +84,18 @@ class UserNotification {
         update_user_meta( $user_id, 'last_checked_notification_time', $current_time );
     }
     public function check_for_new_notifications() {
-        // if($user_email == null){
-        //     $ajax_response = array( 'success'=> false, 'reason' => 'Please provide email for Notification.' );
-        // }
+        if (! is_user_logged_in() ) {
+            $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+            wp_send_json($ajax_response, 403);
+            return; 
+        }
+        $current_user = wp_get_current_user();
+        $user_email = $current_user->user_email;
+        if($user_email == null || empty($user_email)){
+            $ajx_response = array( 'success' => false, 'reason' => 'Please provide user email to get Notification.' );
+            wp_send_json($ajx_response, 400);
+            return; 
+        }
         $notif_data = $this->get_user_new_notifications();
         $array = [
             'success' => true ,
@@ -116,6 +125,7 @@ class UserNotification {
             $user_id = $user->ID;
             $last_checked_time = get_user_meta( $user_id, 'last_checked_notification_time', true );
         }
+
         // Use WP_Query to get notifications for the user
         $args = [
             'post_type' => self::POST_TYPE,
