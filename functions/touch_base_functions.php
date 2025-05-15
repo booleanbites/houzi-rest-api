@@ -95,6 +95,9 @@ function combine_response() {
         if (isset($list2[$key])) {
             $data['rate'] = $list2[$key];  // Add rate
         }
+
+        $data['currency'] = $key; // ✅ Add this line to include the currency key
+
         $combined[] = $data;  // Push into a numeric array
     }
 
