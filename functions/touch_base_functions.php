@@ -42,66 +42,124 @@ function getTerms() {
 }
 
 
-function get_base_currency(){
-	$base_currency = htf_get_base_currency();
-	return $base_currency;
+// function get_base_currency(){
+// 	$base_currency = htf_get_base_currency();
+// 	return $base_currency;
+// }
+// 
+function get_base_currency()
+{
+  $base_currency_code = htf_get_base_currency();
+  $combined_rates = combine_response();
+
+  foreach ($combined_rates as $currency) {
+    if (isset($currency['currency']) && $currency['currency'] === $base_currency_code) {
+      return $currency;
+    }
+  }
+
+  // Fallback if not found
+  return [
+    "name" => "United States Dollar",
+    "symbol" => "$",
+    "position" => "before",
+    "decimals" => "2",
+    "thousands_sep" => ",",
+    "decimals_sep" => ".",
+    "rate" => 1,
+    "currency" => "USD"
+  ];
 }
 
-function exchange_rate_currency_data(){
-    $currencies = Fcc_get_currencies();
-    $base_currency = htf_get_base_currency();
-    $rates = Fcc_get_exchange_rates($base_currency);
-    $supported_currency = houzez_get_list_of_supported_currencies();
 
-    $result = [];
+function exchange_rate_currency_data()
+{
+  $currencies = Fcc_get_currencies();
+  $base_currency = htf_get_base_currency();
+  $rates = Fcc_get_exchange_rates($base_currency);
+  $supported_currency = houzez_get_list_of_supported_currencies();
 
-    if (!empty($supported_currency)) {
-        foreach ($rates as $key => $value) {
-            if (in_array($key, $supported_currency)) {
-                $result[$key] = $value; 
-            }
-        }
+  $result = [];
+
+  if (!empty($supported_currency)) {
+    foreach ($rates as $key => $value) {
+      if (in_array($key, $supported_currency)) {
+        $result[$key] = $value;
+      }
     }
+  }
 
-    return $result;
-} 
+  return $result;
+}
 
-function exchange_rates_currency_data(){
-    $currencies = Fcc_get_currencies();
-    $base_currency = htf_get_base_currency();
-    $rates = Fcc_get_exchange_rates($base_currency);
-    $supported_currency = houzez_get_list_of_supported_currencies();
+/// Depricated function
+// function returns unicode for currency symbol
+///
+// function exchange_rates_currency_data(){
+//     $currencies = Fcc_get_currencies();
+//     $base_currency = htf_get_base_currency();
+//     $rates = Fcc_get_exchange_rates($base_currency);
+//     $supported_currency = houzez_get_list_of_supported_currencies();
 
-    $result = [];
+//     $result = [];
 
-    if (!empty($supported_currency)) {
-        foreach ($currencies as $key => $value) {
-            if (in_array($key, $supported_currency)) {
-                $result[$key] = $value; 
-            }
+//     if (!empty($supported_currency)) {
+//         foreach ($currencies as $key => $value) {
+//             if (in_array($key, $supported_currency)) {
+//                 $result[$key] = $value; 
+//             }
+//         }
+//     }
+
+//     return $result;
+// } 
+// 
+function exchange_rates_currency_data()
+{
+  $currencies = Fcc_get_currencies();
+  $base_currency = htf_get_base_currency();
+  $rates = Fcc_get_exchange_rates($base_currency);
+  $supported_currency = houzez_get_list_of_supported_currencies();
+
+  $result = [];
+
+  if (!empty($supported_currency)) {
+    foreach ($currencies as $key => $value) {
+      if (in_array($key, $supported_currency)) {
+        if (isset($value['symbol'])) {
+          $value['symbol'] = html_entity_decode($value['symbol'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
         }
-    }
 
-    return $result;
-} 
-
-function combine_response() {
-    $list1 = exchange_rates_currency_data(); 
-    $list2 = exchange_rate_currency_data();  
-
-    $combined = [];
-
-    foreach ($list1 as $key => $data) {
-        if (isset($list2[$key])) {
-            $data['rate'] = $list2[$key];  // Add rate
+        if (isset($value['thousands_sep'])) {
+          $value['thousands_sep'] = html_entity_decode($value['thousands_sep'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
         }
 
-        $data['currency'] = $key; // ✅ Add this line to include the currency key
+        if (isset($value['decimals_sep'])) {
+          $value['decimals_sep'] = html_entity_decode($value['decimals_sep'], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        }
 
-        $combined[] = $data;  // Push into a numeric array
+        $result[$key] = $value;
+      }
     }
+  }
 
-    return $combined;
+  return $result;
+}
+
+
+function combine_response()
+{
+  $list1 = exchange_rates_currency_data();
+  $list2 = exchange_rate_currency_data();
+  $combined = [];
+  foreach ($list1 as $key => $data) {
+    if (isset($list2[$key])) {
+      $data['rate'] = $list2[$key];
+    }
+    $data['currency'] = $key;
+    $combined[] = $data;
+  }
+  return $combined;
 }
 
 
@@ -158,31 +216,27 @@ function getMetaData() {
     $response['register_last_name'] = houzez_option('register_last_name', 0);
     $response['register_mobile'] = houzez_option('register_mobile', 0);
     $response['enable_password'] = houzez_option('enable_password', 0);
-	$response['currency_switcher_enabled'] = houzez_currency_switcher_enabled();
-	$response['base_currency'] = get_base_currency();
-	$response['currency_rates'] = combine_response();
-	/// ---- Start for Static Multi Currency     
-	if(houzez_option('multi_currency') == 1){
-		$currencies = houzez_available_currencies();
+    $response['currency_switcher_enabled'] = houzez_currency_switcher_enabled();
 
-    
-    if ( isset($currencies['']) ) {
+  /// ---- Multi Currency, Currency Switcher ----
+    if (houzez_option('multi_currency') == 1) {
+
+      $currencies = houzez_available_currencies();
+      if (isset($currencies[''])) {
         unset($currencies['']);
-    }
+      }
 
-    $response['multi_currencies'] = $currencies;
-	} else {
-    $response['default_currency'] = houzez_get_currency();
-    $response['currency_position'] = houzez_option('currency_position', '$');
-    $response['thousands_separator'] = houzez_option('thousands_separator', ',');
-    $response['decimal_point_separator'] = houzez_option('decimal_point_separator', '.');
-    $response['num_decimals'] = houzez_option('decimals', '0');
-}
-/// ---- End for Static Multi Currency
+      $response['multi_currency_enabled'] = true;
+      $response['multi_currencies'] = $currencies;
+      $response['default_multi_currency'] = houzez_option('default_multi_currency');
+      } else if (houzez_currency_switcher_enabled()) {
+        $response['base_currency'] = get_base_currency();
+        $response['currency_rates'] = combine_response();
+      }
+  /// ---- End for Static Multi Currency ----
 	
- 	
+
     $response['measurement_unit_global']  = houzez_option('measurement_unit_global');
-    
     $prop_size_prefix = houzez_option('measurement_unit');
     $response['measurement_unit_global']  = $prop_size_prefix;
     if( $prop_size_prefix == 'sqft' ) {
