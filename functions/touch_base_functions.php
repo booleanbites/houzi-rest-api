@@ -18,6 +18,28 @@ add_action( 'rest_api_init', function () {
     'permission_callback' => '__return_true'
   ));
 });
+// function getTerms() {
+//   if( !isset( $_GET['term'])) {
+//     $ajax_response = array( 'success' => false, 'reason' => 'Please provide term in GET' );
+//     wp_send_json($ajax_response, 400);
+//     return;
+//   }
+//   $response = array();
+  
+//   $response['success'] = true;
+//   $terms = $_GET['term'];
+//   if( is_array( $terms )) {
+//     foreach ($terms as $term):
+//       add_term_to_response($response, $term);
+//     endforeach;
+//   } else {
+//     add_term_to_response($response, $terms);
+//   }
+  
+
+
+//   wp_send_json($response, 200);
+// }
 function getTerms() {
   if( !isset( $_GET['term'])) {
     $ajax_response = array( 'success' => false, 'reason' => 'Please provide term in GET' );
@@ -33,13 +55,13 @@ function getTerms() {
       add_term_to_response($response, $term);
     endforeach;
   } else {
-    add_term_to_response($response, $terms);
+    $parent_slug = $_GET['parent_slug'] ?? null;
+    add_term_to_response($response, $terms, $parent_slug);
   }
   
-
-
   wp_send_json($response, 200);
 }
+
 
 
 // function get_base_currency(){
@@ -330,7 +352,51 @@ function add_custom_fields_to_response(&$response){
   
   $response['custom_fields'] = $custom_fields;
 }
-function add_term_to_response(&$response, $key){
+// function add_term_to_response(&$response, $key){
+//     if (!taxonomy_exists($key)) {
+//       $response[$key] = [];
+//       return;
+//     }
+//     $property_term = get_terms( array(
+//         'taxonomy'   => $key,
+//         'hide_empty' => false,
+//     ) );
+//     foreach($property_term as $term) {
+//       $taxonomy_img_id = get_term_meta( $term->term_id, 'fave_taxonomy_img', true );
+//       if(empty($taxonomy_img_id)) {
+//         $taxonomy_img_id = get_term_meta( $term->term_id, 'fave_feature_img_icon', true );
+//       }
+//       if(!empty($taxonomy_img_id)) {
+//         $term_img_array = wp_get_attachment_image_src( $taxonomy_img_id, 'full' );
+//         $term_img = !empty($term_img_array) ? $term_img_array[0] : "";
+//         $term_img_thumb_array = wp_get_attachment_image_src($taxonomy_img_id, 'thumbnail', true );
+//         $term_img_thumb = !empty($term_img_thumb_array) ? $term_img_thumb_array[0] : "";
+//         $term->thumbnail = $term_img_thumb;
+//         $term->full = $term_img;
+//       }
+//       if ($key == 'property_area') {
+//         $term_meta = get_option( "_houzez_property_area_$term->term_id");
+//         if( $term_meta ) {
+//           $term->fave_parent_term =  $term_meta['parent_city'];
+//         }
+//       }
+//       if ($key == 'property_city') {
+//         $term_meta = get_option( "_houzez_property_city_$term->term_id");
+//         if( $term_meta ) {
+//           $term->fave_parent_term = $term_meta['parent_state'];
+//         }
+//       }
+//       if ($key == 'property_state') {
+//         $term_meta = get_option( "_houzez_property_state_$term->term_id");
+//         if( $term_meta ) {
+//           $term->fave_parent_term = $term_meta['parent_country'];
+//         }
+//       }
+//     }
+//     $response[$key] = $property_term;
+// }
+
+function add_term_to_response(&$response, $key, $parent_slug = null){
     if (!taxonomy_exists($key)) {
       $response[$key] = [];
       return;
@@ -339,6 +405,8 @@ function add_term_to_response(&$response, $key){
         'taxonomy'   => $key,
         'hide_empty' => false,
     ) );
+    $term_response = array();
+    
     foreach($property_term as $term) {
       $taxonomy_img_id = get_term_meta( $term->term_id, 'fave_taxonomy_img', true );
       if(empty($taxonomy_img_id)) {
@@ -352,26 +420,54 @@ function add_term_to_response(&$response, $key){
         $term->thumbnail = $term_img_thumb;
         $term->full = $term_img;
       }
+      
       if ($key == 'property_area') {
         $term_meta = get_option( "_houzez_property_area_$term->term_id");
         if( $term_meta ) {
           $term->fave_parent_term =  $term_meta['parent_city'];
         }
+        if ($parent_slug == null) {
+          $term_response[] = $term;
+        }
+        else if ($parent_slug != null && $term_meta['parent_city'] == $parent_slug) {
+          $term_response[] = $term;
+        }
       }
-      if ($key == 'property_city') {
+      else if ($key == 'property_city') {
         $term_meta = get_option( "_houzez_property_city_$term->term_id");
         if( $term_meta ) {
           $term->fave_parent_term = $term_meta['parent_state'];
         }
+        if ($parent_slug == null) {
+          $term_response[] = $term;
+        }
+        else if ($parent_slug != null && $term_meta['parent_state'] == $parent_slug) {
+          $term_response[] = $term;
+        }
       }
-      if ($key == 'property_state') {
+      else if ($key == 'property_state') {
         $term_meta = get_option( "_houzez_property_state_$term->term_id");
         if( $term_meta ) {
           $term->fave_parent_term = $term_meta['parent_country'];
         }
+        if ($parent_slug == null) {
+          $term_response[] = $term;
+        }
+        else if ($parent_slug != null && $term_meta['parent_country'] == $parent_slug) {
+          $term_response[] = $term;
+        }
+      }
+      else if ($key == 'property_country') {
+        // Handle property_country - no parent filtering needed
+        $term_response[] = $term;
+      }
+      else {
+        // Handle any other taxonomy types
+        $term_response[] = $term;
       }
     }
-    $response[$key] = $property_term;
+    
+    $response[$key] = $term_response;
 }
 
 function add_roles_to_response(&$response){
