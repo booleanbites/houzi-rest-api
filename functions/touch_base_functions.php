@@ -396,56 +396,11 @@ function add_custom_fields_to_response(&$response){
 //     $response[$key] = $property_term;
 // }
 
-
 function add_term_to_response(&$response, $key, $parent_slug = null){
     if (!taxonomy_exists($key)) {
       $response[$key] = [];
       return;
     }
-    
-    // NEW: check if parent taxonomies have terms
-    $should_filter_by_parent = true;
-    
-    if ($key == 'property_state' && $parent_slug == null) {
-        $country_terms = get_terms(array(
-            'taxonomy' => 'property_country',
-            'hide_empty' => false,
-        ));
-        if (empty($country_terms)) {
-            $should_filter_by_parent = false;
-        }
-    }
-    else if ($key == 'property_city' && $parent_slug == null) {
-        $country_terms = get_terms(array(
-            'taxonomy' => 'property_country',
-            'hide_empty' => false,
-        ));
-        $state_terms = get_terms(array(
-            'taxonomy' => 'property_state',
-            'hide_empty' => false,
-        ));
-        if (empty($country_terms) || empty($state_terms)) {
-            $should_filter_by_parent = false;
-        }
-    }
-    else if ($key == 'property_area' && $parent_slug == null) {
-        $country_terms = get_terms(array(
-            'taxonomy' => 'property_country',
-            'hide_empty' => false,
-        ));
-        $state_terms = get_terms(array(
-            'taxonomy' => 'property_state',
-            'hide_empty' => false,
-        ));
-        $city_terms = get_terms(array(
-            'taxonomy' => 'property_city',
-            'hide_empty' => false,
-        ));
-        if (empty($country_terms) || empty($state_terms) || empty($city_terms)) {
-            $should_filter_by_parent = false;
-        }
-    }
-    
     $property_term = get_terms( array(
         'taxonomy'   => $key,
         'hide_empty' => false,
@@ -472,9 +427,7 @@ function add_term_to_response(&$response, $key, $parent_slug = null){
           $term->fave_parent_term =  $term_meta['parent_city'];
         }
         if ($parent_slug == null) {
-          if (!$should_filter_by_parent || empty($term_meta['parent_city'])) {
-            $term_response[] = $term;
-          }
+          $term_response[] = $term;
         }
         else if ($parent_slug != null && $term_meta['parent_city'] == $parent_slug) {
           $term_response[] = $term;
@@ -486,9 +439,7 @@ function add_term_to_response(&$response, $key, $parent_slug = null){
           $term->fave_parent_term = $term_meta['parent_state'];
         }
         if ($parent_slug == null) {
-          if (!$should_filter_by_parent || empty($term_meta['parent_state'])) {
-            $term_response[] = $term;
-          }
+          $term_response[] = $term;
         }
         else if ($parent_slug != null && $term_meta['parent_state'] == $parent_slug) {
           $term_response[] = $term;
@@ -500,18 +451,18 @@ function add_term_to_response(&$response, $key, $parent_slug = null){
           $term->fave_parent_term = $term_meta['parent_country'];
         }
         if ($parent_slug == null) {
-          if (!$should_filter_by_parent || empty($term_meta['parent_country'])) {
-            $term_response[] = $term;
-          }
+          $term_response[] = $term;
         }
         else if ($parent_slug != null && $term_meta['parent_country'] == $parent_slug) {
           $term_response[] = $term;
         }
       }
       else if ($key == 'property_country') {
+        // Handle property_country - no parent filtering needed
         $term_response[] = $term;
       }
       else {
+        // Handle any other taxonomy types
         $term_response[] = $term;
       }
     }
