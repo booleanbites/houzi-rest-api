@@ -2120,22 +2120,29 @@ function getFavoriteProperties() {
 
     $postOffset = ($page-1) * $per_page; //subtracting 1 from page, because api is sending 1 as first page.
     
-
-
     
     $userID  = get_current_user_id();
-    $fav_ids = 'houzez_favorites-'.$userID;
-    $fav_ids = get_option( $fav_ids );
+    
+    $fav_id_key = 'houzez_favorites-'.$userID;
 
-    //if it is empty from option, try from user meta.
-    if( empty( $fav_ids ) ) { 
-        $fav_ids = get_user_meta( $userID, 'houzez_favorites', true );
-        if ( empty( $fav_ids ) || ! is_array( $fav_ids ) ) {
-            $fav_ids = array();
-        }
+    //first try from option.
+    $fav_ids_from_option = get_option( $fav_id_key );
+
+    // we should definitely get the favorites from user meta.    
+    $fav_ids = get_user_meta( $userID, 'houzez_favorites', true );
+    
+    //if it is not empty from user meta and also it is not empty from options, we should merge these
+    if( !empty( $fav_ids_from_option ) && is_array( $fav_ids_from_option ) && !empty($fav_ids) && is_array($fav_ids) ) {
+        $fav_ids = array_merge($fav_ids, $fav_ids_from_option);
+        //save the merged array to user meta.
+        update_user_meta( $userID, 'houzez_favorites', $fav_ids );
+    } else if( !empty( $fav_ids_from_option ) && is_array( $fav_ids_from_option ) ) {
+        $fav_ids = $fav_ids_from_option;
+        //save the array to user meta.
+        update_user_meta( $userID, 'houzez_favorites', $fav_ids );
     }
 
-    if( empty( $fav_ids ) ) { 
+    if ( empty( $fav_ids ) || ! is_array( $fav_ids ) ) {
         $ajax_response = array( 'success' => false, 'reason' => esc_html__("You don't have any favorite listings yet!", 'houzez') );
          wp_send_json($ajax_response, 404);
     } else {
@@ -2170,21 +2177,33 @@ function isFavoriteProperty($prop_id) {
         return false; 
     }
     $userID  = get_current_user_id();
-    $fav_ids = 'houzez_favorites-'.$userID;
-    $fav_ids = get_option( $fav_ids );
+    $fav_id_key = 'houzez_favorites-'.$userID;
+    //first try from option.
+    $fav_ids_from_option = get_option( $fav_id_key );
+    
+    // we should definitely get the favorites from user meta.    
+    $fav_ids = get_user_meta( $userID, 'houzez_favorites', true );
 
-    //if it is empty from option, try from user meta.
-    if( empty( $fav_ids ) ) { 
-        $fav_ids = get_user_meta( $userID, 'houzez_favorites', true );
-        if ( empty( $fav_ids ) || ! is_array( $fav_ids ) ) {
-            $fav_ids = array();
-        }
-    }
-
-    if( empty( $fav_ids ) ) {
+    //check if both are empty.
+    if( empty( $fav_ids_from_option ) && empty($fav_ids) ) {
         return false;
     }
-    return in_array($prop_id, $fav_ids);
+    //if it is not empty from user meta and also it is not empty from options
+    // we should check if prop_id exists in any of the array.
+    if( !empty( $fav_ids_from_option ) && is_array( $fav_ids_from_option ) ) {
+        if( in_array($prop_id, $fav_ids_from_option) ) {
+            return true;
+        }
+    }
+    //if it is not empty from user meta, check if prop_id exists in user meta array.
+    if ( !empty( $fav_ids ) && is_array( $fav_ids ) ) {
+        if( in_array($prop_id, $fav_ids) ) {
+            return true;
+        }
+    }
+    //if both are empty, then return false.
+    return false;
+    
 }
 
 function saveSearch() {
