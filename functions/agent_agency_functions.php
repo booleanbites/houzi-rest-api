@@ -22,10 +22,33 @@ add_filter( 'rest_houzez_agency_query', function( $args, $request ) {
   $visible_only = $request->get_param( 'visible_only' );
   
   if ( $visible_only !== null ) {
-      $is_visible = filter_var( $visible_only, FILTER_VALIDATE_BOOLEAN );
-      $args['meta_key'] = 'fave_agency_visible';
-      $args['meta_value'] = $is_visible ? '0' : '1'; //  true(display) → '0', false(will not display) → '1'
-  }
+        $is_visible = filter_var( $visible_only, FILTER_VALIDATE_BOOLEAN );
+        
+        if ( $is_visible ) {
+            // Show visible agents: either meta doesn't exist OR meta value is '0'
+            $args['meta_query'] = array(
+                'relation' => 'OR',
+                array(
+                    'key'     => 'fave_agency_visible',
+                    'compare' => 'NOT EXISTS'
+                ),
+                array(
+                    'key'     => 'fave_agency_visible',
+                    'value'   => '0',
+                    'compare' => '='
+                )
+            );
+        } else {
+            // Show only hidden agents: meta exists AND value is '1'
+            $args['meta_query'] = array(
+                array(
+                    'key'     => 'fave_agency_visible',
+                    'value'   => '1',
+                    'compare' => '='
+                )
+            );
+        }
+    }
   
   return $args;
 }, 10, 2 );
@@ -34,13 +57,37 @@ add_filter( 'rest_houzez_agent_query', function( $args, $request ) {
   $visible_only = $request->get_param( 'visible_only' );
   
   if ( $visible_only !== null ) {
-      $is_visible = filter_var( $visible_only, FILTER_VALIDATE_BOOLEAN );
-      $args['meta_key'] = 'fave_agent_visible';
-      $args['meta_value'] = $is_visible ? '0' : '1'; //  true(display) → '0', false(will not display) → '1'
-  }
+        $is_visible = filter_var( $visible_only, FILTER_VALIDATE_BOOLEAN );
+        
+        if ( $is_visible ) {
+            // Show visible agents: either meta doesn't exist OR meta value is '0'
+            $args['meta_query'] = array(
+                'relation' => 'OR',
+                array(
+                    'key'     => 'fave_agent_visible',
+                    'compare' => 'NOT EXISTS'
+                ),
+                array(
+                    'key'     => 'fave_agent_visible',
+                    'value'   => '0',
+                    'compare' => '='
+                )
+            );
+        } else {
+            // Show only hidden agents: meta exists AND value is '1'
+            $args['meta_query'] = array(
+                array(
+                    'key'     => 'fave_agent_visible',
+                    'value'   => '1',
+                    'compare' => '='
+                )
+            );
+        }
+    }
   
   return $args;
 }, 10, 2 );
+
 
 // ------
 
