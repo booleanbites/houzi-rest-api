@@ -37,6 +37,20 @@ add_action('litespeed_init', function () {
 // houzez-mobile-api/v1/search-properties
 add_action('rest_api_init', function () {
 
+  ///////////
+  register_rest_route(
+    'houzez-mobile-api/v1',
+    '/fetch-users',
+    array(
+      'methods' => 'GET',
+      'callback' => 'fetch_all_users',
+      'permission_callback' => function () {
+        // For public access, return true. Otherwise, check for capabilities
+        return current_user_can('list_users'); // or use '__return_true' if open
+      },
+    )
+  );
+  ////
   register_rest_route(
     'houzez-mobile-api/v1',
     '/signup',
@@ -1425,4 +1439,82 @@ function convert_to_valid_username($string) {
   $username = trim($username, '_-');
   
   return $username;
+}
+
+//////////
+//
+//
+add_filter( 'rest_prepare_user', 'custom_add_user_fields_to_rest', 10, 3 );
+
+function custom_add_user_fields_to_rest( $response, $user, $request ) {
+    $data = $response->get_data();
+    
+    // Check if user approval system is enabled
+    $is_enabled = false;
+    if (function_exists('houzez_login_option')) {
+        $is_enabled = (int) houzez_login_option('enable_user_approval', 0) === 1;
+    }
+
+    if ($is_enabled) {
+        // Include Houzez approval status
+        $houzez_status = get_user_meta( $user->ID, 'houzez_account_approved', true );
+        $data['houzez_account_approved'] = ($houzez_status !== '') ? intval($houzez_status) : 1;
+        
+        // Include user roles
+        $data['roles'] = $user->roles;
+        
+        // Include email only if allowed
+        if (current_user_can('list_users')) {
+            $data['email'] = $user->user_email;
+        } else {
+            unset($data['email']); 
+        }
+    } else {
+        // Remove fields when approval system is disabled
+        unset($data['houzez_account_approved']);
+        unset($data['roles']);
+        unset($data['email']);
+    }
+
+    $response->set_data($data);
+    return $response;
+}
+
+function fetch_all_users() {
+    // Ensure REST server is available
+    if (!function_exists('rest_get_server')) {
+        require_once ABSPATH . 'wp-includes/rest-api.php';
+    }
+
+    // Check if approval system is enabled
+    $is_enabled = false;
+    if (function_exists('houzez_login_option')) {
+        $is_enabled = (int) houzez_login_option('enable_user_approval', 0) === 1;
+    }
+
+    // Make REST request to get users
+    $request = new WP_REST_Request('GET', '/wp/v2/users');
+    $request->set_query_params(array(
+        'per_page' => 100,
+    ));
+
+    $server = rest_get_server();
+    $response = $server->dispatch($request);
+
+    if (is_wp_error($response) || $response->is_error()) {
+        return new WP_Error('fetch_failed', 'Unable to fetch users', array('status' => 500));
+    }
+
+    $users = $response->get_data();
+    
+    // If approval system is disabled, remove sensitive fields
+    if (!$is_enabled) {
+        foreach ($users as &$user) {
+            unset($user['houzez_account_approved']);
+            unset($user['roles']);
+            unset($user['email']);
+        }
+    }
+
+    return $users;
 }
