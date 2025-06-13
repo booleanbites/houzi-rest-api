@@ -45,11 +45,102 @@ add_action('rest_api_init', function () {
       'methods' => 'GET',
       'callback' => 'fetch_all_users',
       'permission_callback' => function () {
-        // For public access, return true. Otherwise, check for capabilities
-        return current_user_can('list_users'); // or use '__return_true' if open
+        return current_user_can('list_users');
       },
+      'args' => array(
+        'search' => array(
+          'description' => 'Search users by name, username, or email',
+          'type' => 'string',
+          'sanitize_callback' => 'sanitize_text_field',
+          'validate_callback' => function ($param, $request, $key) {
+            return is_string($param);
+          }
+        ),
+        'per_page' => array(
+          'description' => 'Number of users per page',
+          'type' => 'integer',
+          'default' => 10,
+          'minimum' => 1,
+          'maximum' => 100,
+          'sanitize_callback' => 'absint',
+          'validate_callback' => function ($param, $request, $key) {
+            return is_numeric($param) && $param >= 1 && $param <= 100;
+          }
+        ),
+        'page' => array(
+          'description' => 'Page number',
+          'type' => 'integer',
+          'default' => 1,
+          'minimum' => 1,
+          'sanitize_callback' => 'absint',
+          'validate_callback' => function ($param, $request, $key) {
+            return is_numeric($param) && $param >= 1;
+          }
+        ),
+        'approval_status' => array(
+          'description' => 'Filter by approval status',
+          'type' => 'string',
+          'enum' => array('pending', 'approved', 'declined', 'suspended'),
+          'sanitize_callback' => 'sanitize_text_field',
+          'validate_callback' => function ($param, $request, $key) {
+            $allowed = array('pending', 'approved', 'declined', 'suspended');
+            return in_array($param, $allowed);
+          }
+        ),
+        'role' => array(
+          'description' => 'Filter by user role',
+          'type' => 'string',
+          'sanitize_callback' => 'sanitize_text_field',
+          'validate_callback' => function ($param, $request, $key) {
+            return is_string($param);
+          }
+        )
+      )
     )
   );
+
+  /// New Post requests for user related actions
+  register_rest_route(
+    'houzez-mobile-api/v1',
+    '/user-approval',
+    array(
+      'methods' => 'POST',
+      'callback' => 'houzez_handle_user_approval_api',
+      'permission_callback' => function () {
+        return current_user_can('edit_users');
+      },
+      'args' => array(
+        'user_id' => array(
+          'required' => true,
+                  'validate_callback' => function($param, $request, $key) {
+          return is_numeric($param);
+        },
+
+          'sanitize_callback' => 'absint',
+        ),
+        'action' => array(
+          'required' => true,
+          'validate_callback' => function ($param) {
+            return in_array($param, ['approve', 'suspend', 'decline']);
+          },
+        ),
+      ),
+    )
+  );
+
+register_rest_route(
+    'houzez-mobile-api/v1',
+    '/user-statuses',
+    array(
+        'methods' => 'GET',
+        'callback' => 'houzez_get_user_statuses',
+        'permission_callback' => function () {
+            return current_user_can('edit_users');
+        }
+    )
+);
+
+
   ////
   register_rest_route(
     'houzez-mobile-api/v1',
@@ -1444,77 +1535,349 @@ function convert_to_valid_username($string) {
 //////////
 //
 //
-add_filter( 'rest_prepare_user', 'custom_add_user_fields_to_rest', 10, 3 );
+add_filter('rest_prepare_user', 'custom_add_user_fields_to_rest', 10, 3);
 
-function custom_add_user_fields_to_rest( $response, $user, $request ) {
-    $data = $response->get_data();
-    
-    // Check if user approval system is enabled
-    $is_enabled = false;
-    if (function_exists('houzez_login_option')) {
-        $is_enabled = (int) houzez_login_option('enable_user_approval', 0) === 1;
+function custom_add_user_fields_to_rest($response, $user, $request)
+{
+  $data = $response->get_data();
+
+  // Check if user approval system is enabled
+  $is_enabled = false;
+  if (function_exists('houzez_login_option')) {
+    $is_enabled = (int) houzez_login_option('enable_user_approval', 0) === 1;
+  }
+
+  if ($is_enabled) {
+    // Include Houzez approval status
+    $houzez_status = get_user_meta($user->ID, 'houzez_account_approved', true);
+    $data['houzez_account_approved'] = ($houzez_status !== '') ? intval($houzez_status) : 1;
+
+    // Add human-readable approval status
+    $status_map = array(
+      -1 => 'declined',
+      0 => 'pending',
+      1 => 'approved',
+      2 => 'suspended'
+    );
+    $status_code = ($houzez_status !== '') ? intval($houzez_status) : 1;
+    $data['approval_status_text'] = isset($status_map[$status_code]) ? $status_map[$status_code] : 'approved';
+
+    // Include user roles
+    $data['roles'] = $user->roles;
+
+    // Include approval method if available
+    $approval_method = get_user_meta($user->ID, 'houzez_approval_method', true);
+    if ($approval_method) {
+      $data['approval_method'] = $approval_method;
     }
 
-    if ($is_enabled) {
-        // Include Houzez approval status
-        $houzez_status = get_user_meta( $user->ID, 'houzez_account_approved', true );
-        $data['houzez_account_approved'] = ($houzez_status !== '') ? intval($houzez_status) : 1;
-        
-        // Include user roles
-        $data['roles'] = $user->roles;
-        
-        // Include email only if allowed
-        if (current_user_can('list_users')) {
-            $data['email'] = $user->user_email;
-        } else {
-            unset($data['email']); 
-        }
+    // Include email only if allowed
+    if (current_user_can('list_users')) {
+      $data['email'] = $user->user_email;
     } else {
-        // Remove fields when approval system is disabled
-        unset($data['houzez_account_approved']);
-        unset($data['roles']);
-        unset($data['email']);
+      unset($data['email']);
     }
+  } else {
+    // Remove fields when approval system is disabled
+    unset($data['houzez_account_approved']);
+    unset($data['approval_status_text']);
+    unset($data['roles']);
+    unset($data['email']);
+  }
 
-    $response->set_data($data);
-    return $response;
+  $response->set_data($data);
+  return $response;
 }
 
-function fetch_all_users() {
-    // Ensure REST server is available
-    if (!function_exists('rest_get_server')) {
-        require_once ABSPATH . 'wp-includes/rest-api.php';
-    }
+function fetch_all_users($request)
+{
+  // Ensure REST server is available
+  if (!function_exists('rest_get_server')) {
+    require_once ABSPATH . 'wp-includes/rest-api.php';
+  }
 
-    // Check if approval system is enabled
-    $is_enabled = false;
-    if (function_exists('houzez_login_option')) {
-        $is_enabled = (int) houzez_login_option('enable_user_approval', 0) === 1;
-    }
+  // Check if approval system is enabled
+  $is_enabled = false;
+  if (function_exists('houzez_login_option')) {
+    $is_enabled = (int) houzez_login_option('enable_user_approval', 0) === 1;
+  }
 
-    // Make REST request to get users
-    $request = new WP_REST_Request('GET', '/wp/v2/users');
-    $request->set_query_params(array(
-        'per_page' => 100,
+  // Get parameters from request
+  $search = $request->get_param('search');
+  $per_page = $request->get_param('per_page') ?: 10;
+  $page = $request->get_param('page') ?: 1;
+  $approval_status = $request->get_param('approval_status');
+  $role = $request->get_param('role');
+
+  // Calculate offset
+  $offset = ($page - 1) * $per_page;
+
+  // Build query arguments
+  $query_args = array(
+    'number' => $per_page,
+    'offset' => $offset,
+    'orderby' => 'registered',
+    'order' => 'DESC'
+  );
+
+  // Add search parameter
+  if (!empty($search)) {
+    $query_args['search'] = '*' . esc_attr($search) . '*';
+    $query_args['search_columns'] = array('user_login', 'user_nicename', 'user_email', 'display_name');
+  }
+
+  // Add role filter
+  if (!empty($role)) {
+    $query_args['role'] = $role;
+  }
+
+  // Add approval status filter (only if approval system is enabled)
+  if ($is_enabled && !empty($approval_status)) {
+    $status_map = array(
+      'pending' => '0',
+      'approved' => '1',
+      'declined' => '-1',
+      'suspended' => '2'
+    );
+
+    if (isset($status_map[$approval_status])) {
+      $query_args['meta_query'] = array(
+        array(
+          'key' => 'houzez_account_approved',
+          'value' => $status_map[$approval_status],
+          'compare' => '='
+        )
+      );
+    }
+  }
+
+  // Get users using WP_User_Query for better control
+  $user_query = new WP_User_Query($query_args);
+  $users = $user_query->get_results();
+  $total_users = $user_query->get_total();
+
+  // Convert users to REST format
+  $formatted_users = array();
+  foreach ($users as $user) {
+    // Create a mock REST request for the user endpoint
+    $user_request = new WP_REST_Request('GET', '/wp/v2/users/' . $user->ID);
+
+    // Get the user controller
+    $users_controller = new WP_REST_Users_Controller();
+    $user_data = $users_controller->prepare_item_for_response($user, $user_request);
+
+    if (!is_wp_error($user_data)) {
+      $formatted_users[] = $user_data->get_data();
+    }
+  }
+
+  // Calculate pagination info
+  $total_pages = ceil($total_users / $per_page);
+  $has_next = $page < $total_pages;
+  $has_prev = $page > 1;
+
+  // Prepare response data
+  $response_data = array(
+    'users' => $formatted_users,
+    'pagination' => array(
+      'total' => $total_users,
+      'total_pages' => $total_pages,
+      'current_page' => $page,
+      'per_page' => $per_page,
+      'has_next_page' => $has_next,
+      'has_previous_page' => $has_prev
+    ),
+    'filters' => array(
+      'search' => $search,
+      'approval_status' => $approval_status,
+      'role' => $role
+    ),
+    'approval_system_enabled' => $is_enabled
+  );
+
+  // If approval system is disabled, clean up sensitive data
+  if (!$is_enabled) {
+    foreach ($response_data['users'] as &$user) {
+      unset($user['houzez_account_approved']);
+      unset($user['approval_status_text']);
+      unset($user['roles']);
+      unset($user['email']);
+    }
+  }
+
+  return rest_ensure_response($response_data);
+}
+
+// Helper function to get available user roles (optional)
+function get_user_roles_for_api()
+{
+  global $wp_roles;
+  $roles = array();
+
+  foreach ($wp_roles->roles as $role_key => $role_info) {
+    $roles[$role_key] = $role_info['name'];
+  }
+
+  return $roles;
+}
+
+
+function houzez_handle_user_approval_api(WP_REST_Request $request)
+{
+  $user_id = $request->get_param('user_id');
+  $action = $request->get_param('action');
+  $user = get_userdata($user_id);
+
+  // Validate user exists
+  if (!$user) {
+    return new WP_Error('invalid_user', 'User not found', array('status' => 404));
+  }
+
+  // Prevent modifying administrators
+  if (in_array('administrator', $user->roles)) {
+    return new WP_Error('unauthorized', 'Cannot modify administrator accounts', array('status' => 403));
+  }
+
+  // Handle actions with email notifications
+  switch ($action) {
+    case 'approve':
+      update_user_meta($user_id, 'houzez_account_approved', 1);
+      
+      // Publish user's posts (custom implementation)
+      houzez_publish_user_posts($user_id);
+
+      // Send approval email
+      $subject = __('Your account has been approved', 'houzez-login-register');
+      $body = sprintf(
+        __("Hello %s,\n\nGood news! Your account on %s has just been approved. You can now log in here:\n%s\n\nThank you!", 'houzez-login-register'),
+        $user->first_name ?: $user->user_login,
+        get_bloginfo('name'),
+        wp_login_url()
+      );
+      wp_mail($user->user_email, $subject, $body);
+
+      $message = 'User approved successfully';
+      $method = 'api_approved';
+      break;
+
+    case 'suspend':
+      update_user_meta($user_id, 'houzez_account_approved', 2);
+      
+      // Trash user's posts (custom implementation)
+      houzez_trash_user_posts($user_id);
+
+      // Send suspension email
+      $subject = __('Your account has been suspended', 'houzez-login-register');
+      $body = sprintf(
+        __("Hello %s,\n\nWe're sorry to let you know that your account on %s has been suspended. If you believe this is an error, please contact us.\n\nRegards,", 'houzez-login-register'),
+        $user->first_name ?: $user->user_login,
+        get_bloginfo('name')
+      );
+      wp_mail($user->user_email, $subject, $body);
+
+      $message = 'User suspended successfully';
+      $method = 'api_suspended';
+      break;
+
+    case 'decline':
+      update_user_meta($user_id, 'houzez_account_approved', -1);
+      
+      // Trash user's posts (custom implementation)
+      houzez_trash_user_posts($user_id);
+
+      // Send declined email
+      $subject = __('Your account registration has been declined', 'houzez-login-register');
+      $body = sprintf(
+        __("Hello %s,\n\nWe're sorry to let you know that your account registration on %s has been declined. If you believe this is an error, please contact us.\n\nRegards,", 'houzez-login-register'),
+        $user->first_name ?: $user->user_login,
+        get_bloginfo('name')
+      );
+      wp_mail($user->user_email, $subject, $body);
+
+      $message = 'User declined successfully';
+      $method = 'api_declined';
+      break;
+
+    default:
+      return new WP_Error('invalid_action', 'Invalid action specified', array('status' => 400));
+  }
+
+  // Update approval method metadata
+  update_user_meta($user_id, 'houzez_approval_method', $method);
+
+  return new WP_REST_Response(array(
+    'success' => true,
+    'message' => $message,
+    'user_id' => $user_id,
+    'new_status' => get_user_meta($user_id, 'houzez_account_approved', true)
+  ), 200);
+}
+
+// Helper function to publish user's posts
+function houzez_publish_user_posts($user_id) {
+  // Get all draft posts by this user
+  $posts = get_posts(array(
+    'author' => $user_id,
+    'post_status' => array('draft', 'pending'),
+    'post_type' => array('property', 'post'), // Add other post types if needed
+    'numberposts' => -1,
+    'suppress_filters' => false
+  ));
+
+  foreach ($posts as $post) {
+    wp_update_post(array(
+      'ID' => $post->ID,
+      'post_status' => 'publish'
     ));
+  }
+}
 
-    $server = rest_get_server();
-    $response = $server->dispatch($request);
+// Helper function to trash user's posts
+function houzez_trash_user_posts($user_id) {
+  // Get all published posts by this user
+  $posts = get_posts(array(
+    'author' => $user_id,
+    'post_status' => 'publish',
+    'post_type' => array('property', 'post'), // Add other post types if needed
+    'numberposts' => -1,
+    'suppress_filters' => false
+  ));
 
-    if (is_wp_error($response) || $response->is_error()) {
-        return new WP_Error('fetch_failed', 'Unable to fetch users', array('status' => 500));
-    }
+  foreach ($posts as $post) {
+    wp_trash_post($post->ID);
+  }
+}
+function houzez_get_user_statuses() {
+    $statuses = array(
+        array(
+            'status' => 'pending',
+            'status_code' => 0,
+            'label' => __('Pending', 'houzez-login-register'),
+            'description' => __('User is awaiting approval', 'houzez-login-register'),
+            'is_actionable' => true
+        ),
+        array(
+            'status' => 'approved',
+            'status_code' => 1,
+            'label' => __('Approved', 'houzez-login-register'),
+            'description' => __('User has full access', 'houzez-login-register'),
+            'is_actionable' => true
+        ),
+        array(
+            'status' => 'suspended',
+            'status_code' => 2,
+            'label' => __('Suspended', 'houzez-login-register'),
+            'description' => __('User temporarily blocked', 'houzez-login-register'),
+            'is_actionable' => true
+        ),
+        array(
+            'status' => 'declined',
+            'status_code' => -1,
+            'label' => __('Declined', 'houzez-login-register'),
+            'description' => __('User registration rejected', 'houzez-login-register'),
+            'is_actionable' => true
+        )
+    );
 
-    $users = $response->get_data();
-    
-    // If approval system is disabled, remove sensitive fields
-    if (!$is_enabled) {
-        foreach ($users as &$user) {
-            unset($user['houzez_account_approved']);
-            unset($user['roles']);
-            unset($user['email']);
-        }
-    }
-
-    return $users;
+    return new WP_REST_Response($statuses, 200);
 }
