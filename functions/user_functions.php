@@ -37,111 +37,6 @@ add_action('litespeed_init', function () {
 // houzez-mobile-api/v1/search-properties
 add_action('rest_api_init', function () {
 
-  ///////////
-  register_rest_route(
-    'houzez-mobile-api/v1',
-    '/fetch-users',
-    array(
-      'methods' => 'GET',
-      'callback' => 'fetch_all_users',
-      'permission_callback' => function () {
-        return current_user_can('list_users');
-      },
-      'args' => array(
-        'search' => array(
-          'description' => 'Search users by name, username, or email',
-          'type' => 'string',
-          'sanitize_callback' => 'sanitize_text_field',
-          'validate_callback' => function ($param, $request, $key) {
-            return is_string($param);
-          }
-        ),
-        'per_page' => array(
-          'description' => 'Number of users per page',
-          'type' => 'integer',
-          'default' => 10,
-          'minimum' => 1,
-          'maximum' => 100,
-          'sanitize_callback' => 'absint',
-          'validate_callback' => function ($param, $request, $key) {
-            return is_numeric($param) && $param >= 1 && $param <= 100;
-          }
-        ),
-        'page' => array(
-          'description' => 'Page number',
-          'type' => 'integer',
-          'default' => 1,
-          'minimum' => 1,
-          'sanitize_callback' => 'absint',
-          'validate_callback' => function ($param, $request, $key) {
-            return is_numeric($param) && $param >= 1;
-          }
-        ),
-        'approval_status' => array(
-          'description' => 'Filter by approval status',
-          'type' => 'string',
-          'enum' => array('pending', 'approved', 'declined', 'suspended'),
-          'sanitize_callback' => 'sanitize_text_field',
-          'validate_callback' => function ($param, $request, $key) {
-            $allowed = array('pending', 'approved', 'declined', 'suspended');
-            return in_array($param, $allowed);
-          }
-        ),
-        'role' => array(
-          'description' => 'Filter by user role',
-          'type' => 'string',
-          'sanitize_callback' => 'sanitize_text_field',
-          'validate_callback' => function ($param, $request, $key) {
-            return is_string($param);
-          }
-        )
-      )
-    )
-  );
-
-  /// New Post requests for user related actions
-  register_rest_route(
-    'houzez-mobile-api/v1',
-    '/user-approval',
-    array(
-      'methods' => 'POST',
-      'callback' => 'houzez_handle_user_approval_api',
-      'permission_callback' => function () {
-        return current_user_can('edit_users');
-      },
-      'args' => array(
-        'user_id' => array(
-          'required' => true,
-                  'validate_callback' => function($param, $request, $key) {
-          return is_numeric($param);
-        },
-
-          'sanitize_callback' => 'absint',
-        ),
-        'action' => array(
-          'required' => true,
-          'validate_callback' => function ($param) {
-            return in_array($param, ['approve', 'suspend', 'decline']);
-          },
-        ),
-      ),
-    )
-  );
-
-register_rest_route(
-    'houzez-mobile-api/v1',
-    '/user-statuses',
-    array(
-        'methods' => 'GET',
-        'callback' => 'houzez_get_user_statuses',
-        'permission_callback' => function () {
-            return current_user_can('edit_users');
-        }
-    )
-);
-
-
-  ////
   register_rest_route(
     'houzez-mobile-api/v1',
     '/signup',
@@ -160,6 +55,107 @@ register_rest_route(
       'permission_callback' => '__return_true'
     )
   );
+	///////////
+register_rest_route(
+    'houzez-mobile-api/v1',
+    '/fetch-users',
+    array(
+        'methods' => 'GET',
+        'callback' => 'fetch_all_users',
+        'permission_callback' => function () {
+            return current_user_can('list_users');
+        },
+        'args' => array(
+            'search' => array(
+                'description' => 'Search users by name, username, or email',
+                'type' => 'string',
+                'sanitize_callback' => 'sanitize_text_field',
+                'validate_callback' => function($param, $request, $key) {
+                    return is_string($param);
+                }
+            ),
+            'per_page' => array(
+                'description' => 'Number of users per page',
+                'type' => 'integer',
+                'default' => 10,
+                'minimum' => 1,
+                'maximum' => 100,
+                'sanitize_callback' => 'absint',
+                'validate_callback' => function($param, $request, $key) {
+                    return is_numeric($param) && $param >= 1 && $param <= 100;
+                }
+            ),
+            'page' => array(
+                'description' => 'Page number',
+                'type' => 'integer',
+                'default' => 1,
+                'minimum' => 1,
+                'sanitize_callback' => 'absint',
+                'validate_callback' => function($param, $request, $key) {
+                    return is_numeric($param) && $param >= 1;
+                }
+            ),
+            'approval_status' => array(
+                'description' => 'Filter by approval status',
+                'type' => 'string',
+                'enum' => array('pending', 'approved', 'declined', 'suspended'),
+                'sanitize_callback' => 'sanitize_text_field',
+                'validate_callback' => function($param, $request, $key) {
+                    $allowed = array('pending', 'approved', 'declined', 'suspended');
+                    return in_array($param, $allowed);
+                }
+            ),
+            'role' => array(
+                'description' => 'Filter by user role',
+                'type' => 'string',
+                'sanitize_callback' => 'sanitize_text_field',
+                'validate_callback' => function($param, $request, $key) {
+                    return is_string($param);
+                }
+            )
+        )
+    )
+);
+	/// New Post requests for user related actions
+  	register_rest_route(
+    	'houzez-mobile-api/v1',
+    	'/user-approval',
+    	array(
+      	'methods' => 'POST',
+      	'callback' => 'houzez_handle_user_approval_api',
+      	'permission_callback' => function () {
+			return current_user_can('edit_users');
+      	},
+      	'args' => array(
+        'user_id' => array(
+        'required' => true,
+        'validate_callback' => function($param, $request, $key) {
+          return is_numeric($param);
+        },
+        'sanitize_callback' => 'absint',
+        ),
+        'action' => array(
+          'required' => true,
+          'validate_callback' => function ($param) {
+            return in_array($param, ['approve', 'suspend', 'decline']);
+          },
+        ),
+      ),
+    )
+  );
+register_rest_route(
+    'houzez-mobile-api/v1',
+    '/user-statuses',
+    array(
+        'methods' => 'GET',
+        'callback' => 'houzez_get_user_statuses',
+        'permission_callback' => function () {
+            return current_user_can('edit_users');
+        }
+    )
+);
+
+	////
   register_rest_route(
     'houzez-mobile-api/v1',
     '/signin',
@@ -1532,9 +1528,8 @@ function convert_to_valid_username($string) {
   return $username;
 }
 
-//////////
-//
-//
+
+/////////// NEw
 add_filter('rest_prepare_user', 'custom_add_user_fields_to_rest', 10, 3);
 
 function custom_add_user_fields_to_rest($response, $user, $request)
@@ -1722,6 +1717,8 @@ function get_user_roles_for_api()
 }
 
 
+
+
 function houzez_handle_user_approval_api(WP_REST_Request $request)
 {
   $user_id = $request->get_param('user_id');
@@ -1847,6 +1844,8 @@ function houzez_trash_user_posts($user_id) {
     wp_trash_post($post->ID);
   }
 }
+
+
 function houzez_get_user_statuses() {
     $statuses = array(
         array(
