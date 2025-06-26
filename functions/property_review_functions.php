@@ -215,9 +215,7 @@ function addReview()
     houzez_submit_review();
 }
 
-function reportContent()
-{
-
+function reportContent() {
     if (!is_user_logged_in()) {
         $ajax_response = array('success' => false, 'reason' => 'Please provide user auth.');
         wp_send_json($ajax_response, 403);
@@ -234,15 +232,14 @@ function reportContent()
         wp_send_json($ajax_response, 403);
         return;
     }
+
     global $current_user;
     wp_get_current_user();
     $userID = get_current_user_id();
-    // $contactName = $current_user->display_name;
     $contactName = empty($_POST['name']) ? $current_user->display_name : $_POST['name'];
 
     $content_type = $_POST['content_type'];
     $content_id = $_POST['content_id'];
-
 
     $contentLink = get_post_permalink($content_id);
     $contentTitle = get_the_title($content_id);
@@ -257,49 +254,88 @@ function reportContent()
     $reason = empty($_POST['reason']) ? "" : $_POST['reason'];
     $email = empty($_POST['email']) ? "" : $_POST['email'];
 
-    $subject = "$contactName reported about a $content_type";
-    $body = "<p><b>Reporter ID:</b> $userID</p>";
-    $body .= "<p><b>Reporter Name:</b> $contactName</p>";
+    // Email-specific content
+    $email_subject = "$contactName reported about a $content_type";
+    $email_body = "<p><b>Reporter ID:</b> $userID</p>";
+    $email_body .= "<p><b>Reporter Name:</b> $contactName</p>";
     if (!empty($email)) {
-        $body .= "<p><b>Reporter Email:</b> $email</p>";
+        $email_body .= "<p><b>Reporter Email:</b> $email</p>";
     }
-    $body .= "<p><b>$content_type ID:</b> $content_id</p>";
-    $body .= "<p><b>$content_type title:</b> $contentTitle</p>";
-    $body .= "<p><b>$content_type content:</b> $contentDescription</p>";
-    $body .= "<p><b>$content_type author:</b> $content_author</p>";
-    $body .= "<p><b>Permalink:</b> $contentLink</p>";
+    $email_body .= "<p><b>$content_type ID:</b> $content_id</p>";
+    $email_body .= "<p><b>$content_type title:</b> $contentTitle</p>";
+    $email_body .= "<p><b>$content_type content:</b> $contentDescription</p>";
+    $email_body .= "<p><b>$content_type author:</b> $content_author</p>";
+    $email_body .= "<p><b>Permalink:</b> $contentLink</p>";
     if (!empty($reason)) {
-        $body .= "<p><b>Reported reason:</b> $reason</p>";
+        $email_body .= "<p><b>Reported reason:</b> $reason</p>";
     }
     if (!empty($message)) {
-        $body .= "<p><b>Message:</b> $message</p>";
+        $email_body .= "<p><b>Message:</b> $message</p>";
     }
 
-
-    $to = get_option('admin_email');
-    $headers = array(
-        'Content-Type: text/html; charset=UTF-8',
+    // Push notification content
+    $notification_title = sprintf(
+        __('New %s Report', 'houzi'),
+        ucfirst($content_type)
     );
-
-    if (wp_mail($to, $subject, $body, $headers)) {
-        // $response['status'] = 200;
-        // $response['message'] = 'Message sent successfully.';
-        //$response['test'] = $body;
+    $notification_message = sprintf(
+        __('%s reported %s: %s', 'houzi'),
+        $contactName,
+        $content_type,
+        $contentTitle
+    );
+    if (!empty($reason)) {
+        $notification_message .= "\n" . __('Reason', 'houzi') . ": " . $reason;
     }
 
-    $notifArgs = array(
-        "title" => $subject,
-        "message" => $body,
-        "type" => 'report',
-        "to" => $to,
+    // Get all administrator users
+    $admins = get_users(array(
+        'role' => 'administrator',
+        'fields' => array('user_email', 'display_name')
+    ));
+
+    $admin_emails = array();
+    foreach ($admins as $admin) {
+        $admin_emails[] = $admin->user_email;
+    }
+
+    // Send email to all admins with detailed content
+    $headers = array('Content-Type: text/html; charset=UTF-8');
+    if (!empty($admin_emails)) {
+        wp_mail($admin_emails, $email_subject, $email_body, $headers);
+    }
+
+    // Prepare extra data
+    $extra_data = array(
+        'content_type' => $content_type,
+        'content_id' => $content_id,
+        'content_title' => $contentTitle,
+        'content_link' => $contentLink,
+        'reporter_id' => $userID,
+        'reporter_name' => $contactName,
+        'reporter_email' => $email,
+        'report_reason' => $reason,
+        'report_message' => $message
     );
 
-    do_action('houzez_send_notification', $notifArgs);
+
+
+    // Push Notifications
+    foreach ($admins as $admin) {
+        $push_notifArgs = array(
+            "title" => $notification_title,
+            "message" => $notification_message,
+            "type" => 'review_report',
+            "to" => $admin->user_email,
+        );
+
+        do_action('houzez_send_notification', $push_notifArgs);
+    }
 
     $ajax_response = array('success' => true, 'message' => esc_html__('Thank you for reporting, our support will review your report.', 'houzi'));
     wp_send_json($ajax_response, 200);
-
 }
+
 
 ////
 function getReviewsAPI($request)
