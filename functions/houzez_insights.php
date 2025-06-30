@@ -2,9 +2,9 @@
 /**
  * Houzez Property Insights API
  * 
- * @package Houzi Mobile Api
- * @since Houzi 1.0
+ * @package Houzi Mobile API
  * @author BooleanBites
+ * @version 1.0.0
  */
 
 if (!defined('ABSPATH')) exit;
@@ -26,8 +26,8 @@ add_action('rest_api_init', function() {
     
     // 3. Property insights endpoint
     register_rest_route('houzez-insights/v1', '/property-insights/(?P<id>\d+)', [
-        'methods' => 'GET',
-        'callback' => 'houzez_get_property_insights',
+        'methods'  => 'GET',
+        'callback' => 'houzez_get_real_property_insights',
         'permission_callback' => 'houzez_validate_property_access',
         'args' => [
             'id' => [
@@ -52,22 +52,30 @@ add_action('rest_api_init', function() {
             ]
         ]
     ]);
+
     
     // 4. User insights endpoint
     register_rest_route('houzez-insights/v1', '/user-insights', [
-        'methods' => 'GET',
-        'callback' => 'houzez_get_user_insights',
-        'permission_callback' => 'is_user_logged_in',
-        'args' => [
-            'time_period' => [
-                'default' => 'lastmonth',
-                'validate_callback' => function($param) {
-                    $allowed = ['lastday', 'lastweek', 'lastmonth', 'lastyear'];
-                    return in_array($param, $allowed);
-                }
-            ]
+    'methods' => 'GET',
+    'callback' => 'houzez_get_user_insights',
+    'permission_callback' => 'is_user_logged_in',
+    'args' => [
+        'time_period' => [
+            'default' => 'lastmonth',
+            'validate_callback' => function($param) {
+                $allowed = ['lastday', 'lastweek', 'lastmonth', 'lastyear'];
+                return in_array($param, $allowed);
+            }
+        ],
+        'property_id' => [
+            'validate_callback' => function($param) {
+                return empty($param) || is_numeric($param);
+            },
+            'sanitize_callback' => 'absint'
         ]
-    ]);
+    ]
+]);
+
 });
 
 /**
@@ -222,95 +230,105 @@ function houzez_get_property_insights($request) {
 /**
  * Generate property insights data
  */
-function houzez_generate_property_insights($property_id, $time_period, $data_type) {
-    // Base views data
-    $views_map = [
-        'lastday' => rand(50, 200),
-        'lastweek' => rand(300, 1000),
-        'lastmonth' => rand(1000, 5000),
-        'lastyear' => rand(10000, 50000)
-    ];
+function houzez_get_real_property_insights($request) {
+    $property_id = $request->get_param('id');
+    $time_period = $request->get_param('time_period');
+    $data_type = $request->get_param('data_type');
     
-    $insights = [];
+    // Initialize insights system
+    $fave_insights = new Fave_Insights();
     
-    // Data type handling
+    // Get all available stats
+    $stats = $fave_insights->fave_listing_stats($property_id);
+    
+    // Handle lastyear views differently (sum chart data)
+    $lastyear_views = 0;
+    $lastyear_unique_views = 0;
+    if ($time_period === 'lastyear' && isset($stats['charts']['lastyear'])) {
+        foreach ($stats['charts']['lastyear'] as $data_point) {
+            $lastyear_views += $data_point['views'];
+            $lastyear_unique_views += $data_point['unique_views'];
+        }
+    }
+    
+    // Process based on data type
     switch ($data_type) {
         case 'views':
-            $insights = [
-                'total_views' => $views_map[$time_period],
-                'unique_views' => round($views_map[$time_period] * 0.75)
+            return [
+                'total_views' => houzez_get_period_views($stats, $time_period, $lastyear_views),
+                'unique_views' => houzez_get_period_unique_views($stats, $time_period, $lastyear_unique_views)
             ];
-            break;
             
         case 'traffic':
-            $insights = [
-                'referrers' => [
-                    'Google' => rand(30, 60),
-                    'Facebook' => rand(10, 30),
-                    'Direct' => rand(5, 20),
-                    'Other' => rand(1, 10)
-                ],
-                'browsers' => [
-                    'Chrome' => rand(50, 70),
-                    'Safari' => rand(15, 30),
-                    'Firefox' => rand(5, 15)
-                ]
+            return [
+                'referrers' => $stats['others']['referrers'] ?? [],
+                'browsers' => $stats['others']['browsers'] ?? []
             ];
-            break;
             
         case 'geo':
-            $insights = [
-                'countries' => [
-                    'US' => rand(30, 60),
-                    'UK' => rand(10, 25),
-                    'CA' => rand(5, 15),
-                    'AU' => rand(3, 10)
-                ]
+            return [
+                'countries' => $stats['others']['countries'] ?? []
             ];
-            break;
             
         case 'devices':
-            $insights = [
-                'devices' => [
-                    'Mobile' => rand(50, 70),
-                    'Desktop' => rand(25, 45),
-                    'Tablet' => rand(5, 15)
-                ],
-                'platforms' => [
-                    'Android' => rand(40, 60),
-                    'iOS' => rand(30, 50),
-                    'Windows' => rand(20, 40)
-                ]
+            return [
+                'devices' => $stats['others']['devices'] ?? [],
+                'platforms' => $stats['others']['platforms'] ?? []
             ];
-            break;
             
         case 'overview':
         default:
-            $insights = [
-                'total_views' => $views_map[$time_period],
-                'unique_views' => round($views_map[$time_period] * 0.75),
-                'top_countries' => [
-                    'US' => rand(30, 60),
-                    'UK' => rand(10, 25),
-                    'CA' => rand(5, 15)
-                ],
-                'top_referrers' => [
-                    'Google' => rand(30, 60),
-                    'Facebook' => rand(10, 30),
-                    'Direct' => rand(5, 20)
-                ],
-                'device_breakdown' => [
-                    'Mobile' => rand(50, 70),
-                    'Desktop' => rand(25, 45),
-                    'Tablet' => rand(5, 15)
-                ],
+            return [
+                'total_views' => houzez_get_period_views($stats, $time_period, $lastyear_views),
+                'unique_views' => houzez_get_period_unique_views($stats, $time_period, $lastyear_unique_views),
+                'top_countries' => $stats['others']['countries'] ?? [],
+                'top_referrers' => $stats['others']['referrers'] ?? [],
+                'device_breakdown' => $stats['others']['devices'] ?? [],
                 'last_updated' => current_time('mysql')
             ];
-            break;
+    }
+}
+
+/**
+ * Helper to get views for a specific time period
+ */
+function houzez_get_period_views($stats, $time_period, $lastyear_value = 0) {
+    $period_map = [
+        'lastday' => 'lastday',
+        'lastweek' => 'lastweek',
+        'lastmonth' => 'lastmonth',
+        'lastyear' => $lastyear_value
+    ];
+    
+    // Handle normal periods
+    if (is_string($period_map[$time_period])) {
+        return $stats['views'][$period_map[$time_period]] ?? 0;
     }
     
-    return $insights;
+    // Handle computed lastyear value
+    return $period_map[$time_period];
 }
+
+/**
+ * Helper to get unique views for a specific time period
+ */
+function houzez_get_period_unique_views($stats, $time_period, $lastyear_value = 0) {
+    $period_map = [
+        'lastday' => 'lastday',
+        'lastweek' => 'lastweek',
+        'lastmonth' => 'lastmonth',
+        'lastyear' => $lastyear_value
+    ];
+    
+    // Handle normal periods
+    if (is_string($period_map[$time_period])) {
+        return $stats['unique_views'][$period_map[$time_period]] ?? 0;
+    }
+    
+    // Handle computed lastyear value
+    return $period_map[$time_period];
+}
+
 
 /**
  * Get user insights data
@@ -319,70 +337,119 @@ function houzez_get_user_insights($request) {
     try {
         $user_id = get_current_user_id();
         $time_period = sanitize_text_field($request->get_param('time_period'));
-        $properties = houzez_get_user_properties();
+        $property_id = $request->get_param('property_id');
         
-        // Ensure we have properties
-        if (!$properties['success'] || empty($properties['properties'])) {
-            return [
-                'success' => true,
-                'user_id' => $user_id,
-                'message' => 'No properties found for this user',
-                'insights' => []
-            ];
+        // Get user properties and validate property ID if provided
+        $properties = houzez_get_user_properties();
+        $is_single_property = !empty($property_id);
+        
+        if ($is_single_property) {
+            // Validate requested property belongs to user
+            $property_exists = false;
+            foreach ($properties['properties'] as $property) {
+                if ($property['id'] == $property_id) {
+                    $property_exists = true;
+                    break;
+                }
+            }
+            
+            if (!$property_exists) {
+                return new WP_REST_Response([
+                    'success' => false,
+                    'error' => 'Invalid property ID or property not owned by user'
+                ], 403);
+            }
         }
         
-        // Initialize totals
+        // Initialize insights and stats
+        $fave_insights = new Fave_Insights();
         $total_views = 0;
         $total_unique_views = 0;
         $top_properties = [];
         
-        // Create insights instance
-        $fave_insights = new Fave_Insights();
-        
-        // Aggregate data from all properties
-        foreach ($properties['properties'] as $property) {
-            // Get real insights for the property
-            $property_stats = $fave_insights->fave_listing_stats($property['id']);
+        if ($is_single_property) {
+            // Process single property
+            $property_stats = $fave_insights->fave_listing_stats($property_id);
             
-            // Extract values for the requested time period
             $views = $property_stats['views'][$time_period] ?? 0;
             $unique_views = $property_stats['unique_views'][$time_period] ?? 0;
             
-            // Aggregate totals
-            $total_views += $views;
-            $total_unique_views += $unique_views;
+            $total_views = $views;
+            $total_unique_views = $unique_views;
             
-            // Store for top properties list
             $top_properties[] = [
-                'id' => $property['id'],
-                'title' => $property['title'],
+                'id' => $property_id,
+                'title' => get_the_title($property_id),
                 'views' => $views,
                 'unique_views' => $unique_views,
-                'url' => $property['url']
+                'url' => get_permalink($property_id)
             ];
+            
+            // Get detailed stats for single property
+            $charts = $property_stats['charts'][$time_period] ?? [];
+            $traffic_sources = $property_stats['others']['referrers'] ?? [];
+            $geo_distribution = $property_stats['others']['countries'] ?? [];
+            $device_breakdown = $property_stats['others']['devices'] ?? [];
+            
+            $total_properties = 1;
+        } else {
+            // Process all properties
+            if (!$properties['success'] || empty($properties['properties'])) {
+                return [
+                    'success' => true,
+                    'user_id' => $user_id,
+                    'message' => 'No properties found for this user',
+                    'insights' => []
+                ];
+            }
+            
+            foreach ($properties['properties'] as $property) {
+                $property_stats = $fave_insights->fave_listing_stats($property['id']);
+                
+                $views = $property_stats['views'][$time_period] ?? 0;
+                $unique_views = $property_stats['unique_views'][$time_period] ?? 0;
+                
+                $total_views += $views;
+                $total_unique_views += $unique_views;
+                
+                $top_properties[] = [
+                    'id' => $property['id'],
+                    'title' => $property['title'],
+                    'views' => $views,
+                    'unique_views' => $unique_views,
+                    'url' => $property['url']
+                ];
+            }
+            
+            // Sort and get top 3 properties
+            usort($top_properties, function($a, $b) {
+                return $b['views'] - $a['views'];
+            });
+            $top_properties = array_slice($top_properties, 0, 3);
+            
+            // Get user-level aggregated stats
+            $user_stats = $fave_insights->fave_user_stats($user_id);
+            $charts = $user_stats['charts'][$time_period] ?? [];
+            $traffic_sources = $user_stats['others']['referrers'] ?? [];
+            $geo_distribution = $user_stats['others']['countries'] ?? [];
+            $device_breakdown = $user_stats['others']['devices'] ?? [];
+            
+            $total_properties = count($properties['properties']);
         }
-        
-        // Sort properties by views descending
-        usort($top_properties, function($a, $b) {
-            return $b['views'] - $a['views'];
-        });
-        
-        // Get user-level stats (agency-wide or all properties for admin)
-        $user_stats = $fave_insights->fave_user_stats($user_id);
         
         // Prepare final response
         $response = [
             'success' => true,
             'user_id' => $user_id,
             'time_period' => $time_period,
-            'total_properties' => count($properties['properties']),
+            'total_properties' => $total_properties,
             'total_views' => $total_views,
             'total_unique_views' => $total_unique_views,
-            'top_properties' => array_slice($top_properties, 0, 3),
-            'charts' => $user_stats['charts'][$time_period] ?? [],
-            'traffic_sources' => $user_stats['others']['referrers'] ?? [],
-            'geo_distribution' => $user_stats['others']['countries'] ?? [],
-            'device_breakdown' => $user_stats['others']['devices'] ?? []
+            'top_properties' => $top_properties,
+            'charts' => $charts,
+            'traffic_sources' => $traffic_sources,
+            'geo_distribution' => $geo_distribution,
+            'device_breakdown' => $device_breakdown
         ];
         
         return $response;
