@@ -17,14 +17,12 @@ add_action('rest_api_init', function() {
         'permission_callback' => '__return_true'
     ]);
     
-    // 2. User properties endpoint
     register_rest_route('houzez-insights/v1', '/user-properties', [
         'methods' => 'GET',
         'callback' => 'houzez_get_user_properties',
         'permission_callback' => 'is_user_logged_in'
     ]);
     
-    // 3. Property insights endpoint
     register_rest_route('houzez-insights/v1', '/property-insights/(?P<id>\d+)', [
         'methods'  => 'GET',
         'callback' => 'houzez_get_real_property_insights',
@@ -54,14 +52,13 @@ add_action('rest_api_init', function() {
     ]);
 
     
-  // 4. User insights endpoint
 register_rest_route('houzez-insights/v1', '/user-insights', [
     'methods' => 'GET',
     'callback' => 'houzez_get_user_insights',
     'permission_callback' => 'is_user_logged_in',
     'args' => [
         'time_period' => [
-            'default' => 'lastmonth',
+            'default' => 'lastday',
             'validate_callback' => function($param) {
                 $allowed = ['lastday', 'lastweek', 'lastmonth', 'lasthalfyear', 'lastyear'];
                 return in_array($param, $allowed);
