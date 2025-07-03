@@ -105,19 +105,75 @@ function houzez_insights_system_check() {
 function houzez_get_user_properties() {
     try {
         $user_id = get_current_user_id();
+        $user = get_userdata($user_id);
         $properties = [];
         
-        // Admins get all properties
         if (current_user_can('edit_others_posts')) {
             $args = [
                 'post_type' => 'property',
-                'posts_per_page' => 10,
+                'posts_per_page' => -1,
                 'post_status' => 'publish',
                 'fields' => 'ids'
             ];
             $property_ids = get_posts($args);
         } 
-        // Regular users get their own properties
+        elseif (in_array('houzez_agency', (array)$user->roles)) {
+            $args_own = [
+                'post_type' => 'property',
+                'author' => $user_id,
+                'posts_per_page' => -1,
+                'post_status' => 'publish',
+                'fields' => 'ids'
+            ];
+            
+            $agent_ids = houzez_get_agency_agents($user_id);
+            $args_agents = [
+                'post_type' => 'property',
+                'author__in' => $agent_ids,
+                'posts_per_page' => -1,
+                'post_status' => 'publish',
+                'fields' => 'ids'
+            ];
+            
+            $own_ids = get_posts($args_own);
+            $agent_ids = $agent_ids ? get_posts($args_agents) : [];
+            $property_ids = array_unique(array_merge($own_ids, $agent_ids));
+        }
+        elseif (in_array('houzez_agent', (array)$user->roles)) {
+            $agency_id = get_user_meta($user_id, 'fave_agent_agency', true);
+            
+            if ($agency_id) {
+                $args_agency = [
+                    'post_type' => 'property',
+                    'author' => $agency_id,
+                    'posts_per_page' => -1,
+                    'post_status' => 'publish',
+                    'fields' => 'ids'
+                ];
+                
+                $agent_ids = houzez_get_agency_agents($agency_id);
+                $args_agents = [
+                    'post_type' => 'property',
+                    'author__in' => $agent_ids,
+                    'posts_per_page' => -1,
+                    'post_status' => 'publish',
+                    'fields' => 'ids'
+                ];
+                
+                $agency_ids = get_posts($args_agency);
+                $agent_ids = $agent_ids ? get_posts($args_agents) : [];
+                $property_ids = array_unique(array_merge($agency_ids, $agent_ids));
+            } else {
+                $args = [
+                    'post_type' => 'property',
+                    'author' => $user_id,
+                    'posts_per_page' => -1,
+                    'post_status' => 'publish',
+                    'fields' => 'ids'
+                ];
+                $property_ids = get_posts($args);
+            }
+        }
         else {
             $args = [
                 'post_type' => 'property',
@@ -155,11 +211,19 @@ function houzez_get_user_properties() {
     }
 }
 
+function houzez_get_agency_agents($agency_id) {
+    $agents = get_users([
+        'meta_key' => 'fave_agent_agency',
+        'meta_value' => $agency_id,
+        'fields' => 'ids'
+    ]);
+    return is_array($agents) ? $agents : [];
+}
+
 /**
  * Validate property access
  */
 function houzez_validate_property_access() {
-    // Always allow if user can edit others posts
     if (current_user_can('edit_others_posts')) {
         return true;
     }
@@ -196,7 +260,6 @@ function houzez_get_property_insights($request) {
             );
         }
         
-        // Prepare response structure
         $response = [
             'success' => true,
             'property' => [
@@ -232,10 +295,8 @@ function houzez_get_real_property_insights($request) {
     $time_period = $request->get_param('time_period');
     $data_type = $request->get_param('data_type');
     
-    // Initialize insights system
     $fave_insights = new Fave_Insights();
     
-    // Get all available stats
     $stats = $fave_insights->fave_listing_stats($property_id);
     
     // Handle lastyear views differently (sum chart data)
@@ -297,12 +358,10 @@ function houzez_get_period_views($stats, $time_period, $lastyear_value = 0) {
         'lastyear' => $lastyear_value
     ];
     
-    // Handle normal periods
     if (is_string($period_map[$time_period])) {
         return $stats['views'][$period_map[$time_period]] ?? 0;
     }
     
-    // Handle computed lastyear value
     return $period_map[$time_period];
 }
 
@@ -317,12 +376,10 @@ function houzez_get_period_unique_views($stats, $time_period, $lastyear_value = 
         'lastyear' => $lastyear_value
     ];
     
-    // Handle normal periods
     if (is_string($period_map[$time_period])) {
         return $stats['unique_views'][$period_map[$time_period]] ?? 0;
     }
     
-    // Handle computed lastyear value
     return $period_map[$time_period];
 }
 
@@ -336,7 +393,6 @@ function houzez_get_user_insights($request) {
         $time_period = sanitize_text_field($request->get_param('time_period'));
         $property_id = $request->get_param('property_id');
         
-        // Get user properties and validate property ID if provided
         $properties = houzez_get_user_properties();
         $is_single_property = !empty($property_id);
         
@@ -358,14 +414,11 @@ function houzez_get_user_insights($request) {
             }
         }
         
-        // Initialize insights
         $fave_insights = new Fave_Insights();
         
         if ($is_single_property) {
-            // Process single property
             $property_stats = $fave_insights->fave_listing_stats($property_id);
             
-            // Get detailed stats for single property
             $charts = $property_stats['charts'][$time_period] ?? [];
             $traffic_sources = $property_stats['others']['referrers'] ?? [];
             $top_countries = $property_stats['others']['countries'] ?? [];
@@ -373,13 +426,11 @@ function houzez_get_user_insights($request) {
             $platforms = $property_stats['others']['platforms'] ?? [];
             $browsers = $property_stats['others']['browsers'] ?? [];
             
-            // Get views and unique views data
             $views_data = $property_stats['views'] ?? [];
             $unique_views_data = $property_stats['unique_views'] ?? [];
             
             $total_properties = 1;
         } else {
-            // Process all properties
             if (!$properties['success'] || empty($properties['properties'])) {
                 return [
                     'success' => true,
@@ -398,7 +449,6 @@ function houzez_get_user_insights($request) {
             $platforms = $user_stats['others']['platforms'] ?? [];
             $browsers = $user_stats['others']['browsers'] ?? [];
             
-            // Get views and unique views data
             $views_data = $user_stats['views'] ?? [];
             $unique_views_data = $user_stats['unique_views'] ?? [];
             
@@ -459,7 +509,6 @@ function houzez_get_user_insights($request) {
             }
         }
         
-        // Prepare final response
         $response = [
             'success' => true,
             'user_id' => $user_id,
