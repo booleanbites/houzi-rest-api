@@ -211,13 +211,23 @@ function houzez_get_user_properties() {
     }
 }
 
-function houzez_get_agency_agents($agency_id) {
-    $agents = get_users([
-        'meta_key' => 'fave_agent_agency',
-        'meta_value' => $agency_id,
-        'fields' => 'ids'
-    ]);
-    return is_array($agents) ? $agents : [];
+
+if ( ! function_exists( 'houzez_get_agency_agents' ) ) {
+    function houzez_get_agency_agents($agency_id) {
+        // Ensure WordPress environment is fully loaded
+        if ( ! function_exists( 'get_users' ) ) {
+            return [];
+        }
+        
+        $agents = get_users([
+            'meta_key' => 'fave_agent_agency',
+            'meta_value' => $agency_id,
+            'fields' => 'ids',
+            'meta_compare' => '=', // Explicit comparison for clarity
+        ]);
+        
+        return is_array($agents) ? $agents : [];
+    }
 }
 
 /**

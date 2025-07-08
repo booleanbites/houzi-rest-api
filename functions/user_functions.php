@@ -486,13 +486,13 @@ function tryPhoneLogin()
     $user_obj = get_users($user_query);
     $user = reset($user_obj);
     if ($user) {
-      doJWTAuthWithSecret($$user->user_login, $user->data->user_pass);
+      doJWTAuthWithSecret($user->user_login, $user->data->user_pass);
       //we logged in, return from here.
       return;
     }
   }
 
-  $ajax_response = array( 'success' => false , "Couldn't verify the user",  );
+  $ajax_response = array( 'success' => false , "Couldn't verify the user");
   wp_send_json($ajax_response, 403);    
 
 }
@@ -1587,9 +1587,9 @@ function custom_add_user_fields_to_rest($response, $user, $request)
 function fetch_all_users($request)
 {
   // Ensure REST server is available
-  if (!function_exists('rest_get_server')) {
-    require_once ABSPATH . 'wp-includes/rest-api.php';
-  }
+  // if (!function_exists('rest_get_server')) {
+  //   require_once ABSPATH . 'wp-includes/rest-api.php';
+  // }
 
   // Check if approval system is enabled
   $is_enabled = false;
