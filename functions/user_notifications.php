@@ -69,12 +69,14 @@ class UserNotification {
 
 	}
     public function save_last_checked_notification_time_for_current_user() {
+        $current_user = wp_get_current_user();
+        $user_email = $current_user->user_email;
         if (! is_user_logged_in() ) {
             $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
             wp_send_json($ajax_response, 403);
             return; 
         }
-        if(empty($email)){
+        if(empty($user_email)){
             $aja_response = array( 'success' => false, 'reason' => 'Please provide user email to get Notification.' );
             wp_send_json($aja_response, 400);
             return; 
