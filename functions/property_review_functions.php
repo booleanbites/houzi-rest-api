@@ -254,7 +254,6 @@ function reportContent() {
     $reason = empty($_POST['reason']) ? "" : $_POST['reason'];
     $email = empty($_POST['email']) ? "" : $_POST['email'];
 
-    // Email-specific content
     $email_subject = "$contactName reported about a $content_type";
     $email_body = "<p><b>Reporter ID:</b> $userID</p>";
     $email_body .= "<p><b>Reporter Name:</b> $contactName</p>";
@@ -273,7 +272,6 @@ function reportContent() {
         $email_body .= "<p><b>Message:</b> $message</p>";
     }
 
-    // Push notification content
     $notification_title = sprintf(
         __('New %s Report', 'houzi'),
         ucfirst($content_type)
@@ -288,7 +286,6 @@ function reportContent() {
         $notification_message .= "\n" . __('Reason', 'houzi') . ": " . $reason;
     }
 
-    // Get all administrator users
     $admins = get_users(array(
         'role' => 'administrator',
         'fields' => array('user_email', 'display_name')
@@ -299,13 +296,11 @@ function reportContent() {
         $admin_emails[] = $admin->user_email;
     }
 
-    // Send email to all admins with detailed content
     $headers = array('Content-Type: text/html; charset=UTF-8');
     if (!empty($admin_emails)) {
         wp_mail($admin_emails, $email_subject, $email_body, $headers);
     }
 
-    // Prepare extra data
     $extra_data = array(
         'content_type' => $content_type,
         'content_id' => $content_id,
@@ -320,7 +315,6 @@ function reportContent() {
 
 
 
-    // Push Notifications
     foreach ($admins as $admin) {
         $push_notifArgs = array(
             "title" => $notification_title,
@@ -341,7 +335,6 @@ function reportContent() {
 function getReviewsAPI($request)
 {
     try {
-        // Get all parameters including new 'status' parameter
         $entity_type = $request->get_param('entity_type');
         $entity_id = $request->get_param('entity_id');
         $per_page = $request->get_param('per_page');
@@ -349,18 +342,14 @@ function getReviewsAPI($request)
         $orderby = $request->get_param('orderby');
         $order = $request->get_param('order');
         $search = $request->get_param('search');
-        $status_param = $request->get_param('status'); // New status parameter
+        $status_param = $request->get_param('status'); 
 
-        // Determine allowed statuses based on user capability
-        $post_status = ['publish']; // Default for regular users
+        $post_status = ['publish']; 
         if (current_user_can('edit_posts')) {
-            // Editors can see all statuses
             $post_status = ['publish', 'pending', 'review_rejected'];
         }
 
-        // Apply status filter if requested and allowed
         if (!empty($status_param)) {
-            // Validate user has permission to view non-published
             if (in_array($status_param, ['pending', 'review_rejected']) && !current_user_can('edit_posts')) {
                 return new WP_REST_Response(array(
                     'success' => false,
@@ -368,13 +357,11 @@ function getReviewsAPI($request)
                 ), 403);
             }
 
-            // Override status array with requested status
             if (in_array($status_param, $post_status)) {
                 $post_status = [$status_param];
             }
         }
 
-        // Build base query arguments
         $query_args = array(
             'post_type' => 'houzez_reviews',
             'posts_per_page' => $per_page,
@@ -384,10 +371,8 @@ function getReviewsAPI($request)
             'order' => $order
         );
 
-        // Initialize meta query array
         $meta_query = array();
 
-        // Add entity ID filter if provided
         if ($entity_id > 0 && !empty($entity_type)) {
             $meta_query[] = array(
                 'key' => 'review_' . $entity_type . '_id',
@@ -396,7 +381,6 @@ function getReviewsAPI($request)
             );
         }
 
-        // Add entity type filter if provided
         if (!empty($entity_type)) {
             $meta_query[] = array(
                 'key' => 'review_post_type',
@@ -405,21 +389,17 @@ function getReviewsAPI($request)
             );
         }
 
-        // Add meta query to arguments if filters exist
         if (!empty($meta_query)) {
-            // Set relation if multiple conditions
             if (count($meta_query) > 1) {
                 $meta_query['relation'] = 'AND';
             }
             $query_args['meta_query'] = $meta_query;
         }
 
-        // Handle rating ordering
         if ($orderby === 'rating') {
             $query_args['meta_key'] = 'review_stars';
         }
 
-        // Search by reviewer name
         if (!empty($search)) {
             $user_search_args = array(
                 'search' => '*' . $search . '*',
@@ -430,11 +410,9 @@ function getReviewsAPI($request)
             $query_args['author__in'] = !empty($matching_users) ? $matching_users : [0];
         }
 
-        // Execute query
         $reviews_query = new WP_Query($query_args);
         $reviews = array();
 
-        // Status mapping for readable labels
         $status_mapping = [
             'publish' => 'Approved',
             'pending' => 'Pending',
@@ -453,7 +431,21 @@ function getReviewsAPI($request)
                 $author_id = $post->post_author;
                 $user = $author_id ? get_userdata($author_id) : null;
 
-                // Get all review meta values
+                $avatar_url = '';
+                if ($user) {
+                    $custom_avatar = get_user_meta($author_id, 'houzez_author_custom_picture', true);
+                    $wp_avatar = get_avatar_url($author_id, [
+                        'size' => 150,
+                        'default' => 'identicon'
+                    ]);
+                    $theme_avatar = function_exists('houzez_get_profile_pic') 
+                        ? houzez_get_profile_pic() 
+                        : '';
+                    $avatar_url = !empty($custom_avatar) 
+                        ? $custom_avatar 
+                        : ($wp_avatar ? $wp_avatar : $theme_avatar);
+                }
+
                 $meta = array();
                 $meta_keys = [
                     'review_post_type',
@@ -471,13 +463,11 @@ function getReviewsAPI($request)
                     $meta[$key] = $meta_value;
                 }
 
-                // Get featured image
                 $thumbnail_url = '';
                 if ($thumbnail_id = get_post_thumbnail_id($review_id)) {
                     $thumbnail_url = wp_get_attachment_image_url($thumbnail_id, 'full');
                 }
 
-                // Build review data structure
                 $review_status = $post->post_status;
                 $review = array(
                     'id' => $review_id,
@@ -501,7 +491,8 @@ function getReviewsAPI($request)
                     'thumbnail' => $thumbnail_url,
                     'meta' => $meta,
                     'username' => $user ? $user->user_login : '',
-                    'user_display_name' => $user ? $user->display_name : ''
+                    'user_display_name' => $user ? $user->display_name : '',
+                    'thumbnail' => $avatar_url 
                 );
 
                 $reviews[] = $review;
@@ -509,14 +500,12 @@ function getReviewsAPI($request)
             wp_reset_postdata();
         }
 
-        // Create response with pagination headers
         $response = new WP_REST_Response($reviews, 200);
         $response->header('X-WP-Total', $reviews_query->found_posts);
         $response->header('X-WP-TotalPages', $reviews_query->max_num_pages);
         return $response;
 
     } catch (Exception $e) {
-        // Log error and return server error response
         error_log('Reviews API Error: ' . $e->getMessage());
         return new WP_REST_Response(array(
             'success' => false,
@@ -525,17 +514,16 @@ function getReviewsAPI($request)
     }
 }
 
+
 function houzez_rest_trash_review(WP_REST_Request $request)
 {
     $review_id = $request->get_param('id');
 
-    // Verify review exists
     $review = get_post($review_id);
     if (!$review || $review->post_type !== 'houzez_reviews') {
         return new WP_Error('invalid_review', 'Invalid review ID', ['status' => 404]);
     }
 
-    // Check user permissions
     $user = wp_get_current_user();
     $allowed_roles = ['administrator', 'editor', 'houzez_manager'];
 
@@ -543,12 +531,10 @@ function houzez_rest_trash_review(WP_REST_Request $request)
         return new WP_Error('permission_denied', 'You do not have permission to trash reviews', ['status' => 403]);
     }
 
-    // Check if already trashed
     if ($review->post_status === 'trash') {
         return new WP_Error('already_trashed', 'Review is already in trash', ['status' => 400]);
     }
 
-    // Trash the review
     $result = wp_trash_post($review_id);
 
     if (!$result) {
@@ -568,13 +554,11 @@ function houzez_rest_approve_review(WP_REST_Request $request)
 {
     $review_id = $request->get_param('id');
 
-    // Verify review exists
     $review = get_post($review_id);
     if (!$review || $review->post_type !== 'houzez_reviews') {
         return new WP_Error('invalid_review', 'Invalid review ID', ['status' => 404]);
     }
 
-    // Check user permissions
     $user = wp_get_current_user();
     $allowed_roles = ['administrator', 'editor', 'houzez_manager'];
 
@@ -582,12 +566,10 @@ function houzez_rest_approve_review(WP_REST_Request $request)
         return new WP_Error('permission_denied', 'You do not have permission to approve reviews', ['status' => 403]);
     }
 
-    // Check valid status for approval
     if (!in_array($review->post_status, ['pending', 'review_rejected'])) {
         return new WP_Error('invalid_status', 'Review cannot be approved from current status', ['status' => 400]);
     }
 
-    // Update status
     $args = [
         'ID' => $review_id,
         'post_status' => 'publish'
@@ -599,7 +581,6 @@ function houzez_rest_approve_review(WP_REST_Request $request)
         return $result;
     }
 
-    // Update meta
     if (function_exists('houzez_admin_review_meta_on_save')) {
         houzez_admin_review_meta_on_save($review_id);
     }
@@ -618,13 +599,11 @@ function houzez_rest_reject_review(WP_REST_Request $request)
 {
     $review_id = $request->get_param('id');
 
-    // Verify review exists
     $review = get_post($review_id);
     if (!$review || $review->post_type !== 'houzez_reviews') {
         return new WP_Error('invalid_review', 'Invalid review ID', ['status' => 404]);
     }
 
-    // Check user permissions
     $user = wp_get_current_user();
     $allowed_roles = ['administrator', 'editor', 'houzez_manager'];
 
@@ -632,12 +611,10 @@ function houzez_rest_reject_review(WP_REST_Request $request)
         return new WP_Error('permission_denied', 'You do not have permission to reject reviews', ['status' => 403]);
     }
 
-    // Check valid status for rejection
     if (!in_array($review->post_status, ['pending', 'publish'])) {
         return new WP_Error('invalid_status', 'Review cannot be rejected from current status', ['status' => 400]);
     }
 
-    // Update status
     $args = [
         'ID' => $review_id,
         'post_status' => 'review_rejected'
@@ -649,7 +626,6 @@ function houzez_rest_reject_review(WP_REST_Request $request)
         return $result;
     }
 
-    // Update meta
     if (function_exists('houzez_admin_review_meta_on_save')) {
         houzez_admin_review_meta_on_save($review_id);
     }
@@ -671,7 +647,6 @@ function houzez_get_admin_actions_log(WP_REST_Request $request)
     $per_page = $request->get_param('per_page');
     $log = get_option('houzez_review_admin_actions', []);
 
-    // Paginate results
     $total_items = count($log);
     $total_pages = ceil($total_items / $per_page);
     $offset = ($page - 1) * $per_page;
