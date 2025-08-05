@@ -2440,7 +2440,7 @@ function decodeParamsUtil($search_args_decoded) {
 function search_property_location($query_args, $latitude, $longitude, $radius, $use_radius, $search_location) {
 
     // If required parameters are missing, return the unmodified query
-    if (!($use_radius && $latitude && $longitude && $radius) || !$search_location) {
+    if (!$use_radius || empty($use_radius)) {
         return $query_args;
     }
 
