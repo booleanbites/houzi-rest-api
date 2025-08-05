@@ -375,7 +375,11 @@ function setupSearchQuery() {
         'post_status' => 'publish'
     );
 
-    $query_args = apply_filters('houzez_radius_filter', $query_args, $search_lat, $search_long, $search_radius, $use_radius, $search_location );
+    /// [*] Depricated:
+    ///
+    /// $query_args = apply_filters('houzez_radius_filter', $query_args, $search_lat, $search_long, $search_radius, $use_radius, $search_location );
+    
+    $query_args = search_property_location( $query_args, $search_lat, $search_long, $search_radius, $use_radius, $search_location );
 
     $keyword = stripcslashes($keyword);
 
@@ -1240,7 +1244,7 @@ function setupSearchQueryForTesting() {
         'post_status' => 'publish'
     );
 
-    $query_args = apply_filters('houzez_radius_filter', $query_args, $search_lat, $search_long, $search_radius, $use_radius, $search_location );
+    $query_args = search_property_location( $query_args, $search_lat, $search_long, $search_radius, $use_radius, $search_location );
 
     $keyword = stripcslashes($keyword);
 
@@ -2420,4 +2424,61 @@ function decodeParamsUtil($search_args_decoded) {
         endforeach;
     }
     return $search_as_text;
+}
+
+/**
+ * Filter properties by radius search
+ * 
+ * @param array $query_args Current query arguments
+ * @param float $latitude
+ * @param float $longitude
+ * @param int $radius
+ * @param bool $use_radius
+ * @param string $search_location
+ * @return array Modified query arguments
+ */
+function search_property_location($query_args, $latitude, $longitude, $radius, $use_radius, $search_location) {
+
+    // If required parameters are missing, return the unmodified query
+    if (!($use_radius && $latitude && $longitude && $radius) || !$search_location) {
+        return $query_args;
+    }
+
+    // Determine earth radius unit (km or miles)
+    $radius_unit = houzez_option('radius_unit');
+    if ($radius_unit == 'km') {
+        $earth_radius_num = 111;
+    } elseif ($radius_unit == 'mi') {
+        $earth_radius_num = 69;
+    } else {
+        $earth_radius_num = 111; // default to km
+    }
+
+    // Add latitude bounds
+    $lat_query = array(
+        'key' => 'houzez_geolocation_lat',
+        'value' => array($latitude - $radius / $earth_radius_num, $latitude + $radius / $earth_radius_num),
+        'type' => 'DECIMAL(10,7)',
+        'compare' => 'BETWEEN',
+    );
+
+    // Add longitude bounds (adjusted for latitude)
+    $long_query = array(
+        'key' => 'houzez_geolocation_long',
+        'value' => array(
+            $longitude - $radius / (cos(deg2rad($latitude)) * $earth_radius_num), 
+            $longitude + $radius / (cos(deg2rad($latitude)) * $earth_radius_num)
+        ),
+        'type' => 'DECIMAL(10,7)',
+        'compare' => 'BETWEEN',
+    );
+
+    // Add to meta_query
+    if (!isset($query_args['meta_query'])) {
+        $query_args['meta_query'] = array('relation' => 'AND');
+    }
+    $query_args['meta_query'][] = $lat_query;
+    $query_args['meta_query'][] = $long_query;
+
+    return $query_args;
 }
