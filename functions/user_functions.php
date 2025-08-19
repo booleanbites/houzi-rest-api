@@ -461,6 +461,11 @@ function tryPhoneLogin()
     return;
   }
 
+  // Check if approval system is enabled
+  $is_enabled = false;
+  if (function_exists('houzez_login_option')) {
+    $is_enabled = (int) houzez_login_option('enable_user_approval', 0) === 1;
+  }
 
   $source = $_POST['source'];
   if (strtolower($source) != 'phone') {
@@ -486,15 +491,27 @@ function tryPhoneLogin()
     $user_obj = get_users($user_query);
     $user = reset($user_obj);
     if ($user) {
+      // Check if user approval system is enabled and user is not approved
+      if ($is_enabled) {
+        $approval_status = get_user_meta($user->ID, 'houzez_account_approved', true);
+        if ($approval_status !== '1') {
+          $ajax_response = array(
+            'success' => false, 
+            'reason' => 'Your account is pending approval. Please wait for administrator approval.'
+          );
+          wp_send_json($ajax_response, 403);
+          return;
+        }
+      }
+      
       doJWTAuthWithSecret($user->user_login, $user->data->user_pass);
-      //we logged in, return from here.
+      // We logged in, return from here.
       return;
     }
   }
 
   $ajax_response = array( 'success' => false , "Couldn't verify the user");
   wp_send_json($ajax_response, 403);    
-
 }
 function socialSignOn()
 {
@@ -518,14 +535,17 @@ function socialSignOn()
     wp_send_json($ajax_response, 403);
     return;
   }
-
+  
+  // Check if approval system is enabled
+  $is_enabled = false;
+  if (function_exists('houzez_login_option')) {
+    $is_enabled = (int) houzez_login_option('enable_user_approval', 0) === 1;
+  }
 
   $source = $_POST['source'];
   $user_id_social = $_POST['user_id'];
 
-  //if source is apple, we need to first check if any user exist with the user_id
-  //then we need to fetch the user based on apple user id
-  //and try login with that.
+  // If source is apple, check if any user exists with the user_id
   if (strtolower($source) == 'apple') {
     $user = reset(
       get_users(
@@ -537,15 +557,33 @@ function socialSignOn()
       )
     );
     if ($user) {
-      //user_login will definitely exist on apple user. email may not.
+      // Check if user is approved before allowing login
+      if ($is_enabled) {
+        $approval_status = get_user_meta($user->ID, 'houzez_account_approved', true);
+        if ($approval_status !== '1') {
+          $ajax_response = array(
+            'success' => false, 
+            'reason' => 'Your account is pending approval. Please wait for administrator approval.'
+          );
+          wp_send_json($ajax_response, 403);
+          return;
+        }
+      }
+      
+      // Ensure existing users have approval status set
+      if (!get_user_meta($user->ID, 'houzez_account_approved', true)) {
+        $approval_status = $is_enabled ? 0 : 1;
+        update_user_meta($user->ID, 'houzez_account_approved', $approval_status);
+      }
+      
+      // User login will definitely exist on apple user
       doJWTAuthWithSecret($user->user_login, $user->data->user_pass);
-      //we logged in, return from here.
       return;
     }
   }
 
   $email = $_POST['email'] ?? "";
-  //source wasn't apple or phone, we need email or username.
+  // Source wasn't apple or phone, we need email or username
   if ((strtolower($source) != 'phone' && strtolower($source) != 'apple') && (!isset($_POST['email']) || empty($email))) {
     $ajax_response = array('success' => false, 'reason' => "email not provided");
     wp_send_json($ajax_response, 403);
@@ -567,8 +605,26 @@ function socialSignOn()
     $user_obj = get_users($user_query);
     $user = reset($user_obj);
     if ($user) {
+      // Check if user is approved before allowing login
+      if ($is_enabled) {
+        $approval_status = get_user_meta($user->ID, 'houzez_account_approved', true);
+        if ($approval_status !== '1') {
+          $ajax_response = array(
+            'success' => false, 
+            'reason' => 'Your account is pending approval. Please wait for administrator approval.'
+          );
+          wp_send_json($ajax_response, 403);
+          return;
+        }
+      }
+      
+      // Ensure existing users have approval status set
+      if (!get_user_meta($user->ID, 'houzez_account_approved', true)) {
+        $approval_status = $is_enabled ? 0 : 1;
+        update_user_meta($user->ID, 'houzez_account_approved', $approval_status);
+      }
+      
       doJWTAuthWithSecret($username, $user->data->user_pass);
-      //we logged in, return from here.
       return;
     }
   }
@@ -576,14 +632,32 @@ function socialSignOn()
   if (email_exists($email)) {
     $user = get_user_by('email', $email);
 
+    // Check if user is approved before allowing login
+    if ($is_enabled) {
+      $approval_status = get_user_meta($user->ID, 'houzez_account_approved', true);
+      if ($approval_status !== '1') {
+        $ajax_response = array(
+          'success' => false, 
+          'reason' => 'Your account is pending approval. Please wait for administrator approval.'
+        );
+        wp_send_json($ajax_response, 403);
+        return;
+      }
+    }
 
-    //if there does exist a user with this email, we need to update its apple social id for future logins.
+    // Ensure existing users have approval status set
+    if (!get_user_meta($user->ID, 'houzez_account_approved', true)) {
+      $approval_status = $is_enabled ? 0 : 1;
+      update_user_meta($user->ID, 'houzez_account_approved', $approval_status);
+    }
+
+    // If there does exist a user with this email, update its apple social id for future logins
     if (strtolower($source) == 'apple') {
       update_user_meta($user->ID, "user_id_social", $user_id_social);
     }
 
     if ($user && wp_check_password($user_id_social, $user->data->user_pass, $user->ID)) {
-      //in existing houzez, for social login, $user_id_social is the password
+      // In existing houzez, for social login, $user_id_social is the password
       doJWTAuth($email, $user_id_social);
       return;
     } else {
@@ -592,21 +666,18 @@ function socialSignOn()
 
     return;
   }
-  // there's a chance where the apple login may not send email. so we cannot get the
-  // email or generate username when there's no email.
-  // so simply set the display name if provided or user_id_social as username.
+  
+  // There's a chance where the apple login may not send email
   if ((strtolower($source) == 'apple') && empty($email)) {
     if (isset($_POST['display_name']) && !empty($_POST['display_name'])) {
       $display_n = $_POST['display_name'];
       $username = convert_to_valid_username($display_n);;
     } else {
-      
       $username = convert_to_valid_username(substr($user_id_social, 0, 15));
-      //set display_name to Apple and a username, so it doesn't make problem if the display name wasn't provided.
+      // Set display_name to Apple and a username
       $_POST['display_name'] = "Apple " . substr($username, 0, 8);
     }
   }
-
 
   if (empty($username)) {
     $username = explode('@', $email)[0];
@@ -615,27 +686,46 @@ function socialSignOn()
   if (username_exists($username)) {
     $user = get_user_by('login', $username);
 
-    //if there does exist a user with this email/phonenum, we need to update its social id for future logins.
+    // Check if user is approved before allowing login
+    if ($is_enabled) {
+      $approval_status = get_user_meta($user->ID, 'houzez_account_approved', true);
+      if ($approval_status !== '1') {
+        $ajax_response = array(
+          'success' => false, 
+          'reason' => 'Your account is pending approval. Please wait for administrator approval.'
+        );
+        wp_send_json($ajax_response, 403);
+        return;
+      }
+    }
+
+    // Ensure existing users have approval status set
+    if (!get_user_meta($user->ID, 'houzez_account_approved', true)) {
+      $approval_status = $is_enabled ? 0 : 1;
+      update_user_meta($user->ID, 'houzez_account_approved', $approval_status);
+    }
+
+    // If there does exist a user with this email/phonenum, update its social id
     if (strtolower($source) == 'apple' || strtolower($source) == 'phone') {
       update_user_meta($user->ID, "user_id_social", $user_id_social);
     }
 
-    //for social login, $user_id_social is the password
+    // For social login, $user_id_social is the password
     if ($user && wp_check_password($user_id_social, $user->data->user_pass, $user->ID)) {
-      //in existing houzez, for social login, $user_id_social is the password
       doJWTAuth($username, $user_id_social);
       return;
     } else {
       doJWTAuthWithSecret($username, $user->data->user_pass);
       return;
     }
-
   }
+  
   if (!isset($_POST['display_name'])) {
     $ajax_response = array('success' => false, 'reason' => "display_name not provided");
     wp_send_json($ajax_response, 403);
     return;
   }
+  
   $profile_image_url = $_POST['profile_url'];
   $display_name = $_POST['display_name'];
   if (!str_contains($display_name, ' ')) {
@@ -645,9 +735,17 @@ function socialSignOn()
   houzez_register_user_social($email, $username, $display_name, $user_id_social, $profile_image_url);
 
   $wordpress_user_id = username_exists($username);
+  
+  // Set approval status for social registrations
+  if ($is_enabled) {
+    update_user_meta($wordpress_user_id, 'houzez_account_approved', 0); // Pending
+  } else {
+    update_user_meta($wordpress_user_id, 'houzez_account_approved', 1); // Auto-approved
+  }
+  
   wp_set_password($user_id_social, $wordpress_user_id);
-
   update_user_meta($wordpress_user_id, "user_id_social", $user_id_social);
+  
   if (strtolower($source) == 'phone') {
     $phonenum = $username;
     if (strpos($phonenum, '+') !== 0) {
@@ -656,12 +754,18 @@ function socialSignOn()
     update_user_meta($wordpress_user_id, "fave_author_mobile", $phonenum);
   }
 
-  doJWTAuth($username, $user_id_social);
-  return;
-
-  // $ajax_response = array( 'success' => true , 'email' => $email, 'username' => $username, 'user_id' => $user_id,  );
-  // wp_send_json($ajax_response, 200);    
-
+  // If approval is required, don't automatically log in
+  if ($is_enabled) {
+    $ajax_response = array(
+      'success' => true, 
+      'message' => 'Account created successfully. Please wait for administrator approval.',
+      'needs_approval' => true
+    );
+    wp_send_json($ajax_response, 200);
+    return;
+  } else {
+    doJWTAuth($username, $user_id_social);
+  }
 }
 function checkPassWithSecret($user_id, $candidate_password, $hashedpass)
 {
