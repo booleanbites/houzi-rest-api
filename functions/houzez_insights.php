@@ -99,114 +99,195 @@ function houzez_insights_system_check() {
     ];
 }
 
+/// Depricated But Still available for backward compatibility 
+
 /**
  * Get properties accessible to current user
  */
-function houzez_get_user_properties() {
-    try {
-        $user_id = get_current_user_id();
-        $user = get_userdata($user_id);
-        $properties = [];
+// function houzez_get_user_properties() {
+//     try {
+//         $user_id = get_current_user_id();
+//         $user = get_userdata($user_id);
+//         $properties = [];
         
+//         if (current_user_can('edit_others_posts')) {
+//             $args = [
+//                 'post_type' => 'property',
+//                 'posts_per_page' => -1,
+//                 'post_status' => 'publish',
+//                 'fields' => 'ids'
+//             ];
+//             $property_ids = get_posts($args);
+//         } 
+//         elseif (in_array('houzez_agency', (array)$user->roles)) {
+//             $args_own = [
+//                 'post_type' => 'property',
+//                 'author' => $user_id,
+//                 'posts_per_page' => -1,
+//                 'post_status' => 'publish',
+//                 'fields' => 'ids'
+//             ];
+            
+//             $agent_ids = houzez_get_agency_agents($user_id);
+//             $args_agents = [
+//                 'post_type' => 'property',
+//                 'author__in' => $agent_ids,
+//                 'posts_per_page' => -1,
+//                 'post_status' => 'publish',
+//                 'fields' => 'ids'
+//             ];
+            
+//             $own_ids = get_posts($args_own);
+//             $agent_ids = $agent_ids ? get_posts($args_agents) : [];
+//             $property_ids = array_unique(array_merge($own_ids, $agent_ids));
+//         }
+//         elseif (in_array('houzez_agent', (array)$user->roles)) {
+//             $agency_id = get_user_meta($user_id, 'fave_agent_agency', true);
+            
+//             if ($agency_id) {
+//                 $args_agency = [
+//                     'post_type' => 'property',
+//                     'author' => $agency_id,
+//                     'posts_per_page' => -1,
+//                     'post_status' => 'publish',
+//                     'fields' => 'ids'
+//                 ];
+                
+//                 $agent_ids = houzez_get_agency_agents($agency_id);
+//                 $args_agents = [
+//                     'post_type' => 'property',
+//                     'author__in' => $agent_ids,
+//                     'posts_per_page' => -1,
+//                     'post_status' => 'publish',
+//                     'fields' => 'ids'
+//                 ];
+                
+//                 $agency_ids = get_posts($args_agency);
+//                 $agent_ids = $agent_ids ? get_posts($args_agents) : [];
+//                 $property_ids = array_unique(array_merge($agency_ids, $agent_ids));
+//             } else {
+//                 $args = [
+//                     'post_type' => 'property',
+//                     'author' => $user_id,
+//                     'posts_per_page' => -1,
+//                     'post_status' => 'publish',
+//                     'fields' => 'ids'
+//                 ];
+//                 $property_ids = get_posts($args);
+//             }
+//         }
+//         else {
+//             $args = [
+//                 'post_type' => 'property',
+//                 'author' => $user_id,
+//                 'posts_per_page' => -1,
+//                 'post_status' => 'publish',
+//                 'fields' => 'ids'
+//             ];
+//             $property_ids = get_posts($args);
+//         }
+        
+//         foreach ($property_ids as $pid) {
+//             $properties[] = [
+//                 'id' => $pid,
+//                 'title' => get_the_title($pid) ?: 'Property #' . $pid,
+//                 'url' => get_permalink($pid),
+//                 'status' => get_post_status($pid),
+//                 'last_updated' => get_the_modified_date('', $pid),
+//                 'thumbnail' => get_the_post_thumbnail_url($pid, 'thumbnail') ?: ''
+//             ];
+//         }
+        
+//         return [
+//             'success' => true,
+//             'user_id' => $user_id,
+//             'count' => count($properties),
+//             'properties' => $properties
+//         ];
+        
+//     } catch (Exception $e) {
+//         return new WP_REST_Response([
+//             'success' => false,
+//             'error' => $e->getMessage()
+//         ], 500);
+//     }
+// }
+
+function houzez_get_user_properties(WP_REST_Request $request) {
+    try {
+        $page     = max(1, intval($request->get_param('page')) ?: 1);
+        $per_page = min(100, intval($request->get_param('per_page')) ?: 20); 
+        // limit per_page to avoid abuse, default 20
+
+        $user_id = get_current_user_id();
+        $user    = get_userdata($user_id);
+        $properties = [];
+
+        // Base args
+        $base_args = [
+            'post_type'      => 'property',
+            'posts_per_page' => $per_page,
+            'paged'          => $page,
+            'post_status'    => 'publish',
+            'fields'         => 'ids'
+        ];
+
+        // --- ROLE LOGIC ---
         if (current_user_can('edit_others_posts')) {
-            $args = [
-                'post_type' => 'property',
-                'posts_per_page' => -1,
-                'post_status' => 'publish',
-                'fields' => 'ids'
-            ];
-            $property_ids = get_posts($args);
+            $args = $base_args;
         } 
         elseif (in_array('houzez_agency', (array)$user->roles)) {
-            $args_own = [
-                'post_type' => 'property',
-                'author' => $user_id,
-                'posts_per_page' => -1,
-                'post_status' => 'publish',
-                'fields' => 'ids'
-            ];
-            
             $agent_ids = houzez_get_agency_agents($user_id);
-            $args_agents = [
-                'post_type' => 'property',
-                'author__in' => $agent_ids,
-                'posts_per_page' => -1,
-                'post_status' => 'publish',
-                'fields' => 'ids'
-            ];
-            
-            $own_ids = get_posts($args_own);
-            $agent_ids = $agent_ids ? get_posts($args_agents) : [];
-            $property_ids = array_unique(array_merge($own_ids, $agent_ids));
+
+            $args = $base_args;
+            $args['author__in'] = array_merge([$user_id], $agent_ids);
         }
         elseif (in_array('houzez_agent', (array)$user->roles)) {
             $agency_id = get_user_meta($user_id, 'fave_agent_agency', true);
-            
+
             if ($agency_id) {
-                $args_agency = [
-                    'post_type' => 'property',
-                    'author' => $agency_id,
-                    'posts_per_page' => -1,
-                    'post_status' => 'publish',
-                    'fields' => 'ids'
-                ];
-                
                 $agent_ids = houzez_get_agency_agents($agency_id);
-                $args_agents = [
-                    'post_type' => 'property',
-                    'author__in' => $agent_ids,
-                    'posts_per_page' => -1,
-                    'post_status' => 'publish',
-                    'fields' => 'ids'
-                ];
-                
-                $agency_ids = get_posts($args_agency);
-                $agent_ids = $agent_ids ? get_posts($args_agents) : [];
-                $property_ids = array_unique(array_merge($agency_ids, $agent_ids));
+
+                $args = $base_args;
+                $args['author__in'] = array_merge([$agency_id], $agent_ids);
             } else {
-                $args = [
-                    'post_type' => 'property',
-                    'author' => $user_id,
-                    'posts_per_page' => -1,
-                    'post_status' => 'publish',
-                    'fields' => 'ids'
-                ];
-                $property_ids = get_posts($args);
+                $args = $base_args;
+                $args['author'] = $user_id;
             }
         }
         else {
-            $args = [
-                'post_type' => 'property',
-                'author' => $user_id,
-                'posts_per_page' => -1,
-                'post_status' => 'publish',
-                'fields' => 'ids'
-            ];
-            $property_ids = get_posts($args);
+            $args = $base_args;
+            $args['author'] = $user_id;
         }
-        
-        foreach ($property_ids as $pid) {
+
+        // Query
+        $query = new WP_Query($args);
+
+        foreach ($query->posts as $pid) {
             $properties[] = [
-                'id' => $pid,
-                'title' => get_the_title($pid) ?: 'Property #' . $pid,
-                'url' => get_permalink($pid),
-                'status' => get_post_status($pid),
+                'id'           => $pid,
+                'title'        => get_the_title($pid) ?: 'Property #' . $pid,
+                'url'          => get_permalink($pid),
+                'status'       => get_post_status($pid),
                 'last_updated' => get_the_modified_date('', $pid),
-                'thumbnail' => get_the_post_thumbnail_url($pid, 'thumbnail') ?: ''
+                'thumbnail'    => get_the_post_thumbnail_url($pid, 'thumbnail') ?: ''
             ];
         }
-        
+
         return [
-            'success' => true,
-            'user_id' => $user_id,
-            'count' => count($properties),
-            'properties' => $properties
+            'success'     => true,
+            'user_id'     => $user_id,
+            'count'       => $query->found_posts,   // total items
+            'total_pages' => $query->max_num_pages, // total pages
+            'page'        => $page,
+            'per_page'    => $per_page,
+            'properties'  => $properties
         ];
-        
+
     } catch (Exception $e) {
         return new WP_REST_Response([
             'success' => false,
-            'error' => $e->getMessage()
+            'error'   => $e->getMessage()
         ], 500);
     }
 }
@@ -403,26 +484,37 @@ function houzez_get_user_insights($request) {
         $time_period = sanitize_text_field($request->get_param('time_period'));
         $property_id = $request->get_param('property_id');
         
-        $properties = houzez_get_user_properties();
+        $properties = houzez_get_user_properties($request);
         $is_single_property = !empty($property_id);
-        
-        if ($is_single_property) {
-            // Validate requested property belongs to user
-            $property_exists = false;
-            foreach ($properties['properties'] as $property) {
-                if ($property['id'] == $property_id) {
-                    $property_exists = true;
-                    break;
-                }
-            }
+    
+        /// Depricated Code
+        ///
+//         if ($is_single_property) {
+//             // Validate requested property belongs to user
+//             $property_exists = false;
+//             foreach ($properties['properties'] as $property) {
+//                 if ($property['id'] == $property_id) {
+//                     $property_exists = true;
+//                     break;
+//                 }
+//             }
             
-            if (!$property_exists) {
-                return new WP_REST_Response([
-                    'success' => false,
-                    'error' => 'Invalid property ID or property not owned by user'
-                ], 403);
-            }
-        }
+//             if (!$property_exists) {
+//                 return new WP_REST_Response([
+//                     'success' => false,
+//                     'error' => 'Invalid property ID or property not owned by user'
+//                 ], 403);
+//             }
+//         }
+//         
+        if ($is_single_property) {
+    if (!houzez_user_can_access_property($user_id, $property_id)) {
+        return new WP_REST_Response([
+            'success' => false,
+            'error' => 'Invalid property ID or property not owned by user'
+        ], 403);
+    }
+}
         
         $fave_insights = new Fave_Insights();
         
@@ -542,4 +634,21 @@ function houzez_get_user_insights($request) {
             'error' => 'Server error: ' . $e->getMessage()
         ], 500);
     }
+}
+
+
+function houzez_user_can_access_property($user_id, $property_id) {
+    // Check if user can edit others posts (admin)
+    if (current_user_can('edit_others_posts')) {
+        return true;
+    }
+    
+    // Check if user is the author
+    $post = get_post($property_id);
+    if ($post && $post->post_author == $user_id) {
+        return true;
+    }
+    
+    
+    return false;
 }
