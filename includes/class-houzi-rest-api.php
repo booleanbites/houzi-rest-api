@@ -182,7 +182,7 @@ class Houzi_Rest_Api {
         require_once( HOUZI_REST_API_PLUGIN_PATH . 'functions/property_functions.php');
         require_once( HOUZI_REST_API_PLUGIN_PATH . 'functions/property_data_functions.php');
         require_once( HOUZI_REST_API_PLUGIN_PATH . 'functions/touch_base_functions.php');
-        
+        require_once( HOUZI_REST_API_PLUGIN_PATH . 'functions/houzez_insights.php');
         require_once( HOUZI_REST_API_PLUGIN_PATH . 'functions/agent_agency_functions.php');
         require_once( HOUZI_REST_API_PLUGIN_PATH . 'functions/crm_dashboard.php');
         require_once( HOUZI_REST_API_PLUGIN_PATH . 'functions/user_functions.php');
