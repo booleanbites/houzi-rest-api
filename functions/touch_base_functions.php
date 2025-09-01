@@ -267,7 +267,7 @@ function getMetaData()
   $response['num_decimals'] = houzez_option('decimals', '0');
   $response['add-prop-gdpr-enabled'] = houzez_option('add-prop-gdpr-enabled');
   $response['is_user_admin'] = houzez_is_user_administrator();
-  $response['is_roles_profile_enabled'] = (bool) houzez_option('user_show_roles_profile');
+  $response['user_show_roles_profile'] = (bool) houzez_option('user_show_roles_profile');
   $response['register_first_name'] = houzez_option('register_first_name', 0);
   $response['register_last_name'] = houzez_option('register_last_name', 0);
   $response['register_mobile'] = houzez_option('register_mobile', 0);
