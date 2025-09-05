@@ -1096,19 +1096,49 @@ add_action( 'init', 'houzez_add_custom_endpoint' );
 // ---------------
 // Function to handle the custom 'print-property-pdf' endpoint.
 function houzez_handle_custom_endpoint() {
-    // Check if the 'propid' parameter is set in the query string and is not empty.
+
+    /**
+     * @deprecated We have Made significant changes to this function.
+     * Created a Separate function for PDF generation.
+     * Now it is recommended to use the new function for generating PDFs.
+     * New Function is directly calling houzez function to create the PDF.
+     */
+
+    // // Check if the 'propid' parameter is set in the query string and is not empty.
+    // if ( isset( $_GET['propid'] ) && ! empty( $_GET['propid'] ) ) {
+    //     // Houzez function to print the property.
+    // 	houzi_create_print ();
+    //     // Note: The following 'exit;' line is commented out, which means WordPress 
+    // 	// will continue processing after this function.
+    //     // If you uncomment the 'exit;' line, it will stop further WordPress processing 
+    // 	// after this function, which may be necessary depending on your specific use case.
+    //     exit; // Stop further WordPress processing
+    // }
+
     if ( isset( $_GET['propid'] ) && ! empty( $_GET['propid'] ) ) {
-        // Houzez function to print the property.
-		houzi_create_print ();
-        // Note: The following 'exit;' line is commented out, which means WordPress 
-		// will continue processing after this function.
-        // If you uncomment the 'exit;' line, it will stop further WordPress processing 
-		// after this function, which may be necessary depending on your specific use case.
-        exit; // Stop further WordPress processing
+        /// Backup original POST data
+        /// Set the propid parameter expected by houzez_create_print()
+        $original_post = $_POST;
+        $_POST['propid'] = $_GET['propid'];
+
+        /// Houzez's function
+        if (function_exists('houzez_create_print')) {
+            houzez_create_print();
+        } 
+        /// Backward compatibility if Houzez function doesn't exist
+        else {
+            houzi_create_print();
+        }
+
+        $_POST = $original_post;
+        exit;
     }
 }
 add_action( 'template_redirect', 'houzez_handle_custom_endpoint' );
 
+/*
+ *   Backward compatibility in Case Houzez function doesn't work
+*/
 
 function houzi_create_print () {
 	if(!isset($_GET['propid'])|| !is_numeric($_GET['propid'])){
