@@ -56,6 +56,14 @@ add_action( 'rest_api_init', function () {
         'callback' => 'deleteProperty',
         'permission_callback' => '__return_true'
       ));
+      
+	register_rest_route('houzez-mobile-api/v1', '/check-user-verification', array(
+    'methods' => 'GET',
+    'callback' => 'checkUserVerification',
+    'permission_callback' => function () {
+        return is_user_logged_in();
+    }
+));
   
     register_rest_route( 'houzez-mobile-api/v1', '/update-property', array(
       'methods' => 'POST',
@@ -177,8 +185,60 @@ function addProperty(){
     wp_send_json(['prop_id' => $new_property ],200);
 }
 
-function addPropertyWithAuth() {
+function checkUserVerification($request) {
+    $user_id = get_current_user_id();
+    $enable_user_verification = houzez_option('enable_user_verification', 0);
+    $verification_required = houzez_option('verification_required_for_property', 0);
     
+    $response = array(
+        'success' => true,
+        'is_verified' => true,
+        'verification_required' => false,
+        'message' => ''
+    );
+    
+    if ($enable_user_verification && $verification_required) {
+        $response['verification_required'] = true;
+        
+        // skip verification check for admin, editors, and exempt roles
+        if (!houzez_is_admin() && !houzez_is_editor() && !is_exempt_from_verification($user_id)) {
+            // check if user is verified
+            $verification_status = get_user_meta($user_id, 'houzez_verification_status', true);
+            if ($verification_status !== 'approved') {
+                $fallback_verification_message = esc_html__('Your account must be verified before you can submit properties. Please complete the verification process.', 'houzez');
+                $verification_message = houzez_option('verification_message', $fallback_verification_message);
+                
+                $response['success'] = true;
+                $response['is_verified'] = false;
+                $response['message'] = $verification_message;
+                
+                return new WP_REST_Response($response, 200);
+            }
+        }
+    }
+    
+    return new WP_REST_Response($response, 200);
+}
+
+/// Helper function to check if user is exempt from verification
+function is_exempt_from_verification($user_id) {
+    $user = get_userdata($user_id);
+    if (!$user) {
+        return false;
+    }
+    
+    $exempt_roles = houzez_option('exempt_roles_verification', array('administrator'));
+    
+    foreach ($exempt_roles as $role) {
+        if (in_array($role, (array)$user->roles)) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+function addPropertyWithAuth() {
     $new_property['post_status']    = 'publish';
     
     // $floor_plans_post = $_POST['floor_plans'];

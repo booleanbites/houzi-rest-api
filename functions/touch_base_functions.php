@@ -272,6 +272,7 @@ function getMetaData()
   $response['register_last_name'] = houzez_option('register_last_name', 0);
   $response['register_mobile'] = houzez_option('register_mobile', 0);
   $response['enable_password'] = houzez_option('enable_password', 0);
+  $response['user_verification_system'] = (bool) houzez_option('enable_user_verification', 0);
   $response['currency_switcher_enabled'] = houzez_currency_switcher_enabled();
   /// ---- Start for Static Multi Currency     
   if (houzez_option('multi_currency') == 1) {
