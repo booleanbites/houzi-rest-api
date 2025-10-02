@@ -914,57 +914,183 @@ function getPropertyByMetaKey($request) {
     sendPropertyJson($args);
 }
 
-function adminApproveDisapproveListing() {
-    if (! is_user_logged_in() ) {
-        $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
-        wp_send_json($ajax_response, 403);
-        return; 
+    /*
+    * Depricated Functions
+    */
+
+// function adminApproveDisapproveListing() {
+//     if (! is_user_logged_in() ) {
+//         $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+//         wp_send_json($ajax_response, 403);
+//         return; 
+//     }
+
+//     $userID       = get_current_user_id();
+//     $user_role = houzez_user_role_by_user_id($userID);
+//     if ($user_role != 'administrator') {
+//         $ajax_response = array( 'success' => false, 'reason' => 'User is not an administrator.' );
+//         wp_send_json($ajax_response, 403);
+//         return; 
+//     }
+
+//     $action = $_REQUEST['action'];
+//     if (!( isset($_POST['listing_id']) || (isset($_REQUEST['action']) ))) {
+//         $ajax_response = array( 'success' => false , 'reason' => esc_html__( 'No Property ID (listing_id) found', 'houzez' ) );
+//         wp_send_json($ajax_response,400);
+//         return;
+//     }
+
+//     /*
+//      * get the original listing id
+//      */
+//     $listing_id = $_POST['listing_id'];
+
+//     $post_id = absint($listing_id);
+
+//     $post_status = ($action == 'approve') ? 'publish' : 'disapproved';
+
+//     $listing_data = array(
+//         'ID' => $post_id,
+//         'post_status' => $post_status
+//     );
+//     wp_update_post($listing_data);
+
+//     $author_id = get_post_field('post_author', $post_id);
+//     $user = get_user_by('id', $author_id);
+//     $user_email = $user->user_email;
+
+//     $args = array(
+//         'listing_title' => get_the_title($post_id),
+//         'listing_url' => get_permalink($post_id)
+//     );
+
+//     $email_type = ($action == 'approve') ? 'listing_approved' : 'listing_disapproved';
+//     houzez_email_type($user_email, $email_type, $args);
+
+//     $ajax_response = array( 'success' => true, 'message' => 'Listing ' . $action );
+//     wp_send_json($ajax_response, 200);
+// }
+
+function adminApproveDisapproveListing($request) {
+    $parameters = $request->get_params();
+    
+    if (!is_user_logged_in()) {
+        $ajax_response = array('success' => false, 'reason' => 'Please provide user auth.');
+        return rest_ensure_response($ajax_response);
     }
 
-    $userID       = get_current_user_id();
+    $userID = get_current_user_id();
     $user_role = houzez_user_role_by_user_id($userID);
     if ($user_role != 'administrator') {
-        $ajax_response = array( 'success' => false, 'reason' => 'User is not an administrator.' );
-        wp_send_json($ajax_response, 403);
-        return; 
+        $ajax_response = array('success' => false, 'reason' => 'User is not an administrator.');
+        return rest_ensure_response($ajax_response);
     }
 
-    $action = $_REQUEST['action'];
-    if (!( isset($_POST['listing_id']) || (isset($_REQUEST['action']) ))) {
-        $ajax_response = array( 'success' => false , 'reason' => esc_html__( 'No Property ID (listing_id) found', 'houzez' ) );
-        wp_send_json($ajax_response,400);
-        return;
+    if (!isset($parameters['listing_id']) || empty($parameters['listing_id'])) {
+        $ajax_response = array('success' => false, 'reason' => esc_html__('No Property ID (listing_id) found', 'houzez'));
+        return rest_ensure_response($ajax_response);
     }
 
-    /*
-     * get the original listing id
-     */
-    $listing_id = $_POST['listing_id'];
+    $listing_id = intval($parameters['listing_id']);
+    $action = isset($parameters['action']) ? $parameters['action'] : '';
 
+    try {
+        if ($action == 'publish' || $action == 'approve') {
+            $result = approveListing($listing_id);
+        } elseif ($action == 'disapprove') {
+            $result = disapprovalListing($listing_id);
+        } elseif ($action == 'on_hold') {
+            $result = onHoldListing($listing_id);
+        } else {
+//             $ajax_response = array('success' => false, 'reason' => 'Invalid action specified.');
+//             return rest_ensure_response($ajax_response);
+            return getAllProperties();
+        }
+
+        return getAllProperties();
+
+    } catch (Exception $e) {
+        $ajax_response = array('success' => false, 'reason' => 'Error processing request: ' . $e->getMessage());
+        return rest_ensure_response($ajax_response);
+    }
+}
+
+function approveListing($listing_id) {
     $post_id = absint($listing_id);
-
-    $post_status = ($action == 'approve') ? 'publish' : 'disapproved';
-
+    $listing_status = get_post_status($post_id);
+    
     $listing_data = array(
         'ID' => $post_id,
-        'post_status' => $post_status
+        'post_status' => 'publish',
+        'post_date' => current_time('mysql'),
+        'post_date_gmt' => get_gmt_from_date(current_time('mysql'))
     );
-    wp_update_post($listing_data);
+    
+    if (wp_update_post($listing_data)) {
+        // Send email notification
+        $author_id = get_post_field('post_author', $post_id);
+        $user = get_user_by('id', $author_id);
+        $user_email = $user->user_email;
 
-    $author_id = get_post_field('post_author', $post_id);
-    $user = get_user_by('id', $author_id);
-    $user_email = $user->user_email;
+        $args = array(
+            'listing_title' => get_the_title($post_id),
+            'listing_url' => get_permalink($post_id)
+        );
+        houzez_email_type($user_email, 'listing_approved', $args);
 
-    $args = array(
-        'listing_title' => get_the_title($post_id),
-        'listing_url' => get_permalink($post_id)
+        if ($listing_status == 'disapproved' && houzez_get_remaining_listings($author_id) > 0) {
+            houzez_update_package_listings($author_id);
+        }
+        
+        // return array('success' => true, 'message' => 'Listing approved successfully');
+        getAllProperties();
+        return ;
+    }
+    
+    return array('success' => false, 'reason' => 'Failed to approve listing');
+}
+
+function onHoldListing($listing_id) {
+    $post_id = absint($listing_id);
+    
+    $listing_data = array(
+        'ID' => $post_id,
+        'post_status' => 'on_hold'
     );
+    
+    if (wp_update_post($listing_data)) {
+        // Send email notification if needed
+        $author_id = get_post_field('post_author', $post_id);
+        $user = get_user_by('id', $author_id);
+        $user_email = $user->user_email;
 
-    $email_type = ($action == 'approve') ? 'listing_approved' : 'listing_disapproved';
-    houzez_email_type($user_email, $email_type, $args);
+        $args = array(
+            'listing_title' => get_the_title($post_id),
+            'listing_url' => get_permalink($post_id)
+        );
+        houzez_email_type($user_email, 'listing_on_hold', $args);
+        return ;
+    }
+    
+    return array('success' => false, 'reason' => 'Failed to put listing on hold');
+}
 
-    $ajax_response = array( 'success' => true, 'message' => 'Listing ' . $action );
-    wp_send_json($ajax_response, 200);
+function disapprovalListing($listing_id) {
+    $post_id = absint($listing_id);
+    
+    $listing_data = array(
+        'ID' => $post_id,
+        'post_status' => 'disapproved'
+    );
+    
+    if (wp_update_post($listing_data)) {
+        do_action('houzez_disapprove_listing', $post_id);
+        
+        // return array('success' => true, 'message' => 'Listing disapproved successfully');
+        return ;
+    }
+    
+    return array('success' => false, 'reason' => 'Failed to disapprove listing');
 }
 
 function toggleFeatured() {
