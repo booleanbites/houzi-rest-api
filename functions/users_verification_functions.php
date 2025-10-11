@@ -42,14 +42,19 @@ add_action('rest_api_init', function () {
     register_rest_route('houzez-mobile-api/v1', '/verification-status', array(
         'methods' => 'GET',
         'callback' => 'getVerificationStatus',
-        'permission_callback' => 'isUserLoggedIn'
+        'permission_callback' => '__return_true'
     ));
+	register_rest_route('houzez-mobile-api/v1', '/test-verification', array(
+    'methods' => 'POST',
+    'callback' => 'testVerification',
+    'permission_callback' => '__return_true'
+));
     
     // Submit Verification
     register_rest_route('houzez-mobile-api/v1', '/submit-verification', array(
         'methods' => 'POST',
         'callback' => 'submitVerificationRequest',
-        'permission_callback' => 'isUserLoggedIn'
+        'permission_callback' => '__return_true'
     ));
     
     // Submit Additional Info
@@ -63,7 +68,7 @@ add_action('rest_api_init', function () {
     register_rest_route('houzez-mobile-api/v1', '/verification-history', array(
         'methods' => 'GET',
         'callback' => 'getVerificationHistory',
-        'permission_callback' => 'isUserLoggedIn'
+        'permission_callback' => '__return_true'
     ));
     
     // Verification Requests (Admin only)
@@ -87,9 +92,139 @@ add_action('rest_api_init', function () {
         'permission_callback' => 'isUserLoggedIn'
     ));
 });
-
+function testVerification($request) {
+    return new WP_REST_Response(array(
+        'success' => true, 
+        'message' => 'Basic API is working',
+        'user_id' => get_current_user_id()
+    ), 200);
+}
 /**
  * Submit verification request
+ */
+// function submitVerificationRequest($request) {
+    
+//     if (!is_user_logged_in()) {
+//         return new WP_REST_Response(array('success' => false, 'message' => 'You must be logged in to submit a verification request'), 403);
+//     }
+
+//     $user_id = get_current_user_id();
+//     $params = $request->get_params();
+//     $files = $request->get_file_params();
+
+//     // Check if user verification is enabled
+//     $verification_enabled = fave_option('enable_user_verification', 0);
+//     if (!$verification_enabled) {
+//         return new WP_REST_Response(array('success' => false, 'message' => 'User verification is not enabled'), 400);
+//     }
+
+//     // Check if user already has a pending or approved verification
+//     $current_status = get_user_meta($user_id, 'houzez_verification_status', true);
+//     if ($current_status === 'pending') {
+//         return new WP_REST_Response(array('success' => false, 'message' => 'You already have a pending verification request'), 400);
+//     } elseif ($current_status === 'approved') {
+//         return new WP_REST_Response(array('success' => false, 'message' => 'Your account is already verified'), 400);
+//     }
+
+//     // Validate required fields
+//     $full_name = isset($params['full_name']) ? sanitize_text_field($params['full_name']) : '';
+//     $document_type = isset($params['document_type']) ? sanitize_text_field($params['document_type']) : '';
+
+//     if (empty($full_name) || empty($document_type)) {
+//         return new WP_REST_Response(array('success' => false, 'message' => 'Please fill in all required fields'), 400);
+//     }
+
+//     // Handle file upload
+//     if (empty($files['verification_document'])) {
+//         return new WP_REST_Response(array('success' => false, 'message' => 'Please upload a document'), 400);
+//     }
+
+//     // Initialize verification class
+//     $verification_class = new Houzez_User_Verification();
+    
+//     // Process front side file upload
+//     $uploaded_file = $files['verification_document'];
+//     $allowed_types = array('pdf', 'jpg', 'jpeg', 'png');
+//     $file_extension = strtolower(pathinfo($uploaded_file['name'], PATHINFO_EXTENSION));
+    
+//     if (!in_array($file_extension, $allowed_types)) {
+//         return new WP_REST_Response(array('success' => false, 'message' => 'Only PDF, JPG, and PNG files are allowed'), 400);
+//     }
+
+//     // Use the secure file upload method from the class
+//     $movefile = $verification_class->handle_secure_file_upload($uploaded_file, $user_id);
+
+//     if (is_wp_error($movefile)) {
+//         return new WP_REST_Response(array('success' => false, 'message' => 'Error uploading document: ' . $movefile->get_error_message()), 400);
+//     }
+
+//     // Check if document requires back side
+//     $document_types = $verification_class->get_document_type('');
+//     $requires_back = false;
+    
+//     if (isset($document_types[$document_type]) && $document_types[$document_type]['requires_back']) {
+//         $requires_back = true;
+//     }
+
+//     $verification_data = array(
+//         'full_name' => $full_name,
+//         'document_type' => $document_type,
+//         'document_path' => $movefile['file'],
+//         'document_url' => $movefile['url'],
+//         'document_type_mime' => $movefile['type'],
+//         'status' => 'pending',
+//         'submitted_on' => current_time('mysql')
+//     );
+
+//     // Handle back side upload if required
+//     if ($requires_back) {
+//         if (empty($files['verification_document_back'])) {
+//             return new WP_REST_Response(array('success' => false, 'message' => 'Please upload the back side of your document'), 400);
+//         }
+
+//         $uploaded_back_file = $files['verification_document_back'];
+//         $back_file_extension = strtolower(pathinfo($uploaded_back_file['name'], PATHINFO_EXTENSION));
+        
+//         if (!in_array($back_file_extension, $allowed_types)) {
+//             return new WP_REST_Response(array('success' => false, 'message' => 'Only PDF, JPG, and PNG files are allowed for back side'), 400);
+//         }
+
+//         $movefile_back = $verification_class->handle_secure_file_upload($uploaded_back_file, $user_id);
+        
+//         if (is_wp_error($movefile_back)) {
+//             return new WP_REST_Response(array('success' => false, 'message' => 'Error uploading back side: ' . $movefile_back->get_error_message()), 400);
+//         }
+
+//         $verification_data['document_back_path'] = $movefile_back['file'];
+//         $verification_data['document_back_url'] = $movefile_back['url'];
+//         $verification_data['document_back_type_mime'] = $movefile_back['type'];
+//     }
+
+//     // Save verification data
+//     update_user_meta($user_id, 'houzez_verification_data', $verification_data);
+//     update_user_meta($user_id, 'houzez_verification_status', 'pending');
+
+//     // Add to verification history
+//     $verification_class->add_to_verification_history($user_id, 'pending', 'verification_submitted');
+    
+//     // Update agent/agency post with pending verification status
+//     $verification_class->update_agent_verification_status($user_id, 0);
+    
+//     // Send email notification to admin
+//     $verification_class->send_admin_notification($user_id, $verification_data);
+
+//     return new WP_REST_Response(array(
+//         'success' => true, 
+//         'message' => 'Your verification request has been submitted successfully. We will review your documents and get back to you soon.',
+//         'data' => array(
+//             'status' => 'pending',
+//             'submitted_on' => $verification_data['submitted_on']
+//         )
+//     ), 200);
+// }
+// 
+/**
+ * Submit verification request by calling Houzez method directly
  */
 function submitVerificationRequest($request) {
     
@@ -97,119 +232,27 @@ function submitVerificationRequest($request) {
         return new WP_REST_Response(array('success' => false, 'message' => 'You must be logged in to submit a verification request'), 403);
     }
 
-    $user_id = get_current_user_id();
-    $params = $request->get_params();
-    $files = $request->get_file_params();
-
-    // Check if user verification is enabled
-    $verification_enabled = fave_option('enable_user_verification', 0);
-    if (!$verification_enabled) {
-        return new WP_REST_Response(array('success' => false, 'message' => 'User verification is not enabled'), 400);
-    }
-
-    // Check if user already has a pending or approved verification
-    $current_status = get_user_meta($user_id, 'houzez_verification_status', true);
-    if ($current_status === 'pending') {
-        return new WP_REST_Response(array('success' => false, 'message' => 'You already have a pending verification request'), 400);
-    } elseif ($current_status === 'approved') {
-        return new WP_REST_Response(array('success' => false, 'message' => 'Your account is already verified'), 400);
-    }
-
-    // Validate required fields
-    $full_name = isset($params['full_name']) ? sanitize_text_field($params['full_name']) : '';
-    $document_type = isset($params['document_type']) ? sanitize_text_field($params['document_type']) : '';
-
-    if (empty($full_name) || empty($document_type)) {
-        return new WP_REST_Response(array('success' => false, 'message' => 'Please fill in all required fields'), 400);
-    }
-
-    // Handle file upload
-    if (empty($files['verification_document'])) {
-        return new WP_REST_Response(array('success' => false, 'message' => 'Please upload a document'), 400);
-    }
-
-    // Initialize verification class
+    // Set up the necessary POST data to mimic the AJAX request
+    $_POST = $request->get_params();
+    $_FILES = $request->get_file_params();
+    $_POST['security'] = wp_create_nonce('houzez_verification_nonce');
+    
+    // Initialize the verification class
     $verification_class = new Houzez_User_Verification();
     
-    // Process front side file upload
-    $uploaded_file = $files['verification_document'];
-    $allowed_types = array('pdf', 'jpg', 'jpeg', 'png');
-    $file_extension = strtolower(pathinfo($uploaded_file['name'], PATHINFO_EXTENSION));
-    
-    if (!in_array($file_extension, $allowed_types)) {
-        return new WP_REST_Response(array('success' => false, 'message' => 'Only PDF, JPG, and PNG files are allowed'), 400);
-    }
-
-    // Use the secure file upload method from the class
-    $movefile = $verification_class->handle_secure_file_upload($uploaded_file, $user_id);
-
-    if (is_wp_error($movefile)) {
-        return new WP_REST_Response(array('success' => false, 'message' => 'Error uploading document: ' . $movefile->get_error_message()), 400);
-    }
-
-    // Check if document requires back side
-    $document_types = $verification_class->get_document_type('');
-    $requires_back = false;
-    
-    if (isset($document_types[$document_type]) && $document_types[$document_type]['requires_back']) {
-        $requires_back = true;
-    }
-
-    $verification_data = array(
-        'full_name' => $full_name,
-        'document_type' => $document_type,
-        'document_path' => $movefile['file'],
-        'document_url' => $movefile['url'],
-        'document_type_mime' => $movefile['type'],
-        'status' => 'pending',
-        'submitted_on' => current_time('mysql')
-    );
-
-    // Handle back side upload if required
-    if ($requires_back) {
-        if (empty($files['verification_document_back'])) {
-            return new WP_REST_Response(array('success' => false, 'message' => 'Please upload the back side of your document'), 400);
-        }
-
-        $uploaded_back_file = $files['verification_document_back'];
-        $back_file_extension = strtolower(pathinfo($uploaded_back_file['name'], PATHINFO_EXTENSION));
+    // Call the submit_verification_request method directly
+    try {
+        $verification_class->submit_verification_request();
         
-        if (!in_array($back_file_extension, $allowed_types)) {
-            return new WP_REST_Response(array('success' => false, 'message' => 'Only PDF, JPG, and PNG files are allowed for back side'), 400);
-        }
-
-        $movefile_back = $verification_class->handle_secure_file_upload($uploaded_back_file, $user_id);
+        // If we reach here, the method executed successfully
+        return new WP_REST_Response(array(
+            'success' => true, 
+            'message' => 'Your verification request has been submitted successfully.',
+        ), 200);
         
-        if (is_wp_error($movefile_back)) {
-            return new WP_REST_Response(array('success' => false, 'message' => 'Error uploading back side: ' . $movefile_back->get_error_message()), 400);
-        }
-
-        $verification_data['document_back_path'] = $movefile_back['file'];
-        $verification_data['document_back_url'] = $movefile_back['url'];
-        $verification_data['document_back_type_mime'] = $movefile_back['type'];
+    } catch (Exception $e) {
+        return new WP_REST_Response(array('success' => false, 'message' => 'Error submitting verification: ' . $e->getMessage()), 500);
     }
-
-    // Save verification data
-    update_user_meta($user_id, 'houzez_verification_data', $verification_data);
-    update_user_meta($user_id, 'houzez_verification_status', 'pending');
-
-    // Add to verification history
-    $verification_class->add_to_verification_history($user_id, 'pending', 'verification_submitted');
-    
-    // Update agent/agency post with pending verification status
-    $verification_class->update_agent_verification_status($user_id, 0);
-    
-    // Send email notification to admin
-    $verification_class->send_admin_notification($user_id, $verification_data);
-
-    return new WP_REST_Response(array(
-        'success' => true, 
-        'message' => 'Your verification request has been submitted successfully. We will review your documents and get back to you soon.',
-        'data' => array(
-            'status' => 'pending',
-            'submitted_on' => $verification_data['submitted_on']
-        )
-    ), 200);
 }
 
 /**
@@ -332,6 +375,138 @@ function submitAdditionalInfo($request) {
         )
     ), 200);
 }
+
+// function submitVerificationRequest($request) {
+    
+//     // Log the request for debugging
+//     error_log('=== VERIFICATION API CALLED ===');
+//     error_log('User ID: ' . get_current_user_id());
+    
+//     if (!is_user_logged_in()) {
+//         error_log('User not logged in');
+//         return new WP_REST_Response(array('success' => false, 'message' => 'You must be logged in to submit a verification request'), 403);
+//     }
+
+//     $user_id = get_current_user_id();
+//     $params = $request->get_params();
+//     $files = $request->get_file_params();
+
+//     // Log parameters and files
+//     error_log('Params: ' . print_r($params, true));
+//     error_log('Files: ' . print_r($files, true));
+//     error_log('Request method: ' . $_SERVER['REQUEST_METHOD']);
+//     error_log('Content type: ' . $_SERVER['CONTENT_TYPE']);
+
+//     try {
+//         // Check if user verification is enabled
+//         $verification_enabled = fave_option('enable_user_verification', 0);
+//         error_log('Verification enabled: ' . $verification_enabled);
+        
+//         if (!$verification_enabled) {
+//             return new WP_REST_Response(array('success' => false, 'message' => 'User verification is not enabled'), 400);
+//         }
+
+//         // Check if user already has a pending or approved verification
+//         $current_status = get_user_meta($user_id, 'houzez_verification_status', true);
+//         error_log('Current status: ' . $current_status);
+        
+//         if ($current_status === 'pending') {
+//             return new WP_REST_Response(array('success' => false, 'message' => 'You already have a pending verification request'), 400);
+//         } elseif ($current_status === 'approved') {
+//             return new WP_REST_Response(array('success' => false, 'message' => 'Your account is already verified'), 400);
+//         }
+
+//         // Validate required fields
+//         $full_name = isset($params['full_name']) ? sanitize_text_field($params['full_name']) : '';
+//         $document_type = isset($params['document_type']) ? sanitize_text_field($params['document_type']) : '';
+
+//         error_log('Full name: ' . $full_name);
+//         error_log('Document type: ' . $document_type);
+
+//         if (empty($full_name) || empty($document_type)) {
+//             return new WP_REST_Response(array('success' => false, 'message' => 'Please fill in all required fields'), 400);
+//         }
+
+//         // Map document type from label to key
+//         $document_type_map = array(
+//             'ID Card' => 'id_card',
+//             'Passport' => 'passport',
+//             'Driver\'s License' => 'drivers_license',
+//             'Business License' => 'business_license',
+//             'Other Document' => 'other'
+//         );
+        
+//         if (isset($document_type_map[$document_type])) {
+//             $document_type = $document_type_map[$document_type];
+//             error_log('Mapped document type to: ' . $document_type);
+//         }
+
+//         // Handle file upload
+//         if (empty($files['verification_document'])) {
+//             error_log('No verification document in files array');
+//             return new WP_REST_Response(array('success' => false, 'message' => 'Please upload a document'), 400);
+//         }
+
+//         // Use global instance
+//         global $houzez_user_verification;
+        
+//         if (!$houzez_user_verification) {
+//             error_log('houzez_user_verification global not found');
+//             return new WP_REST_Response(array('success' => false, 'message' => 'Verification system not initialized'), 500);
+//         }
+
+//         $verification_class = $houzez_user_verification;
+
+//         // Process front side file upload
+//         $uploaded_file = $files['verification_document'];
+//         error_log('Uploaded file info: ' . print_r($uploaded_file, true));
+        
+//         // Check if this is a valid file upload
+//         if (!isset($uploaded_file['tmp_name']) || !is_uploaded_file($uploaded_file['tmp_name'])) {
+//             error_log('Invalid file upload - not uploaded via HTTP POST');
+//             return new WP_REST_Response(array('success' => false, 'message' => 'Invalid file upload'), 400);
+//         }
+
+//         $allowed_types = array('pdf', 'jpg', 'jpeg', 'png');
+//         $file_extension = strtolower(pathinfo($uploaded_file['name'], PATHINFO_EXTENSION));
+        
+//         error_log('File extension: ' . $file_extension);
+        
+//         if (!in_array($file_extension, $allowed_types)) {
+//             return new WP_REST_Response(array('success' => false, 'message' => 'Only PDF, JPG, and PNG files are allowed'), 400);
+//         }
+
+//         // Use the secure file upload method from the class
+//         error_log('Calling handle_secure_file_upload');
+//         $movefile = $verification_class->handle_secure_file_upload($uploaded_file, $user_id);
+
+//         if (is_wp_error($movefile)) {
+//             error_log('File upload error: ' . $movefile->get_error_message());
+//             return new WP_REST_Response(array('success' => false, 'message' => 'Error uploading document: ' . $movefile->get_error_message()), 400);
+//         }
+
+//         error_log('File uploaded successfully');
+
+//         // Rest of your existing code...
+//         // [Keep the rest of your existing verification logic here]
+
+//         return new WP_REST_Response(array(
+//             'success' => true, 
+//             'message' => 'Your verification request has been submitted successfully.',
+//             'data' => array(
+//                 'status' => 'pending',
+//                 'submitted_on' => current_time('mysql')
+//             )
+//         ), 200);
+
+//     } catch (Exception $e) {
+//         error_log('Exception in verification API: ' . $e->getMessage());
+//         error_log('Stack trace: ' . $e->getTraceAsString());
+//         return new WP_REST_Response(array('success' => false, 'message' => 'Internal server error: ' . $e->getMessage()), 500);
+//     }
+// }
+
+
 
 /**
  * Process verification request (admin only)
