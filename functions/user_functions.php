@@ -55,6 +55,17 @@ add_action('rest_api_init', function () {
       'permission_callback' => '__return_true'
     )
   );
+
+  register_rest_route(
+    'houzez-mobile-api/v1',
+    '/change-user-role',
+    array (
+      'methods' => 'POST',
+      'callback' => 'changeUserRole',
+      'permission_callback' => '__return_true'
+    )
+  );
+
 	///////////
 register_rest_route(
     'houzez-mobile-api/v1',
@@ -1085,127 +1096,66 @@ function fetchProfile()
   wp_send_json($response, 200);
 }
 
-/// Left this for Backward Compatibility
-/// [Uncomment] incase for Backward compatibility
-// function editProfile()
-// {
-//   if (!is_user_logged_in()) {
-//     $ajax_response = array('success' => false, 'reason' => 'Please provide user auth.');
-//     wp_send_json($ajax_response, 403);
-//     return;
-//   }
-//   // $userID = get_current_user_id();
-//   global $current_user;
-//   wp_get_current_user();
-//   $userID = $current_user->ID;
 
-//   $user_agent_id = get_the_author_meta('fave_author_agent_id', $userID);
-//   $user_agency_id = get_the_author_meta('fave_author_agency_id', $userID);
-
-//   if (!empty($user_agent_id)) {
-//     //purge light-speed cache for this agent post type.
-//     do_action('litespeed_purge_post', $user_agent_id);
-//   } else if (!empty($user_agency_id)) {
-//     //purge light-speed cache for this agency post type.
-//     do_action('litespeed_purge_post', $user_agency_id);
-//   }
-
-
-//   // $nonce = wp_create_nonce('houzez_profile_ajax_nonce');
-//   // $_REQUEST['houzez-security-profile'] = $nonce;
-
-//   if (!create_nonce_or_throw_error('houzez-security-profile', 'houzez_profile_ajax_nonce')) {
-//     return;
-//   }
-
-//   do_action("wp_ajax_houzez_ajax_update_profile");
-// }
-
-/// Updated updateProfile with role change logic
-///
-function editProfile() {
-    if (!is_user_logged_in()) {
+/*
+ * Change user role
+*/
+function changeUserRole($request){
+	
+	 if (!is_user_logged_in()) {
         $ajax_response = array('success' => false, 'reason' => 'Please provide user auth.');
         wp_send_json($ajax_response, 403);
         return;
     }
-    
-    global $current_user;
-    wp_get_current_user();
-    $userID = $current_user->ID;
-
-    // Check if role update is requested - use the same logic as houzez_change_user_role
-    if (isset($_POST['role'])) {
-        $new_role = sanitize_text_field($_POST['role']);
-        $allowed_roles = array('houzez_agency', 'houzez_agent', 'houzez_buyer', 'houzez_seller', 'houzez_owner', 'houzez_manager');
-        
-        // Verify role is allowed
-        if (in_array($new_role, $allowed_roles)) {
-            $username = $current_user->user_login;
-            $user_email = $current_user->user_email;
-            $current_author_meta = get_user_meta($userID);
-            $authorAgentID = isset($current_author_meta['fave_author_agent_id'][0]) ? $current_author_meta['fave_author_agent_id'][0] : '';
-            $authorAgencyID = isset($current_author_meta['fave_author_agency_id'][0]) ? $current_author_meta['fave_author_agency_id'][0] : '';
-            
-            $user_as_agent = houzez_option('user_as_agent');
-
-            $user_id = wp_update_user(array('ID' => $userID, 'role' => $new_role));
-
-            if (is_wp_error($user_id)) {
-                $ajax_response = array('success' => false, 'reason' => esc_html__('Role not updated!', 'houzez'));
-                wp_send_json($ajax_response, 400);
-                return;
-            } else {
-                if ($user_as_agent == "yes" && ($new_role == 'houzez_agent' || $new_role == 'houzez_agency')) {
-                    if ($new_role == 'houzez_agency') {
-                        if (!empty($authorAgentID)) {
-                            wp_delete_post($authorAgentID, true);
-                        }
-                        houzez_register_as_agency($username, $user_email, $userID);
-                        update_user_meta($userID, 'fave_author_agent_id', '');
-                    } elseif ($new_role == 'houzez_agent') {
-                        if (!empty($authorAgencyID)) {
-                            wp_delete_post($authorAgencyID, true);
-                        }
-                        houzez_register_as_agent($username, $user_email, $userID);
-                        update_user_meta($userID, 'fave_author_agency_id', '');
-                    }
-                } else {
-                    if (!empty($authorAgentID)) {
-                        wp_delete_post($authorAgentID, true);
-                    }
-                    if (!empty($authorAgencyID)) {
-                        wp_delete_post($authorAgencyID, true);
-                    }
-                    update_user_meta($userID, 'fave_author_agent_id', '');
-                    update_user_meta($userID, 'fave_author_agency_id', '');
-                }
-            }
-        } else {
-            $ajax_response = array('success' => false, 'reason' => 'Invalid role specified.');
-            wp_send_json($ajax_response, 400);
-            return;
-        }
-    }
-
-    // Existing cache purging logic
-    $user_agent_id = get_user_meta($userID, 'fave_author_agent_id', true);
-    $user_agency_id = get_user_meta($userID, 'fave_author_agency_id', true);
-    
-    if (!empty($user_agent_id)) {
-        do_action('litespeed_purge_post', $user_agent_id);
-    } else if (!empty($user_agency_id)) {
-        do_action('litespeed_purge_post', $user_agency_id);
-    }
-
-    // Existing nonce verification
-    if (!create_nonce_or_throw_error('houzez-security-profile', 'houzez_profile_ajax_nonce')) {
+	
+    if (!create_nonce_or_throw_error('houzez-role-security-pass', 'houzez_role_pass_ajax_nonce')) {
         return;
     }
 
-    // Process profile update
-    do_action("wp_ajax_houzez_ajax_update_profile");
+	$role = $_POST['role'];
+	
+	do_action("wp_ajax_houzez_change_user_role", $role);
+	
 }
+
+/*
+ * Update the Profile
+*/
+function editProfile()
+{
+  if (!is_user_logged_in()) {
+    $ajax_response = array('success' => false, 'reason' => 'Please provide user auth.');
+    wp_send_json($ajax_response, 403);
+    return;
+  }
+  // $userID = get_current_user_id();
+  global $current_user;
+  wp_get_current_user();
+  $userID = $current_user->ID;
+
+  $user_agent_id = get_the_author_meta('fave_author_agent_id', $userID);
+  $user_agency_id = get_the_author_meta('fave_author_agency_id', $userID);
+
+  if (!empty($user_agent_id)) {
+    //purge light-speed cache for this agent post type.
+    do_action('litespeed_purge_post', $user_agent_id);
+  } else if (!empty($user_agency_id)) {
+    //purge light-speed cache for this agency post type.
+    do_action('litespeed_purge_post', $user_agency_id);
+  }
+
+
+  // $nonce = wp_create_nonce('houzez_profile_ajax_nonce');
+  // $_REQUEST['houzez-security-profile'] = $nonce;
+
+  if (!create_nonce_or_throw_error('houzez-security-profile', 'houzez_profile_ajax_nonce')) {
+    return;
+  }
+
+  do_action("wp_ajax_houzez_ajax_update_profile");
+}
+
+
 // on some houzez instances, post type agent or agency photo get cleared after profile fields update (eg, name phone etc).
 // not sure about the reason, too complex to edit theme, so fix on app side.
 // so after editing profile via editProfile(), call this web service from app.
