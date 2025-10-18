@@ -137,21 +137,21 @@ register_rest_route(
       	'permission_callback' => function () {
 			return current_user_can('edit_users');
       	},
-      	'args' => array(
-        'user_id' => array(
-        'required' => true,
-        'validate_callback' => function($param, $request, $key) {
-          return is_numeric($param);
-        },
-        'sanitize_callback' => 'absint',
-        ),
-        'action' => array(
-          'required' => true,
-          'validate_callback' => function ($param) {
-            return in_array($param, ['approve', 'suspend', 'decline']);
-          },
-        ),
-      ),
+//       	'args' => array(
+//         'user_id' => array(
+//         'required' => true,
+//         'validate_callback' => function($param, $request, $key) {
+//           return is_numeric($param);
+//         },
+//         'sanitize_callback' => 'absint',
+//         ),
+//         'action' => array(
+//           'required' => true,
+//           'validate_callback' => function ($param) {
+//             return in_array($param, ['houzez_approve_user', 'houzez_suspend_user', 'houzez_decline_user']);
+//           },
+//         ),
+//       ),
     )
   );
 register_rest_route(
@@ -1933,7 +1933,7 @@ function fetch_all_users($request)
   return rest_ensure_response($response_data);
 }
 
-// Helper function to get available user roles (optional)
+// Helper function to get available user roles 
 function get_user_roles_for_api()
 {
   global $wp_roles;
@@ -1951,9 +1951,18 @@ function get_user_roles_for_api()
 
 function houzez_handle_user_approval_api(WP_REST_Request $request)
 {
-  $user_id = $request->get_param('user_id');
-  $action = $request->get_param('action');
-  $user = get_userdata($user_id);
+    $user_id = $request->get_param('user_id');
+    $action = $request->get_param('action');
+    $nonce = $request->get_param('_wpnonce');
+    $user = get_userdata($user_id);
+	$userID       = get_current_user_id();
+    $user_role = houzez_user_role_by_user_id($userID);
+	
+    if ($user_role != 'administrator') {
+        $ajax_response = array( 'success' => false, 'reason' => 'User is not an administrator.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+    }
 
   // Validate user exists
   if (!$user) {
@@ -1965,81 +1974,39 @@ function houzez_handle_user_approval_api(WP_REST_Request $request)
     return new WP_Error('unauthorized', 'Cannot modify administrator accounts', array('status' => 403));
   }
 
-  // Handle actions with email notifications
   switch ($action) {
-    case 'approve':
+    case 'houzez_approve_user':
+		  do_action("admin_post_houzez_approve_user", $user_id);
+		  $message = "User is Approved!";
+		  $status = true;
+      break;
+
+    case 'houzez_suspend_user':
 		  
-      update_user_meta($user_id, 'houzez_account_approved', 1);
-      
-      // Publish user's posts (custom implementation)
-      houzez_publish_user_posts($user_id);
-
-      // Send approval email
-      $subject = __('Your account has been approved', 'houzez-login-register');
-      $body = sprintf(
-        __("Hello %s,\n\nGood news! Your account on %s has just been approved. You can now log in here:\n%s\n\nThank you!", 'houzez-login-register'),
-        $user->first_name ?: $user->user_login,
-        get_bloginfo('name'),
-        wp_login_url()
-      );
-      wp_mail($user->user_email, $subject, $body);
-
-      $message = 'User approved successfully';
-      $method = 'api_approved';
+		do_action("admin_post_houzez_suspend_user");
       break;
 
-    case 'suspend':
-      update_user_meta($user_id, 'houzez_account_approved', 2);
-      
-      // Trash user's posts (custom implementation)
-      houzez_trash_user_posts($user_id);
-
-      // Send suspension email
-      $subject = __('Your account has been suspended', 'houzez-login-register');
-      $body = sprintf(
-        __("Hello %s,\n\nWe're sorry to let you know that your account on %s has been suspended. If you believe this is an error, please contact us.\n\nRegards,", 'houzez-login-register'),
-        $user->first_name ?: $user->user_login,
-        get_bloginfo('name')
-      );
-      wp_mail($user->user_email, $subject, $body);
-
-      $message = 'User suspended successfully';
-      $method = 'api_suspended';
-      break;
-
-    case 'decline':
-      update_user_meta($user_id, 'houzez_account_approved', -1);
-      
-      // Trash user's posts (custom implementation)
-      houzez_trash_user_posts($user_id);
-
-      // Send declined email
-      $subject = __('Your account registration has been declined', 'houzez-login-register');
-      $body = sprintf(
-        __("Hello %s,\n\nWe're sorry to let you know that your account registration on %s has been declined. If you believe this is an error, please contact us.\n\nRegards,", 'houzez-login-register'),
-        $user->first_name ?: $user->user_login,
-        get_bloginfo('name')
-      );
-      wp_mail($user->user_email, $subject, $body);
-
-      $message = 'User declined successfully';
-      $method = 'api_declined';
+    case 'houzez_decline_user':
+		  
+		  do_action('admin_post_houzez_decline_user');
       break;
 
     default:
       return new WP_Error('invalid_action', 'Invalid action specified', array('status' => 400));
   }
 
-  // Update approval method metadata
-  update_user_meta($user_id, 'houzez_approval_method', $method);
 
   return new WP_REST_Response(array(
-    'success' => true,
+    'success' => $status,
     'message' => $message,
     'user_id' => $user_id,
     'new_status' => get_user_meta($user_id, 'houzez_account_approved', true)
   ), 200);
 }
+
+
+
+
 
 // Helper function to publish user's posts
 function houzez_publish_user_posts($user_id) {
