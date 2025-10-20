@@ -1768,8 +1768,8 @@ function custom_add_user_fields_to_rest($response, $user, $request)
     // Remove fields when approval system is disabled
     unset($data['houzez_account_approved']);
     unset($data['approval_status_text']);
-    unset($data['roles']);
-    unset($data['email']);
+    // unset($data['roles']);
+    // unset($data['email']);
   }
 
   $response->set_data($data);
