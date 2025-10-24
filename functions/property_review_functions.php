@@ -136,31 +136,6 @@ add_action('rest_api_init', function () {
     ]);
 
 
-
-
-
-
-    // Admin Actions Log API
-    register_rest_route('houzez-mobile-api/v1', '/admin-actions', [
-        'methods' => 'GET',
-        'callback' => 'houzez_get_admin_actions_log',
-        'permission_callback' => function () {
-            return current_user_can('edit_others_posts');
-        },
-        'args' => [
-            'page' => [
-                'default' => 1,
-                'validate_callback' => 'is_numeric',
-                'sanitize_callback' => 'absint',
-            ],
-            'per_page' => [
-                'default' => 20,
-                'validate_callback' => 'is_numeric',
-                'sanitize_callback' => 'absint',
-            ],
-        ],
-    ]);
-
     // Review Settings API
     register_rest_route('houzez-mobile-api/v1', '/review-settings', [
         'methods' => 'GET',
@@ -638,31 +613,6 @@ function houzez_rest_reject_review(WP_REST_Request $request)
 }
 
 
-
-
-// Admin Actions Log API handler
-function houzez_get_admin_actions_log(WP_REST_Request $request)
-{
-    $page = $request->get_param('page');
-    $per_page = $request->get_param('per_page');
-    $log = get_option('houzez_review_admin_actions', []);
-
-    $total_items = count($log);
-    $total_pages = ceil($total_items / $per_page);
-    $offset = ($page - 1) * $per_page;
-    $items = array_slice($log, $offset, $per_page);
-
-    return new WP_REST_Response([
-        'success' => true,
-        'data' => $items,
-        'pagination' => [
-            'current_page' => $page,
-            'per_page' => $per_page,
-            'total_items' => $total_items,
-            'total_pages' => $total_pages
-        ]
-    ], 200);
-}
 
 // Review Settings API handler
 function houzez_get_review_settings()
