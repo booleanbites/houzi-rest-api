@@ -49,6 +49,42 @@ add_filter( 'rest_houzez_agency_query', function( $args, $request ) {
             );
         }
     }
+
+	/// Just Handling(Filtering) the verified agencies to show verified agencies if true from client side
+	 if ( $request->get_param( 'fave_agency_verified' ) ) {
+      $args['meta_key']   = 'fave_agency_verified';
+      $args['meta_value'] = $request->get_param( 'fave_agency_verified' );
+  }
+  
+  $is_verified = $request->get_param( 'is-verified' );
+  if ( $is_verified !== null ) {
+      $is_verified_bool = filter_var( $is_verified, FILTER_VALIDATE_BOOLEAN );
+      
+      if ( $is_verified_bool ) {
+          if ( isset( $args['meta_query'] ) ) {
+              $args['meta_query'] = array(
+                  'relation' => 'AND',
+                  $args['meta_query'],
+                  array(
+                      array(
+                          'key' => 'fave_agency_verified',
+                          'value' => '1',
+                          'compare' => '='
+                      )
+                  )
+              );
+          } else {
+              $args['meta_query'] = array(
+                  array(
+                      'key' => 'fave_agency_verified',
+                      'value' => '1',
+                      'compare' => '='
+                  )
+              );
+          }
+      }
+      
+  }
   
   return $args;
 }, 10, 2 );
@@ -84,6 +120,42 @@ add_filter( 'rest_houzez_agent_query', function( $args, $request ) {
             );
         }
     }
+	
+	/// Just Handling(Filtering) the verified agent to show verified agents if true from client side
+	 if ( $request->get_param( 'fave_agent_agencies' ) ) {
+      $args['meta_key']   = 'fave_agent_agencies';
+      $args['meta_value'] = $request->get_param( 'fave_agent_agencies' );
+  }
+  
+  $is_verified = $request->get_param( 'is-verified' );
+  if ( $is_verified !== null ) {
+      $is_verified_bool = filter_var( $is_verified, FILTER_VALIDATE_BOOLEAN );
+      
+      if ( $is_verified_bool ) {
+          if ( isset( $args['meta_query'] ) ) {
+              $args['meta_query'] = array(
+                  'relation' => 'AND',
+                  $args['meta_query'],
+                  array(
+                      array(
+                          'key' => 'fave_agent_verified',
+                          'value' => '1',
+                          'compare' => '='
+                      )
+                  )
+              );
+          } else {
+              $args['meta_query'] = array(
+                  array(
+                      'key' => 'fave_agent_verified',
+                      'value' => '1',
+                      'compare' => '='
+                  )
+              );
+          }
+      }
+      
+  }
   
   return $args;
 }, 10, 2 );
