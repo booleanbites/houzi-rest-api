@@ -199,21 +199,20 @@ function houzez_get_update_review_approval_setting()
   return (bool) houzez_option('update_review_approved');
 }
 
-//Check if user is admin or not
 
-function houzez_is_user_administrator() {
-    if (!is_user_logged_in()) {
-        return false;
-    }
+// function houzez_is_user_administrator() {
+//     if (!is_user_logged_in()) {
+//         return false;
+//     }
 
-    $user = wp_get_current_user();
+//     $user = wp_get_current_user();
 
-    if (empty($user) || !is_a($user, 'WP_User')) {
-        return false;
-    }
+//     if (empty($user) || !is_a($user, 'WP_User')) {
+//         return false;
+//     }
 
-    return in_array('administrator', (array) $user->roles, true);
-}
+//     return in_array('administrator', (array) $user->roles, true);
+// }
 
 
 function get_user_verification_status_text() {
@@ -317,7 +316,7 @@ function getMetaData()
   $response['decimal_point_separator'] = houzez_option('decimal_point_separator', '.');
   $response['num_decimals'] = houzez_option('decimals', '0');
   $response['add-prop-gdpr-enabled'] = houzez_option('add-prop-gdpr-enabled');
-  $response['is_user_admin'] = houzez_is_user_administrator();
+  // $response['is_user_admin'] = houzez_is_user_administrator();
   $response['user_show_roles_profile'] = (bool) houzez_option('user_show_roles_profile');
   $response['register_first_name'] = houzez_option('register_first_name', 0);
   $response['register_last_name'] = houzez_option('register_last_name', 0);
