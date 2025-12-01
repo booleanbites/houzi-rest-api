@@ -215,58 +215,58 @@ function houzez_get_update_review_approval_setting()
 // }
 
 
-function get_user_verification_status_text() {
-    // Check if user verification system is enabled
-    if (!houzez_option('enable_user_verification', 0)) {
-        return __('Verification system is disabled', 'houzez');
-    }
+// function get_user_verification_status_text() {
+//     // Check if user verification system is enabled
+//     if (!houzez_option('enable_user_verification', 0)) {
+//         return __('Verification system is disabled', 'houzez');
+//     }
     
-    // Check if user is logged in
-    if (!is_user_logged_in()) {
-        return __('Please log in to check verification status', 'houzez');
-    }
+//     // Check if user is logged in
+//     if (!is_user_logged_in()) {
+//         return __('Please log in to check verification status', 'houzez');
+//     }
     
-    $user_id = get_current_user_id();
-    $user = get_userdata($user_id);
+//     $user_id = get_current_user_id();
+//     $user = get_userdata($user_id);
     
-    // Check if user has agent/agency role (or other roles that need verification)
-    $allowed_roles = array('houzez_agent', 'houzez_agency', 'author', 'administrator');
-    $user_roles = $user->roles;
+//     // Check if user has agent/agency role (or other roles that need verification)
+//     $allowed_roles = array('houzez_agent', 'houzez_agency', 'author', 'administrator');
+//     $user_roles = $user->roles;
     
-    $has_allowed_role = false;
-    foreach ($allowed_roles as $role) {
-        if (in_array($role, $user_roles)) {
-            $has_allowed_role = true;
-            break;
-        }
-    }
+//     $has_allowed_role = false;
+//     foreach ($allowed_roles as $role) {
+//         if (in_array($role, $user_roles)) {
+//             $has_allowed_role = true;
+//             break;
+//         }
+//     }
     
-    if (!$has_allowed_role) {
-        return __('Verification is not applicable for your role', 'houzez');
-    }
+//     if (!$has_allowed_role) {
+//         return __('Verification is not applicable for your role', 'houzez');
+//     }
     
-    // Get verification status using Houzez method
-    if (!isset($GLOBALS['houzez_user_verification']) || !is_object($GLOBALS['houzez_user_verification'])) {
-        return __('Verification system is not available', 'houzez');
-    }
+//     // Get verification status using Houzez method
+//     if (!isset($GLOBALS['houzez_user_verification']) || !is_object($GLOBALS['houzez_user_verification'])) {
+//         return __('Verification system is not available', 'houzez');
+//     }
     
-    $verification_status = $GLOBALS['houzez_user_verification']->get_verification_status($user_id);
+//     $verification_status = $GLOBALS['houzez_user_verification']->get_verification_status($user_id);
     
-    // Map status to description text (using the exact strings from templates)
-    switch ($verification_status) {
-        case 'pending':
-            return __('Pending', 'houzez');
-        case 'approved':
-            return __('Verified', 'houzez');
-        case 'rejected':
-            return __('Rejected', 'houzez');
-        case 'additional_info_required':
-            return __('Additional Info Required', 'houzez');
-        default:
-            // This is the exact string from the template you found
-            return __('Not Verified', 'houzez');
-    }
-}
+//     // Map status to description text (using the exact strings from templates)
+//     switch ($verification_status) {
+//         case 'pending':
+//             return __('Pending', 'houzez');
+//         case 'approved':
+//             return __('Verified', 'houzez');
+//         case 'rejected':
+//             return __('Rejected', 'houzez');
+//         case 'additional_info_required':
+//             return __('Additional Info Required', 'houzez');
+//         default:
+//             // This is the exact string from the template you found
+//             return __('Not Verified', 'houzez');
+//     }
+// }
 
 
 function getMetaData()
@@ -323,7 +323,7 @@ function getMetaData()
   $response['register_mobile'] = houzez_option('register_mobile', 0);
   $response['enable_password'] = houzez_option('enable_password', 0);
   $response['user_verification_system'] = (bool) houzez_option('enable_user_verification', 0);
-  $response['houzez_user_verification'] = get_user_verification_status_text();
+  // $response['houzez_user_verification'] = get_user_verification_status_text();
   $response['currency_switcher_enabled'] = houzez_currency_switcher_enabled();
   /// ---- Start for Static Multi Currency     
   if (houzez_option('multi_currency') == 1) {

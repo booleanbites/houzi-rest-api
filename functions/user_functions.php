@@ -389,6 +389,7 @@ function add_user_info_to_login($data, $user)
   $userID = $user->ID;
   $data['user_id'] = $userID;
   $data['user_role'] = $user->roles;
+	
   $data['user_phone'] = get_the_author_meta('fave_author_phone', $userID);
   $user_custom_picture = get_the_author_meta('fave_author_custom_picture', $userID);
   $author_picture_id = get_the_author_meta('fave_author_picture_id', $userID);
@@ -402,14 +403,26 @@ function add_user_info_to_login($data, $user)
   }
   $user_agent_id = get_the_author_meta('fave_author_agent_id', $userID);
   $user_agency_id = get_the_author_meta('fave_author_agency_id', $userID);
+  $data['user_role_available'] = (bool) houzez_option('user_show_roles_profile');
 
   if (!empty($user_agent_id)) {
     $data['fave_author_agent_id'] = $user_agent_id;
   } else if (!empty($user_agency_id)) {
     $data['fave_author_agency_id'] = $user_agency_id;
   }
-	
-	
+	/// User Verification
+	if (class_exists('Houzez_User_Verification') && isset($GLOBALS['houzez_user_verification'])) {
+    $verification = $GLOBALS['houzez_user_verification'];
+    
+    // Check if verification system is enabled
+    $is_enabled = fave_option('enable_user_verification', 0);
+    
+    if ($is_enabled) {
+      // Get the verification status for this user
+      $verification_status = $verification->get_verification_status($userID);
+      $data['houzez_user_verification'] = $verification_status;
+    }
+  }
 
   return $data;
 }
