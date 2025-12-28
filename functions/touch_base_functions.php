@@ -400,43 +400,92 @@ function getMetaData()
   wp_send_json($response, 200);
   //echo json_encode($response);
 }
+
+/// Backup of old code:
+// function add_custom_fields_to_response(&$response)
+// {
+//   $fields_array = Houzez_Fields_Builder::get_form_fields();
+//   $custom_fields = array();
+//   if (!empty($fields_array)) {
+//     foreach ($fields_array as $field) {
+//       $field_type = $field->type;
+
+//       $field_title = $field->label;
+//       $field_placeholder = $field->placeholder;
+
+//       $field->label = houzez_wpml_translate_single_string($field_title);
+//       $field->placeholder = houzez_wpml_translate_single_string($field_placeholder);
+
+//       if ($field_type == 'select' || $field_type == 'multiselect') {
+//         $options = unserialize($field->fvalues);
+//         $options_array = array();
+//         if (!empty($options)) {
+//           foreach ($options as $key => $val) {
+//             $select_options = houzez_wpml_translate_single_string($val);
+//             $options_array[$key] = $select_options;
+//           }
+//         }
+//         $field->fvalues = $options_array;
+//       } elseif ($field_type == 'checkbox_list' || $field_type == 'radio') {
+//         $options = unserialize($field->fvalues);
+//         $options = explode(',', $options);
+//         $options = array_filter(array_map('trim', $options));
+//         $field->fvalues = $options;
+//       }
+
+//       array_push($custom_fields, $field);
+//     }
+//   }
+
+//   $response['custom_fields'] = $custom_fields;
+// }
+
+/// Fix: Added Required_field logic
+/// Author: Ahmad Nasir
 function add_custom_fields_to_response(&$response)
 {
-  $fields_array = Houzez_Fields_Builder::get_form_fields();
-  $custom_fields = array();
-  if (!empty($fields_array)) {
-    foreach ($fields_array as $field) {
-      $field_type = $field->type;
-
-      $field_title = $field->label;
-      $field_placeholder = $field->placeholder;
-
-      $field->label = houzez_wpml_translate_single_string($field_title);
-      $field->placeholder = houzez_wpml_translate_single_string($field_placeholder);
-
-      if ($field_type == 'select' || $field_type == 'multiselect') {
-        $options = unserialize($field->fvalues);
-        $options_array = array();
-        if (!empty($options)) {
-          foreach ($options as $key => $val) {
-            $select_options = houzez_wpml_translate_single_string($val);
-            $options_array[$key] = $select_options;
-          }
+    $required_fields = houzez_option('required_fields');
+    $fields_array = Houzez_Fields_Builder::get_form_fields();
+    $custom_fields = array();
+    if (!empty($fields_array)) {
+        foreach ($fields_array as $field) {
+            $field_type = $field->type;
+            $field_title = $field->label;
+            $field_placeholder = $field->placeholder;
+            $field->label = houzez_wpml_translate_single_string($field_title);
+            $field->placeholder = houzez_wpml_translate_single_string($field_placeholder);
+            /// Logic to check if the field is required
+            $is_required = false;
+            if (is_array($required_fields) && array_key_exists($field->field_id, $required_fields)) {
+                if ($required_fields[$field->field_id] == 1) {
+                    $is_required = true;
+                }
+            }
+            /// Adding the 'required' property to the field
+            $field->required = $is_required;
+            if ($field_type == 'select' || $field_type == 'multiselect') {
+                $options = unserialize($field->fvalues);
+                $options_array = array();
+                if (!empty($options)) {
+                    foreach ($options as $key => $val) {
+                        $select_options = houzez_wpml_translate_single_string($val);
+                        $options_array[$key] = $select_options;
+                    }
+                }
+                $field->fvalues = $options_array;
+            } elseif ($field_type == 'checkbox_list' || $field_type == 'radio') {
+                $options = unserialize($field->fvalues);
+                $options = explode(',', $options);
+                $options = array_filter(array_map('trim', $options));
+                $field->fvalues = $options;
+            }
+            array_push($custom_fields, $field);
         }
-        $field->fvalues = $options_array;
-      } elseif ($field_type == 'checkbox_list' || $field_type == 'radio') {
-        $options = unserialize($field->fvalues);
-        $options = explode(',', $options);
-        $options = array_filter(array_map('trim', $options));
-        $field->fvalues = $options;
-      }
-
-      array_push($custom_fields, $field);
     }
-  }
-
-  $response['custom_fields'] = $custom_fields;
+    $response['custom_fields'] = $custom_fields;
 }
+
+
 // function add_term_to_response(&$response, $key){
 //     if (!taxonomy_exists($key)) {
 //       $response[$key] = [];
