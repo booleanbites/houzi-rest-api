@@ -903,8 +903,10 @@ function resetUserPassword()
   if (!create_nonce_or_throw_error('security', 'fave_resetpassword_nonce')) {
     return;
   }
-
-  do_action("wp_ajax_nopriv_houzez_reset_password");//houzez_reset_password();
+  /// It require 4 params [rp_key, username/email, password, confirm_password]
+  // do_action("wp_ajax_nopriv_houzez_reset_password");
+  /// It only sends the mail about password reset to user
+  do_action("wp_ajax_nopriv_houzez_forgot_password");
 
 }
 
