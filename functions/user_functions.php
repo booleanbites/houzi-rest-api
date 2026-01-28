@@ -956,6 +956,16 @@ function sendContactMail(WP_REST_Request $request)
   );
 
   if (wp_mail($to, $subject, $body, $headers)) {
+    $clean_message = preg_replace('/<\/?p[^>]*>/', "\n", $body);
+    $clean_message = preg_replace('/\s+/', ' ', strip_tags($clean_message));
+    $push_notifArgs = array(
+            "title" => $subject,
+            "message" => trim($clean_message),
+            "type" => 'contact',
+            "to" => $to,
+        );
+
+    do_action('houzez_send_notification', $push_notifArgs);
     $response['status'] = 200;
     $response['message'] = 'Message sent successfully.';
     //$response['test'] = $body;
