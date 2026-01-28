@@ -199,75 +199,74 @@ function houzez_get_update_review_approval_setting()
   return (bool) houzez_option('update_review_approved');
 }
 
-//Check if user is admin or not
 
-function houzez_is_user_administrator() {
-    if (!is_user_logged_in()) {
-        return false;
-    }
+// function houzez_is_user_administrator() {
+//     if (!is_user_logged_in()) {
+//         return false;
+//     }
 
-    $user = wp_get_current_user();
+//     $user = wp_get_current_user();
 
-    if (empty($user) || !is_a($user, 'WP_User')) {
-        return false;
-    }
+//     if (empty($user) || !is_a($user, 'WP_User')) {
+//         return false;
+//     }
 
-    return in_array('administrator', (array) $user->roles, true);
-}
+//     return in_array('administrator', (array) $user->roles, true);
+// }
 
 
-function get_user_verification_status_text() {
-    // Check if user verification system is enabled
-    if (!houzez_option('enable_user_verification', 0)) {
-        return __('Verification system is disabled', 'houzez');
-    }
+// function get_user_verification_status_text() {
+//     // Check if user verification system is enabled
+//     if (!houzez_option('enable_user_verification', 0)) {
+//         return __('Verification system is disabled', 'houzez');
+//     }
     
-    // Check if user is logged in
-    if (!is_user_logged_in()) {
-        return __('Please log in to check verification status', 'houzez');
-    }
+//     // Check if user is logged in
+//     if (!is_user_logged_in()) {
+//         return __('Please log in to check verification status', 'houzez');
+//     }
     
-    $user_id = get_current_user_id();
-    $user = get_userdata($user_id);
+//     $user_id = get_current_user_id();
+//     $user = get_userdata($user_id);
     
-    // Check if user has agent/agency role (or other roles that need verification)
-    $allowed_roles = array('houzez_agent', 'houzez_agency', 'author', 'administrator');
-    $user_roles = $user->roles;
+//     // Check if user has agent/agency role (or other roles that need verification)
+//     $allowed_roles = array('houzez_agent', 'houzez_agency', 'author', 'administrator');
+//     $user_roles = $user->roles;
     
-    $has_allowed_role = false;
-    foreach ($allowed_roles as $role) {
-        if (in_array($role, $user_roles)) {
-            $has_allowed_role = true;
-            break;
-        }
-    }
+//     $has_allowed_role = false;
+//     foreach ($allowed_roles as $role) {
+//         if (in_array($role, $user_roles)) {
+//             $has_allowed_role = true;
+//             break;
+//         }
+//     }
     
-    if (!$has_allowed_role) {
-        return __('Verification is not applicable for your role', 'houzez');
-    }
+//     if (!$has_allowed_role) {
+//         return __('Verification is not applicable for your role', 'houzez');
+//     }
     
-    // Get verification status using Houzez method
-    if (!isset($GLOBALS['houzez_user_verification']) || !is_object($GLOBALS['houzez_user_verification'])) {
-        return __('Verification system is not available', 'houzez');
-    }
+//     // Get verification status using Houzez method
+//     if (!isset($GLOBALS['houzez_user_verification']) || !is_object($GLOBALS['houzez_user_verification'])) {
+//         return __('Verification system is not available', 'houzez');
+//     }
     
-    $verification_status = $GLOBALS['houzez_user_verification']->get_verification_status($user_id);
+//     $verification_status = $GLOBALS['houzez_user_verification']->get_verification_status($user_id);
     
-    // Map status to description text (using the exact strings from templates)
-    switch ($verification_status) {
-        case 'pending':
-            return __('Pending', 'houzez');
-        case 'approved':
-            return __('Verified', 'houzez');
-        case 'rejected':
-            return __('Rejected', 'houzez');
-        case 'additional_info_required':
-            return __('Additional Info Required', 'houzez');
-        default:
-            // This is the exact string from the template you found
-            return __('Not Verified', 'houzez');
-    }
-}
+//     // Map status to description text (using the exact strings from templates)
+//     switch ($verification_status) {
+//         case 'pending':
+//             return __('Pending', 'houzez');
+//         case 'approved':
+//             return __('Verified', 'houzez');
+//         case 'rejected':
+//             return __('Rejected', 'houzez');
+//         case 'additional_info_required':
+//             return __('Additional Info Required', 'houzez');
+//         default:
+//             // This is the exact string from the template you found
+//             return __('Not Verified', 'houzez');
+//     }
+// }
 
 
 function getMetaData()
@@ -317,14 +316,14 @@ function getMetaData()
   $response['decimal_point_separator'] = houzez_option('decimal_point_separator', '.');
   $response['num_decimals'] = houzez_option('decimals', '0');
   $response['add-prop-gdpr-enabled'] = houzez_option('add-prop-gdpr-enabled');
-  $response['is_user_admin'] = houzez_is_user_administrator();
+  // $response['is_user_admin'] = houzez_is_user_administrator();
   $response['user_show_roles_profile'] = (bool) houzez_option('user_show_roles_profile');
   $response['register_first_name'] = houzez_option('register_first_name', 0);
   $response['register_last_name'] = houzez_option('register_last_name', 0);
   $response['register_mobile'] = houzez_option('register_mobile', 0);
   $response['enable_password'] = houzez_option('enable_password', 0);
   $response['user_verification_system'] = (bool) houzez_option('enable_user_verification', 0);
-  $response['houzez_user_verification'] = get_user_verification_status_text();
+  // $response['houzez_user_verification'] = get_user_verification_status_text();
   $response['currency_switcher_enabled'] = houzez_currency_switcher_enabled();
   /// ---- Start for Static Multi Currency     
   if (houzez_option('multi_currency') == 1) {
@@ -401,43 +400,92 @@ function getMetaData()
   wp_send_json($response, 200);
   //echo json_encode($response);
 }
+
+/// Backup of old code:
+// function add_custom_fields_to_response(&$response)
+// {
+//   $fields_array = Houzez_Fields_Builder::get_form_fields();
+//   $custom_fields = array();
+//   if (!empty($fields_array)) {
+//     foreach ($fields_array as $field) {
+//       $field_type = $field->type;
+
+//       $field_title = $field->label;
+//       $field_placeholder = $field->placeholder;
+
+//       $field->label = houzez_wpml_translate_single_string($field_title);
+//       $field->placeholder = houzez_wpml_translate_single_string($field_placeholder);
+
+//       if ($field_type == 'select' || $field_type == 'multiselect') {
+//         $options = unserialize($field->fvalues);
+//         $options_array = array();
+//         if (!empty($options)) {
+//           foreach ($options as $key => $val) {
+//             $select_options = houzez_wpml_translate_single_string($val);
+//             $options_array[$key] = $select_options;
+//           }
+//         }
+//         $field->fvalues = $options_array;
+//       } elseif ($field_type == 'checkbox_list' || $field_type == 'radio') {
+//         $options = unserialize($field->fvalues);
+//         $options = explode(',', $options);
+//         $options = array_filter(array_map('trim', $options));
+//         $field->fvalues = $options;
+//       }
+
+//       array_push($custom_fields, $field);
+//     }
+//   }
+
+//   $response['custom_fields'] = $custom_fields;
+// }
+
+/// Fix: Added Required_field logic
+/// Author: Ahmad Nasir
 function add_custom_fields_to_response(&$response)
 {
-  $fields_array = Houzez_Fields_Builder::get_form_fields();
-  $custom_fields = array();
-  if (!empty($fields_array)) {
-    foreach ($fields_array as $field) {
-      $field_type = $field->type;
-
-      $field_title = $field->label;
-      $field_placeholder = $field->placeholder;
-
-      $field->label = houzez_wpml_translate_single_string($field_title);
-      $field->placeholder = houzez_wpml_translate_single_string($field_placeholder);
-
-      if ($field_type == 'select' || $field_type == 'multiselect') {
-        $options = unserialize($field->fvalues);
-        $options_array = array();
-        if (!empty($options)) {
-          foreach ($options as $key => $val) {
-            $select_options = houzez_wpml_translate_single_string($val);
-            $options_array[$key] = $select_options;
-          }
+    $required_fields = houzez_option('required_fields');
+    $fields_array = Houzez_Fields_Builder::get_form_fields();
+    $custom_fields = array();
+    if (!empty($fields_array)) {
+        foreach ($fields_array as $field) {
+            $field_type = $field->type;
+            $field_title = $field->label;
+            $field_placeholder = $field->placeholder;
+            $field->label = houzez_wpml_translate_single_string($field_title);
+            $field->placeholder = houzez_wpml_translate_single_string($field_placeholder);
+            /// Logic to check if the field is required
+            $is_required = false;
+            if (is_array($required_fields) && array_key_exists($field->field_id, $required_fields)) {
+                if ($required_fields[$field->field_id] == 1) {
+                    $is_required = true;
+                }
+            }
+            /// Adding the 'required' property to the field
+            $field->required = $is_required;
+            if ($field_type == 'select' || $field_type == 'multiselect') {
+                $options = unserialize($field->fvalues);
+                $options_array = array();
+                if (!empty($options)) {
+                    foreach ($options as $key => $val) {
+                        $select_options = houzez_wpml_translate_single_string($val);
+                        $options_array[$key] = $select_options;
+                    }
+                }
+                $field->fvalues = $options_array;
+            } elseif ($field_type == 'checkbox_list' || $field_type == 'radio') {
+                $options = unserialize($field->fvalues);
+                $options = explode(',', $options);
+                $options = array_filter(array_map('trim', $options));
+                $field->fvalues = $options;
+            }
+            array_push($custom_fields, $field);
         }
-        $field->fvalues = $options_array;
-      } elseif ($field_type == 'checkbox_list' || $field_type == 'radio') {
-        $options = unserialize($field->fvalues);
-        $options = explode(',', $options);
-        $options = array_filter(array_map('trim', $options));
-        $field->fvalues = $options;
-      }
-
-      array_push($custom_fields, $field);
     }
-  }
-
-  $response['custom_fields'] = $custom_fields;
+    $response['custom_fields'] = $custom_fields;
 }
+
+
 // function add_term_to_response(&$response, $key){
 //     if (!taxonomy_exists($key)) {
 //       $response[$key] = [];
