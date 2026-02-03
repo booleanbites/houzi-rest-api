@@ -781,11 +781,10 @@ function socialSignOn()
   // If approval is required, don't automatically log in
   if ($is_enabled) {
     $ajax_response = array(
-      'success' => true, 
+      'success' => false, 
       'message' => 'Account created successfully. Please wait for administrator approval.',
-      'needs_approval' => true
     );
-    wp_send_json($ajax_response, 200);
+    wp_send_json($ajax_response, 403);
     return;
   } else {
     doJWTAuth($username, $user_id_social);
