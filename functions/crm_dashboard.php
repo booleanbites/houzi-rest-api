@@ -762,27 +762,27 @@ function userCRMStats( $request ) {
     $prev_month_end   = date('Y-m-t', strtotime('-1 month'));
 
     $properties = array(
-        'total' => array(
+        'total_properties' => array(
             'current'  => houzez_user_posts_count('any'),
             'previous' => houzez_get_user_properties_count_by_date('any', $prev_month_start, $prev_month_end)
         ),
-        'published' => array(
+        'published_properties' => array(
             'current'  => houzez_user_posts_count('publish'),
             'previous' => houzez_get_user_properties_count_by_date('publish', $prev_month_start, $prev_month_end)
         ),
-        'pending' => array(
+        'pending_properties' => array(
             'current'  => houzez_user_posts_count('pending'),
             'previous' => houzez_get_user_properties_count_by_date('pending', $prev_month_start, $prev_month_end)
         ),
-        'sold' => array(
+        'sold_properties' => array(
             'current'  => houzez_user_posts_count('houzez_sold'),
             'previous' => houzez_get_user_properties_count_by_date('houzez_sold', $prev_month_start, $prev_month_end)
         ),
-        'expired' => array(
+        'expired_properties' => array(
             'current'  => houzez_user_posts_count('expired'),
             'previous' => houzez_get_user_properties_count_by_date('expired', $prev_month_start, $prev_month_end)
         ),
-        'draft' => array(
+        'draft_properties' => array(
             'current' => houzez_user_posts_count('draft'),
             'previous' => 0 
         )
@@ -830,14 +830,14 @@ function userCRMStats( $request ) {
     $response = array(
         'success' => true,
         'user_id' => $user_id,
-        'user_display_name' => $user_display_name,
+		    'user_display_name' => $user_display_name,
 		    'datetime'  => $formatted_datetime,
         'data'    => array(
             'properties' => $properties,
             'crm'        => array(
-                'leads'     => $leads_data,
-                'inquiries' => $inquiries_data,
-                'deals'     => $deals_data
+                'total_leads'     => $leads_data,
+                'total_inquiries' => $inquiries_data,
+                'total_deals'     => $deals_data
             )
         )
     );
