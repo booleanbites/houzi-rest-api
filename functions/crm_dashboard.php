@@ -181,7 +181,7 @@ add_action( 'rest_api_init', function () {
     ));
 
     register_rest_route( 'houzez-mobile-api/v1', '/user-crm-stats', array(
-        'methods'             => 'POST',
+        'methods'             => 'GET',
         'callback'            => 'userCRMStats',
         'permission_callback' => '__return_true', 
     ));
