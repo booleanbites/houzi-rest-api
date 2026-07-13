@@ -306,6 +306,10 @@ function getMetaData()
 
   $response['messages'] = houzez_option('agent_direct_messages', 0);
 
+  if (function_exists('houzi_ai_touch_base_features')) {
+    $response['ai_features'] = houzi_ai_touch_base_features();
+  }
+
   $response['max_prop_images'] = houzez_option('max_prop_images', "50");
   $response['new_ratings_approved_by_admin'] = houzez_get_new_ratings_approval_setting();
   $response['update_review_approved'] = houzez_get_update_review_approval_setting();

@@ -5694,6 +5694,352 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "AI (BYOK)",
+			"item": [
+				{
+					"name": "AI Search",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "app-secret",
+								"value": "SWSRJ44Kh234",
+								"description": "App secret from the plugin AI/Settings field.",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "query",
+									"value": "3 bed house under 500k in New York with a pool",
+									"type": "text"
+								},
+								{
+									"key": "conversation_id",
+									"value": "",
+									"type": "text",
+									"disabled": true,
+									"description": "Optional: pass the id returned by a prior call to refine that search."
+								}
+							]
+						},
+						"url": {
+							"raw": "{{URL}}houzez-mobile-api/v1/ai-search",
+							"host": [
+								"{{URL}}houzez-mobile-api"
+							],
+							"path": [
+								"v1",
+								"ai-search"
+							]
+						},
+						"description": "Natural-language search -> structured filters. Public: needs app-secret + passes rate limits. Returns filters (not results); feed them into search-properties. Errors follow the AI contract: ai_disabled | no_api_key | rate_limited | ai_timeout | ai_error | invalid_request."
+					},
+					"response": []
+				},
+				{
+					"name": "AI Describe (form data)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "app-secret",
+								"value": "SWSRJ44Kh234",
+								"description": "App secret from the plugin AI/Settings field.",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "property",
+									"value": "{\"title\": \"Modern 3-bed villa\", \"type\": \"Villa\", \"beds\": \"3\", \"baths\": \"2\", \"size\": \"1800\", \"size_unit\": \"sq ft\", \"price\": \"480000\", \"address\": \"Palm Jumeirah, Dubai\", \"year_built\": \"2019\", \"features\": [\"Swimming Pool\", \"Sea View\", \"Garage\"]}",
+									"type": "text",
+									"description": "JSON string of listing fields (add-property flow). Whitelisted + size-capped server-side. Requires edit_posts capability."
+								},
+								{
+									"key": "listing_id",
+									"value": "123",
+									"type": "text",
+									"disabled": true,
+									"description": "Alternative to property: server loads listing meta itself and checks ownership."
+								},
+								{
+									"key": "tone",
+									"value": "professional",
+									"type": "text",
+									"description": "professional | casual | luxury"
+								},
+								{
+									"key": "length",
+									"value": "medium",
+									"type": "text",
+									"description": "short | medium | long"
+								},
+								{
+									"key": "language",
+									"value": "",
+									"type": "text",
+									"disabled": true,
+									"description": "Optional locale code; blank follows the site default."
+								}
+							]
+						},
+						"url": {
+							"raw": "{{URL}}houzez-mobile-api/v1/ai-describe",
+							"host": [
+								"{{URL}}houzez-mobile-api"
+							],
+							"path": [
+								"v1",
+								"ai-describe"
+							]
+						},
+						"description": "AI listing-description writer. Logged-in, must be able to edit listings. Provide EITHER listing_id (preferred; server trusts its own data) OR a property JSON blob. Runs through the Fair Housing prompt layer. Returns { description, seo_title }."
+					},
+					"response": []
+				},
+				{
+					"name": "AI Ask Listing",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "app-secret",
+								"value": "SWSRJ44Kh234",
+								"description": "App secret from the plugin AI/Settings field.",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "listing_id",
+									"value": "123",
+									"type": "text"
+								},
+								{
+									"key": "question",
+									"value": "Does this property have parking and what year was it built?",
+									"type": "text"
+								},
+								{
+									"key": "conversation_id",
+									"value": "",
+									"type": "text",
+									"disabled": true,
+									"description": "Optional: continue a prior Q&A thread about the same listing."
+								}
+							]
+						},
+						"url": {
+							"raw": "{{URL}}houzez-mobile-api/v1/ai-ask-listing",
+							"host": [
+								"{{URL}}houzez-mobile-api"
+							],
+							"path": [
+								"v1",
+								"ai-ask-listing"
+							]
+						},
+						"description": "Grounded Q&A about ONE published listing. Public: app-secret + rate limit. Answers only from listing data; sets grounded=false and suggest_contact_agent=true when the data doesn't say."
+					},
+					"response": []
+				},
+				{
+					"name": "AI CRM - Lead Summary",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "app-secret",
+								"value": "SWSRJ44Kh234",
+								"description": "App secret from the plugin AI/Settings field.",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "lead_id",
+									"value": "201",
+									"type": "text"
+								},
+								{
+									"key": "language",
+									"value": "",
+									"type": "text",
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "{{URL}}houzez-mobile-api/v1/ai-crm/lead-summary",
+							"host": [
+								"{{URL}}houzez-mobile-api"
+							],
+							"path": [
+								"v1",
+								"ai-crm",
+								"lead-summary"
+							]
+						},
+						"description": "Summarize a CRM lead (profile, enquiries, viewed listings, notes). Logged-in agent who owns the lead (scoping enforced by the Houzez CRM classes). Returns { summary, next_action, signals[] }."
+					},
+					"response": []
+				},
+				{
+					"name": "AI CRM - Rank Matches",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "app-secret",
+								"value": "SWSRJ44Kh234",
+								"description": "App secret from the plugin AI/Settings field.",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "enquiry_id",
+									"value": "73",
+									"type": "text"
+								},
+								{
+									"key": "language",
+									"value": "",
+									"type": "text",
+									"disabled": true
+								}
+							]
+						},
+						"url": {
+							"raw": "{{URL}}houzez-mobile-api/v1/ai-crm/rank-matches",
+							"host": [
+								"{{URL}}houzez-mobile-api"
+							],
+							"path": [
+								"v1",
+								"ai-crm",
+								"rank-matches"
+							]
+						},
+						"description": "Rank the enquiry's matched listings by fit for the lead, with a one-line why per property. Logged-in agent who owns the enquiry. Returns { ranked: [{ property_id, score, why }] }. NOTE: param is enquiry_id (not inquiry_id)."
+					},
+					"response": []
+				},
+				{
+					"name": "AI CRM - Draft Email",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "app-secret",
+								"value": "SWSRJ44Kh234",
+								"description": "App secret from the plugin AI/Settings field.",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "lead_id",
+									"value": "201",
+									"type": "text"
+								},
+								{
+									"key": "property_ids[]",
+									"value": "123",
+									"type": "text",
+									"description": "Repeat this key for each property (max 5)."
+								},
+								{
+									"key": "property_ids[]",
+									"value": "456",
+									"type": "text"
+								},
+								{
+									"key": "tone",
+									"value": "professional",
+									"type": "text",
+									"description": "professional | casual | luxury"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{URL}}houzez-mobile-api/v1/ai-crm/draft-email",
+							"host": [
+								"{{URL}}houzez-mobile-api"
+							],
+							"path": [
+								"v1",
+								"ai-crm",
+								"draft-email"
+							]
+						},
+						"description": "Draft an outreach email presenting selected properties to a lead. Logged-in agent. Only published or agent-owned listings are included. Returns { subject, body } as a draft; sending stays on send-matched-listing-email."
+					},
+					"response": []
+				}
+			],
+			"description": "Bring-your-own-key AI endpoints (plugin 1.5.0). All require the app-secret header and pass server-side rate limits. Availability is advertised per-feature in touch-base under ai_features. Config lives in the plugin AI admin tab."
 		}
 	],
 	"event": [
