@@ -259,7 +259,7 @@ class RestApiAISettings {
 	public function model_callback() {
 		printf(
 			'<input class="regular-text" type="text" name="houzi_ai_options[model]" id="model" value="%s" placeholder="Provider default">
-			<label for="model"><br>Leave empty for the provider default (OpenAI: gpt-4.1-mini, Claude: claude-haiku-4-5, Gemini: gemini-2.0-flash).</label>',
+			<label for="model"><br>Leave empty for the provider default (OpenAI: gpt-5-mini, Claude: claude-haiku-4-5, Gemini: gemini-3-flash-preview).</label>',
 			isset( $this->houzi_ai_options['model'] ) ? esc_attr( $this->houzi_ai_options['model'] ) : ''
 		);
 	}
@@ -267,7 +267,7 @@ class RestApiAISettings {
 	public function lite_model_callback() {
 		printf(
 			'<input class="regular-text" type="text" name="houzi_ai_options[lite_model]" id="lite_model" value="%s" placeholder="Provider default">
-			<label for="lite_model"><br>A cheaper / faster model for lightweight generations such as the home "Tailored for You" suggestions. Prefer a low-cost model here to save on cost (e.g. gpt-4.1-nano, claude-haiku-4-5, gemini-2.0-flash-lite). Leave empty to reuse the Model above / the provider default.</label>',
+			<label for="lite_model"><br>A cheaper / faster model for lightweight generations such as the home "Tailored for You" suggestions. Prefer a low-cost model here to save on cost (e.g. gpt-5-nano, claude-haiku-4-5, gemini-3.1-flash-lite). Leave empty to reuse the Model above / the provider default.</label>',
 			isset( $this->houzi_ai_options['lite_model'] ) ? esc_attr( $this->houzi_ai_options['lite_model'] ) : ''
 		);
 	}

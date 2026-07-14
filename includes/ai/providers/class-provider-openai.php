@@ -14,7 +14,7 @@ if ( ! defined( 'WPINC' ) ) {
 class Houzi_AI_Provider_OpenAI implements Houzi_AI_Provider_Interface {
 
 	const API_URL       = 'https://api.openai.com/v1/chat/completions';
-	const DEFAULT_MODEL = 'gpt-4.1-mini';
+	const DEFAULT_MODEL = 'gpt-5-mini';
 
 	private $api_key;
 
