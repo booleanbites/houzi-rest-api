@@ -112,6 +112,18 @@ class Houzi_AI_Prompt_Library {
 					. self::fair_housing_rules();
 				break;
 
+			case 'suggestions':
+				$prompt = "You write very short marketing subtitles for a real-estate app's home screen. "
+					. "For each taxonomy term provided (a property status, type or feature), write ONE catchy subtitle by calling the tool.\n"
+					. "Rules:\n"
+					. "- Return exactly one entry per input term, echoing its 'slug' unchanged.\n"
+					. "- Each subtitle: at most ~40 characters, Title-free, no ending period, no emoji, no quotes.\n"
+					. "- Make it inviting and specific to that term (e.g. status 'For Rent' -> 'Find your next rental'; type 'Apartments' -> 'City living, simplified'; feature 'Swimming Pool' -> 'Dive into summer').\n"
+					. "- Do not repeat the term name verbatim as the whole subtitle; add value.\n"
+					. self::language_rule( $language )
+					. self::fair_housing_rules();
+				break;
+
 			default:
 				$prompt = '';
 				break;

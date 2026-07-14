@@ -19,7 +19,7 @@ class Houzi_AI_Settings {
 	const OPTION_NAME = 'houzi_ai_options';
 
 	/** Feature keys used across settings, guards and touch-base. */
-	const FEATURES = array( 'search', 'describe', 'ask_listing', 'crm' );
+	const FEATURES = array( 'search', 'describe', 'ask_listing', 'crm', 'suggestions' );
 
 	private static function options() {
 		$options = get_option( self::OPTION_NAME );
@@ -60,6 +60,16 @@ class Houzi_AI_Settings {
 	public static function model() {
 		$options = self::options();
 		return isset( $options['model'] ) ? trim( $options['model'] ) : '';
+	}
+
+	/**
+	 * Cheaper/faster "lite" model for lightweight generations (e.g. the
+	 * "Tailored for You" taxonomy subtitles). Empty string means "fall back to
+	 * model() and then the provider adapter's default".
+	 */
+	public static function lite_model() {
+		$options = self::options();
+		return isset( $options['lite_model'] ) ? trim( $options['lite_model'] ) : '';
 	}
 
 	public static function rate_per_user_hour() {

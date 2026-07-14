@@ -102,6 +102,13 @@ class RestApiAISettings {
 			'houzi_ai_setting_section'
 		);
 		add_settings_field(
+			'lite_model',
+			'Lite Model',
+			array( $this, 'lite_model_callback' ),
+			'houzi-rest-api-ai-admin',
+			'houzi_ai_setting_section'
+		);
+		add_settings_field(
 			'features',
 			'Features',
 			array( $this, 'features_callback' ),
@@ -153,11 +160,14 @@ class RestApiAISettings {
 		if ( isset( $input['model'] ) ) {
 			$sanitary_values['model'] = sanitize_text_field( $input['model'] );
 		}
+		if ( isset( $input['lite_model'] ) ) {
+			$sanitary_values['lite_model'] = sanitize_text_field( $input['lite_model'] );
+		}
 
 		// Marker so unchecked boxes are honored only after the first save
 		// (before that, all features default on when AI is enabled).
 		$sanitary_values['features_saved'] = 1;
-		foreach ( array( 'search', 'describe', 'ask_listing', 'crm' ) as $feature ) {
+		foreach ( array( 'search', 'describe', 'ask_listing', 'crm', 'suggestions' ) as $feature ) {
 			if ( isset( $input[ 'feature_' . $feature ] ) ) {
 				$sanitary_values[ 'feature_' . $feature ] = 1;
 			}
@@ -254,12 +264,21 @@ class RestApiAISettings {
 		);
 	}
 
+	public function lite_model_callback() {
+		printf(
+			'<input class="regular-text" type="text" name="houzi_ai_options[lite_model]" id="lite_model" value="%s" placeholder="Provider default">
+			<label for="lite_model"><br>A cheaper / faster model for lightweight generations such as the home "Tailored for You" suggestions. Prefer a low-cost model here to save on cost (e.g. gpt-4.1-nano, claude-haiku-4-5, gemini-2.0-flash-lite). Leave empty to reuse the Model above / the provider default.</label>',
+			isset( $this->houzi_ai_options['lite_model'] ) ? esc_attr( $this->houzi_ai_options['lite_model'] ) : ''
+		);
+	}
+
 	public function features_callback() {
 		$features = array(
 			'search'      => 'AI Property Search (natural language)',
 			'describe'    => 'AI Description Writer',
 			'ask_listing' => 'Ask About This Listing (buyer Q&amp;A)',
 			'crm'         => 'CRM Copilot (lead summary, match ranking, email drafts)',
+			'suggestions' => 'Tailored for You (home taxonomy suggestions)',
 		);
 		$saved = isset( $this->houzi_ai_options['features_saved'] );
 		foreach ( $features as $key => $label ) {

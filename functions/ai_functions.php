@@ -36,6 +36,11 @@ add_action( 'rest_api_init', function () {
 		'callback'            => 'houziAiDescribe',
 		'permission_callback' => '__return_true',
 	) );
+	register_rest_route( 'houzez-mobile-api/v1', '/ai-suggestions', array(
+		'methods'             => 'POST',
+		'callback'            => 'houziAiSuggestions',
+		'permission_callback' => '__return_true',
+	) );
 	register_rest_route( 'houzez-mobile-api/v1', '/ai-ask-listing', array(
 		'methods'             => 'POST',
 		'callback'            => 'houziAiAskListing',
@@ -526,6 +531,139 @@ function houziAiDescribe( $request ) {
 
 /*
 |--------------------------------------------------------------------------
+| POST /ai-suggestions   (home "Tailored for You" taxonomy subtitles)
+|--------------------------------------------------------------------------
+*/
+
+/**
+ * A compact, curated set of the site's OWN taxonomy terms for the home
+ * "Tailored for You" cards: the most-used statuses, types and features. The
+ * names/slugs are authoritative (the site's real taxonomy) — only the subtitle
+ * copy is model-generated, so this works for any white-label vocabulary.
+ */
+function houzi_ai_suggestion_terms() {
+	$plan = array(
+		array( 'taxonomy' => 'property_status',  'kind' => 'status',  'limit' => 2 ),
+		array( 'taxonomy' => 'property_type',    'kind' => 'type',    'limit' => 2 ),
+		array( 'taxonomy' => 'property_feature', 'kind' => 'feature', 'limit' => 2 ),
+	);
+	$out = array();
+	foreach ( $plan as $p ) {
+		$terms = get_terms( array(
+			'taxonomy'   => $p['taxonomy'],
+			'hide_empty' => false,
+			'orderby'    => 'count',
+			'order'      => 'DESC',
+			'number'     => $p['limit'],
+		) );
+		if ( is_wp_error( $terms ) || empty( $terms ) ) {
+			continue;
+		}
+		foreach ( $terms as $term ) {
+			$out[] = array(
+				'taxonomy' => $p['taxonomy'],
+				'kind'     => $p['kind'],
+				'slug'     => $term->slug,
+				'name'     => $term->name,
+			);
+		}
+	}
+	return $out;
+}
+
+function houziAiSuggestions( $request ) {
+	if ( ! houzi_ai_guard( $request, 'suggestions' ) ) {
+		return;
+	}
+
+	$language = Houzi_AI_Settings::resolve_language( isset( $_POST['language'] ) ? $_POST['language'] : '' );
+
+	$terms = houzi_ai_suggestion_terms();
+	if ( empty( $terms ) ) {
+		wp_send_json( array( 'success' => true, 'items' => array() ), 200 );
+		return;
+	}
+
+	// The subtitles are site-level content (identical for every user) and stable,
+	// so cache the generated set server-side, keyed by the term set + language +
+	// lite model. It regenerates only when the taxonomies, language or model
+	// change. This keeps cost to ~one generation per day per site even though the
+	// app also caches per user per day.
+	$signature   = md5( wp_json_encode( wp_list_pluck( $terms, 'slug' ) ) . '|' . $language . '|' . Houzi_AI_Settings::lite_model() );
+	$cache_key   = 'houzi_ai_suggestions_' . $signature;
+	$subtitles   = get_transient( $cache_key );
+
+	if ( ! is_array( $subtitles ) ) {
+		$tool = array(
+			'name'        => 'write_taxonomy_subtitles',
+			'description' => 'Write one short marketing subtitle for each provided taxonomy term.',
+			'parameters'  => array(
+				'type'       => 'object',
+				'properties' => array(
+					'items' => array(
+						'type'  => 'array',
+						'items' => array(
+							'type'       => 'object',
+							'properties' => array(
+								'slug'     => array( 'type' => 'string' ),
+								'subtitle' => array( 'type' => 'string', 'description' => 'Max ~40 characters, no ending period.' ),
+							),
+							'required'   => array( 'slug', 'subtitle' ),
+						),
+					),
+				),
+				'required'   => array( 'items' ),
+			),
+		);
+
+		$payload = array();
+		foreach ( $terms as $t ) {
+			$payload[] = array( 'slug' => $t['slug'], 'name' => $t['name'], 'kind' => $t['kind'] );
+		}
+		$user_message = 'Write a subtitle for each of these terms: ' . wp_json_encode( $payload );
+
+		$system = Houzi_AI_Prompt_Library::get( 'suggestions', array( 'language' => $language ) );
+		$result = Houzi_AI_Gateway::complete(
+			'suggestions',
+			$system,
+			array( array( 'role' => 'user', 'content' => $user_message ) ),
+			$tool,
+			array( 'model' => Houzi_AI_Settings::lite_model(), 'max_tokens' => 700, 'temperature' => 0.6 )
+		);
+		if ( is_wp_error( $result ) ) {
+			houzi_ai_send_gateway_error( $result );
+			return;
+		}
+
+		$subtitles = array();
+		$args      = isset( $result['tool_args'] ) ? $result['tool_args'] : array();
+		if ( isset( $args['items'] ) && is_array( $args['items'] ) ) {
+			foreach ( $args['items'] as $row ) {
+				if ( isset( $row['slug'], $row['subtitle'] ) ) {
+					$subtitles[ (string) $row['slug'] ] = sanitize_text_field( $row['subtitle'] );
+				}
+			}
+		}
+		set_transient( $cache_key, $subtitles, DAY_IN_SECONDS );
+	}
+
+	// Never trust the model for slug/name/taxonomy — only for the subtitle copy.
+	// Map it back onto our authoritative term list.
+	$items = array();
+	foreach ( $terms as $t ) {
+		$items[] = array(
+			'taxonomy' => $t['taxonomy'],
+			'slug'     => $t['slug'],
+			'name'     => $t['name'],
+			'subtitle' => isset( $subtitles[ $t['slug'] ] ) ? $subtitles[ $t['slug'] ] : '',
+		);
+	}
+
+	wp_send_json( array( 'success' => true, 'items' => $items ), 200 );
+}
+
+/*
+|--------------------------------------------------------------------------
 | POST /ai-ask-listing
 |--------------------------------------------------------------------------
 */
@@ -949,5 +1087,6 @@ function houzi_ai_touch_base_features() {
 		'ask_listing' => $ready && Houzi_AI_Settings::feature_enabled( 'ask_listing' ),
 		// CRM AI is only real when the Houzez CRM classes are actually present.
 		'crm'         => $ready && Houzi_AI_Settings::feature_enabled( 'crm' ) && houzi_ai_crm_available(),
+		'suggestions' => $ready && Houzi_AI_Settings::feature_enabled( 'suggestions' ),
 	);
 }
