@@ -113,14 +113,20 @@ class Houzi_AI_Prompt_Library {
 				break;
 
 			case 'suggestions':
+				$user_context = isset( $context['user_context'] ) ? trim( (string) $context['user_context'] ) : '';
 				$prompt = "You write very short marketing subtitles for a real-estate app's home screen. "
 					. "For each taxonomy term provided (a property status, type or feature), write ONE catchy subtitle by calling the tool.\n"
 					. "Rules:\n"
 					. "- Return exactly one entry per input term, echoing its 'slug' unchanged.\n"
 					. "- Each subtitle: at most ~40 characters, Title-free, no ending period, no emoji, no quotes.\n"
 					. "- Make it inviting and specific to that term (e.g. status 'For Rent' -> 'Find your next rental'; type 'Apartments' -> 'City living, simplified'; feature 'Swimming Pool' -> 'Dive into summer').\n"
-					. "- Do not repeat the term name verbatim as the whole subtitle; add value.\n"
-					. self::language_rule( $language )
+					. "- Do not repeat the term name verbatim as the whole subtitle; add value.\n";
+				if ( '' !== $user_context ) {
+					$prompt .= "- Personalization: this shopper recently searched for -> " . $user_context . ". "
+						. "Where it fits naturally, nudge the wording to resonate with that intent (location vibe, home size, budget tier), "
+						. "but keep each subtitle generic enough to stand alone, never invent specifics, and never print price numbers.\n";
+				}
+				$prompt .= self::language_rule( $language )
 					. self::fair_housing_rules();
 				break;
 

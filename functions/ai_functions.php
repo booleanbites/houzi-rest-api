@@ -571,6 +571,84 @@ function houzi_ai_suggestion_terms() {
 	return $out;
 }
 
+/**
+ * Validate app-selected taxonomy terms against real taxonomy data. Only the
+ * slug + taxonomy are trusted from the client; names come from the DB. Returns
+ * the same shape as houzi_ai_suggestion_terms() so the handler stays shared.
+ */
+function houzi_ai_resolve_client_terms( $raw ) {
+	if ( ! is_array( $raw ) ) {
+		return array();
+	}
+	$allowed = array(
+		'property_status'  => 'status',
+		'property_type'    => 'type',
+		'property_feature' => 'feature',
+	);
+	$out  = array();
+	$seen = array();
+	foreach ( $raw as $row ) {
+		if ( ! is_array( $row ) ) {
+			continue;
+		}
+		$tax  = isset( $row['taxonomy'] ) ? sanitize_key( $row['taxonomy'] ) : '';
+		$slug = isset( $row['slug'] ) ? sanitize_title( $row['slug'] ) : '';
+		if ( ! isset( $allowed[ $tax ] ) || '' === $slug || isset( $seen[ $tax . '|' . $slug ] ) ) {
+			continue;
+		}
+		$term = get_term_by( 'slug', $slug, $tax );
+		if ( ! $term || is_wp_error( $term ) ) {
+			continue;
+		}
+		$seen[ $tax . '|' . $slug ] = true;
+		$out[]                      = array(
+			'taxonomy' => $tax,
+			'kind'     => $allowed[ $tax ],
+			'slug'     => $term->slug,
+			'name'     => $term->name,
+		);
+		if ( count( $out ) >= 8 ) {
+			break;
+		}
+	}
+	return $out;
+}
+
+/**
+ * Build a short, readable summary of the last few searches for context-aware
+ * copy. Display values only, non-protected attributes only. Never stored.
+ * Returns '' when there is nothing useful.
+ */
+function houzi_ai_build_user_context( $raw ) {
+	if ( ! is_array( $raw ) ) {
+		return '';
+	}
+	$lines = array();
+	foreach ( $raw as $row ) {
+		if ( ! is_array( $row ) ) {
+			continue;
+		}
+		$parts = array();
+		foreach ( array( 'status', 'type', 'feature', 'city', 'beds' ) as $k ) {
+			if ( ! empty( $row[ $k ] ) ) {
+				$parts[] = sanitize_text_field( (string) $row[ $k ] );
+			}
+		}
+		$min = isset( $row['min_price'] ) ? preg_replace( '/[^0-9]/', '', (string) $row['min_price'] ) : '';
+		$max = isset( $row['max_price'] ) ? preg_replace( '/[^0-9]/', '', (string) $row['max_price'] ) : '';
+		if ( '' !== $min || '' !== $max ) {
+			$parts[] = trim( $min . '-' . $max, '-' );
+		}
+		if ( ! empty( $parts ) ) {
+			$lines[] = implode( ' ', $parts );
+		}
+		if ( count( $lines ) >= 10 ) {
+			break;
+		}
+	}
+	return implode( '; ', $lines );
+}
+
 function houziAiSuggestions( $request ) {
 	if ( ! houzi_ai_guard( $request, 'suggestions' ) ) {
 		return;
@@ -578,18 +656,28 @@ function houziAiSuggestions( $request ) {
 
 	$language = Houzi_AI_Settings::resolve_language( isset( $_POST['language'] ) ? $_POST['language'] : '' );
 
-	$terms = houzi_ai_suggestion_terms();
+	// Cards the app selected from the user's own searches (optional). Fall back
+	// to the site's most-used terms for older apps / users with no history.
+	$raw_terms = ( isset( $_POST['terms'] ) && is_string( $_POST['terms'] ) ) ? json_decode( wp_unslash( $_POST['terms'] ), true ) : null;
+	$terms     = houzi_ai_resolve_client_terms( $raw_terms );
+	if ( empty( $terms ) ) {
+		$terms = houzi_ai_suggestion_terms();
+	}
 	if ( empty( $terms ) ) {
 		wp_send_json( array( 'success' => true, 'items' => array() ), 200 );
 		return;
 	}
 
-	// The subtitles are site-level content (identical for every user) and stable,
-	// so cache the generated set server-side, keyed by the term set + language +
-	// lite model. It regenerates only when the taxonomies, language or model
-	// change. This keeps cost to ~one generation per day per site even though the
-	// app also caches per user per day.
-	$signature   = md5( wp_json_encode( wp_list_pluck( $terms, 'slug' ) ) . '|' . $language . '|' . Houzi_AI_Settings::lite_model() );
+	// Compact, readable summary of the last few searches for context-aware copy
+	// (optional; empty for users with no history). Not persisted.
+	$raw_recent   = ( isset( $_POST['recent'] ) && is_string( $_POST['recent'] ) ) ? json_decode( wp_unslash( $_POST['recent'] ), true ) : null;
+	$user_context = houzi_ai_build_user_context( $raw_recent );
+
+	// Copy is personalized per (selected terms + recent-search context), so key
+	// the cache by both plus language + lite model. Identical signals share one
+	// generation and it expires daily; users with no context share a single
+	// entry, keeping cost near one generation per day per distinct signal.
+	$signature   = md5( wp_json_encode( wp_list_pluck( $terms, 'slug' ) ) . '|' . $language . '|' . Houzi_AI_Settings::lite_model() . '|' . md5( $user_context ) );
 	$cache_key   = 'houzi_ai_suggestions_' . $signature;
 	$subtitles   = get_transient( $cache_key );
 
@@ -622,7 +710,7 @@ function houziAiSuggestions( $request ) {
 		}
 		$user_message = 'Write a subtitle for each of these terms: ' . wp_json_encode( $payload );
 
-		$system = Houzi_AI_Prompt_Library::get( 'suggestions', array( 'language' => $language ) );
+		$system = Houzi_AI_Prompt_Library::get( 'suggestions', array( 'language' => $language, 'user_context' => $user_context ) );
 		$result = Houzi_AI_Gateway::complete(
 			'suggestions',
 			$system,
