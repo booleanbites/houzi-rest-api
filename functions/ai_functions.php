@@ -345,6 +345,32 @@ function houzi_ai_sanitize_ask_context( $raw ) {
 		}
 	}
 
+	// Per-floor-plan details (title/beds/baths/size/price/description) so the
+	// model can answer "what's on the first floor" — not just the plan count.
+	if ( isset( $raw['floor_plans'] ) && is_array( $raw['floor_plans'] ) ) {
+		$plans = array();
+		foreach ( array_slice( $raw['floor_plans'], 0, 12 ) as $plan ) {
+			if ( ! is_array( $plan ) ) {
+				continue;
+			}
+			$plan_clean = array();
+			foreach ( array( 'title', 'beds', 'baths', 'size', 'price', 'description' ) as $pk ) {
+				if ( isset( $plan[ $pk ] ) && ! is_array( $plan[ $pk ] ) ) {
+					$val = sanitize_text_field( (string) $plan[ $pk ] );
+					if ( '' !== $val ) {
+						$plan_clean[ $pk ] = houzi_ai_truncate( $val, ( 'description' === $pk ) ? 300 : 80 );
+					}
+				}
+			}
+			if ( ! empty( $plan_clean ) ) {
+				$plans[] = $plan_clean;
+			}
+		}
+		if ( ! empty( $plans ) ) {
+			$clean['floor_plans'] = $plans;
+		}
+	}
+
 	return $clean;
 }
 
@@ -877,6 +903,9 @@ function houziAiAskListing( $request ) {
 		if ( isset( $client_context['agent'] ) ) {
 			$context['agent'] = $client_context['agent'];
 		}
+		if ( isset( $client_context['floor_plans'] ) ) {
+			$context['floor_plans'] = $client_context['floor_plans'];
+		}
 		foreach ( array( 'floors', 'address', 'lat', 'lng' ) as $client_key ) {
 			if ( isset( $client_context[ $client_key ] ) && ! isset( $context[ $client_key ] ) ) {
 				$context[ $client_key ] = $client_context[ $client_key ];
@@ -902,8 +931,8 @@ function houziAiAskListing( $request ) {
 				'suggest_contact_agent' => array( 'type' => 'boolean' ),
 				'action'                => array(
 					'type'        => 'string',
-					'enum'        => array( 'none', 'call', 'whatsapp', 'email', 'directions', 'enquiry' ),
-					'description' => 'A follow-up the app can render as a button. Use "call"/"whatsapp"/"email" when the user asks how to reach the agent or for their phone/email; "directions" when they ask about the location or how to get there; "enquiry" when they ask to send a message/enquiry or arrange a visit/viewing. Otherwise "none".',
+					'enum'        => array( 'none', 'call', 'whatsapp', 'email', 'directions', 'enquiry', 'floorplan' ),
+					'description' => 'A follow-up the app can render as a button. Use "call"/"whatsapp"/"email" when the user asks how to reach the agent or for their phone/email; "directions" when they ask about the location or how to get there; "enquiry" when they ask to send a message/enquiry or arrange a visit/viewing; "floorplan" when they ask about a floor plan / a specific floor and want to see it. Otherwise "none".',
 				),
 				'action_message'        => array(
 					'type'        => 'string',
@@ -933,7 +962,7 @@ function houziAiAskListing( $request ) {
 	$messages[] = array( 'role' => 'assistant', 'content' => $answer );
 	houzi_ai_save_conversation( $conversation_id, $messages );
 
-	$allowed_actions = array( 'none', 'call', 'whatsapp', 'email', 'directions', 'enquiry' );
+	$allowed_actions = array( 'none', 'call', 'whatsapp', 'email', 'directions', 'enquiry', 'floorplan' );
 	$action          = isset( $args['action'] ) ? sanitize_text_field( $args['action'] ) : 'none';
 	if ( ! in_array( $action, $allowed_actions, true ) ) {
 		$action = 'none';
