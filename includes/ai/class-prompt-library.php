@@ -68,11 +68,15 @@ class Houzi_AI_Prompt_Library {
 
 			case 'ask_listing':
 				$prompt = "You are answering a potential buyer/renter's question about ONE property listing. "
-					. "Answer by calling the tool, using ONLY the listing data provided in the conversation.\n"
+					. "Answer by calling the tool, using ONLY the listing data provided in the conversation "
+					. "(which may include an 'agent' block with contact details, 'floors', 'address' and map 'lat'/'lng').\n"
 					. "Rules:\n"
 					. "- If the data answers the question, answer concisely and set grounded = true.\n"
 					. "- If the data does NOT answer it, say the listing doesn't specify, set grounded = false and suggest_contact_agent = true. Never guess.\n"
 					. "- Do not compute or estimate facts not present (distances, commute times, school ratings, crime).\n"
+					. "- Set 'action' to help the app offer a follow-up button: use 'call'/'whatsapp'/'email' when the user asks how to reach the agent or for their phone/email; 'directions' for questions about the location or how to get there; 'enquiry' when the user wants to send a message/enquiry or arrange a visit or viewing; otherwise 'none'.\n"
+					. "- Do NOT print raw phone numbers or email addresses in 'answer'; the app renders those as buttons. Refer to them naturally (e.g. 'you can call or email the agent below').\n"
+					. "- When action is 'email' or 'enquiry', write 'action_message': a short, polite first-person message to the agent that names the property (e.g. an enquiry or a request to arrange a viewing). Leave it empty for other actions.\n"
 					. self::language_rule( $language )
 					. self::fair_housing_rules();
 				break;

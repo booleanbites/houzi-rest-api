@@ -216,6 +216,23 @@ function houzi_ai_property_context( $post_id, $include_description = false ) {
 		}
 	}
 
+	// Floors/storeys, derived from the Houzez Floor Plans repeater (# of plans).
+	$floor_plans = get_post_meta( $post->ID, 'floor_plans', true );
+	if ( is_string( $floor_plans ) && '' !== $floor_plans ) {
+		$floor_plans = maybe_unserialize( $floor_plans );
+	}
+	if ( is_array( $floor_plans ) && count( $floor_plans ) > 0 ) {
+		$context['floors'] = count( $floor_plans );
+	}
+
+	// Map coordinates so the model can offer directions / confirm the location.
+	$lat = get_post_meta( $post->ID, 'houzez_geolocation_lat', true );
+	$lng = get_post_meta( $post->ID, 'houzez_geolocation_long', true );
+	if ( '' !== $lat && null !== $lat && '' !== $lng && null !== $lng ) {
+		$context['lat'] = $lat;
+		$context['lng'] = $lng;
+	}
+
 	if ( $include_description ) {
 		$description = wp_strip_all_tags( $post->post_content );
 		if ( function_exists( 'mb_substr' ) ) {
@@ -285,6 +302,52 @@ function houzi_ai_sanitize_describe_property( $property ) {
 	return $clean;
 }
 
+/**
+ * Whitelist and bound the client-supplied context payload for /ai-ask-listing.
+ *
+ * The app sends the public agent/agency contact (name/phone/mobile/whatsapp/
+ * email) it already displays on the details page, plus optional location/floor
+ * fallbacks. Same discipline as the describe payload: known keys only, each
+ * value length-capped — it feeds a prompt billed to the owner's key, so it must
+ * never be an open text channel.
+ */
+function houzi_ai_sanitize_ask_context( $raw ) {
+	if ( is_string( $raw ) ) {
+		$decoded = json_decode( $raw, true );
+		$raw     = is_array( $decoded ) ? $decoded : array();
+	}
+	if ( ! is_array( $raw ) ) {
+		return array();
+	}
+
+	$clean = array();
+
+	$agent       = ( isset( $raw['agent'] ) && is_array( $raw['agent'] ) ) ? $raw['agent'] : array();
+	$agent_clean = array();
+	foreach ( array( 'name', 'phone', 'mobile', 'whatsapp', 'email' ) as $key ) {
+		if ( isset( $agent[ $key ] ) && ! is_array( $agent[ $key ] ) ) {
+			$value = sanitize_text_field( (string) $agent[ $key ] );
+			if ( '' !== $value ) {
+				$agent_clean[ $key ] = houzi_ai_truncate( $value, 120 );
+			}
+		}
+	}
+	if ( ! empty( $agent_clean ) ) {
+		$clean['agent'] = $agent_clean;
+	}
+
+	foreach ( array( 'floors', 'address', 'lat', 'lng' ) as $key ) {
+		if ( isset( $raw[ $key ] ) && ! is_array( $raw[ $key ] ) ) {
+			$value = sanitize_text_field( (string) $raw[ $key ] );
+			if ( '' !== $value ) {
+				$clean[ $key ] = houzi_ai_truncate( $value, 120 );
+			}
+		}
+	}
+
+	return $clean;
+}
+
 /*
 |--------------------------------------------------------------------------
 | POST /ai-search
@@ -346,6 +409,7 @@ function houziAiSearch( $request ) {
 				'features'    => $enum_or_string( 'property_feature', 'Feature/amenity slugs.' ),
 				'bedrooms'    => array( 'type' => 'integer', 'description' => 'Number of bedrooms requested.' ),
 				'bathrooms'   => array( 'type' => 'integer', 'description' => 'Number of bathrooms requested.' ),
+					'floors'      => array( 'type' => 'integer', 'description' => 'Number of floors/storeys. Map words to numbers: single/one story = 1, double/two story = 2, triple/three story = 3.' ),
 				'min_price'   => array( 'type' => 'number' ),
 				'max_price'   => array( 'type' => 'number' ),
 				'min_area'    => array( 'type' => 'number', 'description' => 'Minimum property size.' ),
@@ -384,7 +448,7 @@ function houziAiSearch( $request ) {
 			}
 		}
 	}
-	foreach ( array( 'bedrooms', 'bathrooms' ) as $key ) {
+	foreach ( array( 'bedrooms', 'bathrooms', 'floors' ) as $key ) {
 		if ( ! empty( $args[ $key ] ) && intval( $args[ $key ] ) > 0 ) {
 			$filters[ $key ] = strval( intval( $args[ $key ] ) );
 		}
@@ -673,44 +737,66 @@ function houziAiSuggestions( $request ) {
 	$raw_recent   = ( isset( $_POST['recent'] ) && is_string( $_POST['recent'] ) ) ? json_decode( wp_unslash( $_POST['recent'] ), true ) : null;
 	$user_context = houzi_ai_build_user_context( $raw_recent );
 
+	// Testing switches: dry_run returns exactly what we would send to the model
+	// (no AI call, no cache); no_cache forces a fresh generation past the cache.
+	$dry_run  = ! empty( $_POST['dry_run'] );
+	$no_cache = ! empty( $_POST['no_cache'] );
+
 	// Copy is personalized per (selected terms + recent-search context), so key
 	// the cache by both plus language + lite model. Identical signals share one
 	// generation and it expires daily; users with no context share a single
 	// entry, keeping cost near one generation per day per distinct signal.
-	$signature   = md5( wp_json_encode( wp_list_pluck( $terms, 'slug' ) ) . '|' . $language . '|' . Houzi_AI_Settings::lite_model() . '|' . md5( $user_context ) );
-	$cache_key   = 'houzi_ai_suggestions_' . $signature;
-	$subtitles   = get_transient( $cache_key );
+	$signature = md5( wp_json_encode( wp_list_pluck( $terms, 'slug' ) ) . '|' . $language . '|' . Houzi_AI_Settings::lite_model() . '|' . md5( $user_context ) );
+	$cache_key = 'houzi_ai_suggestions_' . $signature;
 
-	if ( ! is_array( $subtitles ) ) {
-		$tool = array(
-			'name'        => 'write_taxonomy_subtitles',
-			'description' => 'Write one short marketing subtitle for each provided taxonomy term.',
-			'parameters'  => array(
-				'type'       => 'object',
-				'properties' => array(
+	// Assemble the exact request the model would receive.
+	$tool = array(
+		'name'        => 'write_taxonomy_subtitles',
+		'description' => 'Write one short marketing subtitle for each provided taxonomy term.',
+		'parameters'  => array(
+			'type'       => 'object',
+			'properties' => array(
+				'items' => array(
+					'type'  => 'array',
 					'items' => array(
-						'type'  => 'array',
-						'items' => array(
-							'type'       => 'object',
-							'properties' => array(
-								'slug'     => array( 'type' => 'string' ),
-								'subtitle' => array( 'type' => 'string', 'description' => 'Max ~40 characters, no ending period.' ),
-							),
-							'required'   => array( 'slug', 'subtitle' ),
+						'type'       => 'object',
+						'properties' => array(
+							'slug'     => array( 'type' => 'string' ),
+							'subtitle' => array( 'type' => 'string', 'description' => 'Max ~40 characters, no ending period.' ),
 						),
+						'required'   => array( 'slug', 'subtitle' ),
 					),
 				),
-				'required'   => array( 'items' ),
 			),
-		);
+			'required'   => array( 'items' ),
+		),
+	);
 
-		$payload = array();
-		foreach ( $terms as $t ) {
-			$payload[] = array( 'slug' => $t['slug'], 'name' => $t['name'], 'kind' => $t['kind'] );
-		}
-		$user_message = 'Write a subtitle for each of these terms: ' . wp_json_encode( $payload );
+	$payload = array();
+	foreach ( $terms as $t ) {
+		$payload[] = array( 'slug' => $t['slug'], 'name' => $t['name'], 'kind' => $t['kind'] );
+	}
+	$user_message = 'Write a subtitle for each of these terms: ' . wp_json_encode( $payload );
+	$system       = Houzi_AI_Prompt_Library::get( 'suggestions', array( 'language' => $language, 'user_context' => $user_context ) );
 
-		$system = Houzi_AI_Prompt_Library::get( 'suggestions', array( 'language' => $language, 'user_context' => $user_context ) );
+	// dry_run: inspect the resolved terms, the derived context and the full
+	// prompt without spending tokens or touching the cache.
+	if ( $dry_run ) {
+		wp_send_json( array(
+			'success'      => true,
+			'dry_run'      => true,
+			'terms'        => $terms,
+			'user_context' => $user_context,
+			'cache_key'    => $cache_key,
+			'system'       => $system,
+			'user_message' => $user_message,
+		), 200 );
+		return;
+	}
+
+	$subtitles = $no_cache ? false : get_transient( $cache_key );
+
+	if ( ! is_array( $subtitles ) ) {
 		$result = Houzi_AI_Gateway::complete(
 			'suggestions',
 			$system,
@@ -732,7 +818,9 @@ function houziAiSuggestions( $request ) {
 				}
 			}
 		}
-		set_transient( $cache_key, $subtitles, DAY_IN_SECONDS );
+		if ( ! $no_cache ) {
+			set_transient( $cache_key, $subtitles, DAY_IN_SECONDS );
+		}
 	}
 
 	// Never trust the model for slug/name/taxonomy — only for the subtitle copy.
@@ -779,6 +867,23 @@ function houziAiAskListing( $request ) {
 	}
 
 	$context  = houzi_ai_property_context( $listing_id, true );
+
+	// The app already resolves the public agent/agency contact (per the listing's
+	// display option) and the map location it shows on the details page. Merge
+	// that sanitized context in so the model can answer "who is the agent",
+	// "what's their phone/email" and location questions the server meta omits.
+	$client_context = houzi_ai_sanitize_ask_context( isset( $_POST['context'] ) ? wp_unslash( $_POST['context'] ) : '' );
+	if ( ! empty( $client_context ) ) {
+		if ( isset( $client_context['agent'] ) ) {
+			$context['agent'] = $client_context['agent'];
+		}
+		foreach ( array( 'floors', 'address', 'lat', 'lng' ) as $client_key ) {
+			if ( isset( $client_context[ $client_key ] ) && ! isset( $context[ $client_key ] ) ) {
+				$context[ $client_key ] = $client_context[ $client_key ];
+			}
+		}
+	}
+
 	$language = Houzi_AI_Settings::resolve_language( isset( $_POST['language'] ) ? $_POST['language'] : '' );
 
 	$conversation_id = isset( $_POST['conversation_id'] ) ? sanitize_text_field( $_POST['conversation_id'] ) : '';
@@ -795,8 +900,17 @@ function houziAiAskListing( $request ) {
 				'answer'                => array( 'type' => 'string' ),
 				'grounded'              => array( 'type' => 'boolean', 'description' => 'True only when the listing data answers the question.' ),
 				'suggest_contact_agent' => array( 'type' => 'boolean' ),
+				'action'                => array(
+					'type'        => 'string',
+					'enum'        => array( 'none', 'call', 'whatsapp', 'email', 'directions', 'enquiry' ),
+					'description' => 'A follow-up the app can render as a button. Use "call"/"whatsapp"/"email" when the user asks how to reach the agent or for their phone/email; "directions" when they ask about the location or how to get there; "enquiry" when they ask to send a message/enquiry or arrange a visit/viewing. Otherwise "none".',
+				),
+				'action_message'        => array(
+					'type'        => 'string',
+					'description' => 'Only when action is "email" or "enquiry": a short, ready-to-send first-person message to the agent (e.g. an enquiry or a request to visit) that names the property. Empty string otherwise.',
+				),
 			),
-			'required'   => array( 'answer', 'grounded', 'suggest_contact_agent' ),
+			'required'   => array( 'answer', 'grounded', 'suggest_contact_agent', 'action' ),
 		),
 	);
 
@@ -819,11 +933,20 @@ function houziAiAskListing( $request ) {
 	$messages[] = array( 'role' => 'assistant', 'content' => $answer );
 	houzi_ai_save_conversation( $conversation_id, $messages );
 
+	$allowed_actions = array( 'none', 'call', 'whatsapp', 'email', 'directions', 'enquiry' );
+	$action          = isset( $args['action'] ) ? sanitize_text_field( $args['action'] ) : 'none';
+	if ( ! in_array( $action, $allowed_actions, true ) ) {
+		$action = 'none';
+	}
+	$action_message = isset( $args['action_message'] ) ? sanitize_text_field( $args['action_message'] ) : '';
+
 	wp_send_json( array(
 		'success'               => true,
 		'answer'                => $answer,
 		'grounded'              => ! empty( $args['grounded'] ),
 		'suggest_contact_agent' => ! empty( $args['suggest_contact_agent'] ),
+		'action'                => $action,
+		'action_message'        => $action_message,
 		'conversation_id'       => $conversation_id,
 	), 200 );
 }
