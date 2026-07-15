@@ -336,7 +336,7 @@ function houzi_ai_sanitize_ask_context( $raw ) {
 		$clean['agent'] = $agent_clean;
 	}
 
-	foreach ( array( 'floors', 'address', 'lat', 'lng' ) as $key ) {
+	foreach ( array( 'floors', 'address', 'lat', 'lng', 'has_video', 'has_virtual_tour', 'photos' ) as $key ) {
 		if ( isset( $raw[ $key ] ) && ! is_array( $raw[ $key ] ) ) {
 			$value = sanitize_text_field( (string) $raw[ $key ] );
 			if ( '' !== $value ) {
@@ -379,6 +379,112 @@ function houzi_ai_sanitize_ask_context( $raw ) {
 | POST /ai-search
 |--------------------------------------------------------------------------
 */
+
+/**
+ * Validate the non-location filter args coming from the search tool (or a
+ * refinement patch) into the search-properties param vocabulary. Same rules the
+ * main /ai-search flow uses, extracted so follow-up suggestion patches validate
+ * identically.
+ *
+ * @param array $args Raw tool args (or patch).
+ * @return array Sanitized filter map: type/status/label/features (slug arrays),
+ *               bedrooms/bathrooms/floors (int strings), min/max price+area
+ *               (number strings), keyword (string). Locations are NOT handled
+ *               here (they need resolution).
+ */
+function houzi_ai_sanitize_scalar_filters( $args ) {
+	$out = array();
+	if ( ! is_array( $args ) ) {
+		return $out;
+	}
+
+	foreach ( array( 'type' => 'property_type', 'status' => 'property_status', 'label' => 'property_label', 'features' => 'property_feature' ) as $key => $taxonomy ) {
+		if ( ! empty( $args[ $key ] ) && is_array( $args[ $key ] ) ) {
+			$valid = array_values( array_intersect( array_map( 'sanitize_title', $args[ $key ] ), houzi_ai_taxonomy_slugs( $taxonomy ) ) );
+			if ( ! empty( $valid ) ) {
+				$out[ $key ] = $valid;
+			}
+		}
+	}
+	foreach ( array( 'bedrooms', 'bathrooms', 'floors' ) as $key ) {
+		if ( ! empty( $args[ $key ] ) && intval( $args[ $key ] ) > 0 ) {
+			$out[ $key ] = strval( intval( $args[ $key ] ) );
+		}
+	}
+	foreach ( array( 'min_price', 'max_price', 'min_area', 'max_area' ) as $key ) {
+		if ( isset( $args[ $key ] ) && is_numeric( $args[ $key ] ) && floatval( $args[ $key ] ) > 0 ) {
+			$out[ $key ] = strval( round( floatval( $args[ $key ] ) ) );
+		}
+	}
+	if ( ! empty( $args['keyword'] ) && is_string( $args['keyword'] ) ) {
+		$out['keyword'] = sanitize_text_field( $args['keyword'] );
+	}
+
+	return $out;
+}
+
+/**
+ * Merge a refinement patch onto a base filter set. Term arrays (type, status,
+ * label, features) are UNIONed (so "add a pool" keeps existing features);
+ * scalars (bedrooms, prices, keyword, …) are REPLACED.
+ *
+ * @param array $base  Base search filters (may include resolved location slugs).
+ * @param array $patch Sanitized patch (non-location keys only).
+ * @return array Merged filters.
+ */
+function houzi_ai_merge_filters( $base, $patch ) {
+	$merged = $base;
+	foreach ( $patch as $k => $v ) {
+		if ( is_array( $v ) && isset( $merged[ $k ] ) && is_array( $merged[ $k ] ) ) {
+			$merged[ $k ] = array_values( array_unique( array_merge( $merged[ $k ], $v ) ) );
+		} else {
+			$merged[ $k ] = $v;
+		}
+	}
+	return $merged;
+}
+
+/**
+ * Projected result count for a set of search filters, computed by reusing the
+ * exact same query builder as /search-properties (setupSearchQuery reads $_POST)
+ * so the count matches what the user will actually see. Runs a cheap ids-only
+ * query. Used to drop dead-end refinement suggestions (count 0).
+ *
+ * @param array $filters search-properties param map (type, features, location…).
+ * @return int found_posts (0 on any failure).
+ */
+function houzi_ai_count_for_filters( $filters ) {
+	if ( ! function_exists( 'setupSearchQuery' ) || ! is_array( $filters ) ) {
+		return 0;
+	}
+
+	// setupSearchQuery() reads request params from $_POST; swap it in, then
+	// restore so nothing downstream is affected.
+	$saved_post = $_POST;
+	$_POST      = array();
+	foreach ( $filters as $k => $v ) {
+		$_POST[ $k ] = $v;
+	}
+	$query_args = setupSearchQuery();
+	$_POST      = $saved_post;
+
+	if ( ! is_array( $query_args ) ) {
+		return 0;
+	}
+
+	// Cheapest possible count: one id, but still compute found_posts.
+	$query_args['posts_per_page'] = 1;
+	$query_args['fields']         = 'ids';
+	$query_args['no_found_rows']  = false;
+	$query_args['cache_results']  = false;
+
+	$q     = new WP_Query( $query_args );
+	$count = intval( $q->found_posts );
+	wp_reset_postdata();
+
+	return $count;
+}
+
 function houziAiSearch( $request ) {
 	if ( ! houzi_ai_guard( $request, 'search' ) ) {
 		return;
@@ -447,7 +553,38 @@ function houziAiSearch( $request ) {
 					'description' => 'Place names mentioned (city, area, state or country). Full names, abbreviations expanded (NY -> New York). Only places the user mentioned.',
 				),
 				'explanation' => array( 'type' => 'string' ),
-				'suggestions' => array( 'type' => 'array', 'items' => array( 'type' => 'string' ) ),
+				'suggestions' => array(
+					'type'        => 'array',
+					'description' => '3-4 useful ways to refine THIS search. Each item is an object with a short action "label" and a "patch" of only the filter keys that change.',
+					'items'       => array(
+						'type'       => 'object',
+						'properties' => array(
+							'label' => array(
+								'type'        => 'string',
+								'description' => 'Short action label, e.g. "Add a pool", "Under $400k", "4+ bedrooms", "Include townhouses".',
+							),
+							'patch' => array(
+								'type'        => 'object',
+								'description' => 'Filter changes relative to the current search. Same keys as the main filters, EXCLUDING locations. Include only keys that change.',
+								'properties'  => array(
+									'type'      => $enum_or_string( 'property_type', 'Property type slugs.' ),
+									'status'    => $enum_or_string( 'property_status', 'Listing status slugs.' ),
+									'label'     => $enum_or_string( 'property_label', 'Listing label slugs.' ),
+									'features'  => $enum_or_string( 'property_feature', 'Feature/amenity slugs.' ),
+									'bedrooms'  => array( 'type' => 'integer' ),
+									'bathrooms' => array( 'type' => 'integer' ),
+									'floors'    => array( 'type' => 'integer' ),
+									'min_price' => array( 'type' => 'number' ),
+									'max_price' => array( 'type' => 'number' ),
+									'min_area'  => array( 'type' => 'number' ),
+									'max_area'  => array( 'type' => 'number' ),
+									'keyword'   => array( 'type' => 'string' ),
+								),
+							),
+						),
+						'required'   => array( 'label', 'patch' ),
+					),
+				),
 			),
 		),
 	);
@@ -464,29 +601,7 @@ function houziAiSearch( $request ) {
 	$args = $result['tool_args'];
 
 	// --- Map tool args onto search-properties params (validated). ---
-	$filters = array();
-
-	foreach ( array( 'type' => 'property_type', 'status' => 'property_status', 'label' => 'property_label', 'features' => 'property_feature' ) as $key => $taxonomy ) {
-		if ( ! empty( $args[ $key ] ) && is_array( $args[ $key ] ) ) {
-			$valid = array_values( array_intersect( array_map( 'sanitize_title', $args[ $key ] ), houzi_ai_taxonomy_slugs( $taxonomy ) ) );
-			if ( ! empty( $valid ) ) {
-				$filters[ $key ] = $valid;
-			}
-		}
-	}
-	foreach ( array( 'bedrooms', 'bathrooms', 'floors' ) as $key ) {
-		if ( ! empty( $args[ $key ] ) && intval( $args[ $key ] ) > 0 ) {
-			$filters[ $key ] = strval( intval( $args[ $key ] ) );
-		}
-	}
-	foreach ( array( 'min_price', 'max_price', 'min_area', 'max_area' ) as $key ) {
-		if ( isset( $args[ $key ] ) && is_numeric( $args[ $key ] ) && floatval( $args[ $key ] ) > 0 ) {
-			$filters[ $key ] = strval( round( floatval( $args[ $key ] ) ) );
-		}
-	}
-	if ( ! empty( $args['keyword'] ) && is_string( $args['keyword'] ) ) {
-		$filters['keyword'] = sanitize_text_field( $args['keyword'] );
-	}
+	$filters = houzi_ai_sanitize_scalar_filters( $args );
 
 	// --- Locations: resolve phrases to real term slugs (never guessed). ---
 	$location = Houzi_AI_Location_Resolver::resolve( isset( $args['locations'] ) ? $args['locations'] : array() );
@@ -504,14 +619,61 @@ function houziAiSearch( $request ) {
 		$filters['keyword'] = implode( ' ', $location['unresolved'] );
 	}
 
+	// --- Structured follow-up refinements. Each AI suggestion is a validated
+	// patch merged onto the base search; we keep it only if it still matches
+	// listings (count > 0), so tapping a chip never leads to an empty result. ---
+	$suggestions = array();
+	if ( isset( $args['suggestions'] ) && is_array( $args['suggestions'] ) ) {
+		$seen_suggestions = array();
+		foreach ( array_slice( $args['suggestions'], 0, 6 ) as $suggestion ) {
+			if ( count( $suggestions ) >= 4 ) {
+				break;
+			}
+			if ( ! is_array( $suggestion ) ) {
+				continue;
+			}
+			$label = isset( $suggestion['label'] ) ? sanitize_text_field( $suggestion['label'] ) : '';
+			$patch = ( isset( $suggestion['patch'] ) && is_array( $suggestion['patch'] ) )
+				? houzi_ai_sanitize_scalar_filters( $suggestion['patch'] )
+				: array();
+			if ( '' === $label || empty( $patch ) ) {
+				continue;
+			}
+
+			$merged = houzi_ai_merge_filters( $filters, $patch );
+			// Skip patches that changed nothing after validation/merge.
+			if ( $merged == $filters ) {
+				continue;
+			}
+			// De-dup identical refinements.
+			$fingerprint = md5( wp_json_encode( $merged ) );
+			if ( isset( $seen_suggestions[ $fingerprint ] ) ) {
+				continue;
+			}
+			$seen_suggestions[ $fingerprint ] = true;
+
+			// Dead-end guard: never surface a refinement with zero results.
+			$count = houzi_ai_count_for_filters( $merged );
+			if ( $count < 1 ) {
+				continue;
+			}
+
+			// Return the PATCH (delta), not the absolute merged filters, so the
+			// client can stack refinements onto the current search correctly.
+			$suggestions[] = array(
+				'label' => $label,
+				'patch' => $patch,
+				'count' => $count,
+			);
+		}
+	}
+
 	$response = array(
 		'success'     => true,
 		'filters'     => $filters,
 		'explanation' => isset( $args['explanation'] ) ? sanitize_text_field( $args['explanation'] ) : '',
 		'location'    => $location,
-		'suggestions' => ( isset( $args['suggestions'] ) && is_array( $args['suggestions'] ) )
-			? array_slice( array_map( 'sanitize_text_field', $args['suggestions'] ), 0, 2 )
-			: array(),
+		'suggestions' => $suggestions,
 	);
 
 	if ( ! $is_refinement ) {
@@ -906,7 +1068,7 @@ function houziAiAskListing( $request ) {
 		if ( isset( $client_context['floor_plans'] ) ) {
 			$context['floor_plans'] = $client_context['floor_plans'];
 		}
-		foreach ( array( 'floors', 'address', 'lat', 'lng' ) as $client_key ) {
+		foreach ( array( 'floors', 'address', 'lat', 'lng', 'has_video', 'has_virtual_tour', 'photos' ) as $client_key ) {
 			if ( isset( $client_context[ $client_key ] ) && ! isset( $context[ $client_key ] ) ) {
 				$context[ $client_key ] = $client_context[ $client_key ];
 			}
@@ -931,8 +1093,8 @@ function houziAiAskListing( $request ) {
 				'suggest_contact_agent' => array( 'type' => 'boolean' ),
 				'action'                => array(
 					'type'        => 'string',
-					'enum'        => array( 'none', 'call', 'whatsapp', 'email', 'directions', 'enquiry', 'floorplan' ),
-					'description' => 'A follow-up the app can render as a button. Use "call"/"whatsapp"/"email" when the user asks how to reach the agent or for their phone/email; "directions" when they ask about the location or how to get there; "enquiry" when they ask to send a message/enquiry or arrange a visit/viewing; "floorplan" when they ask about a floor plan / a specific floor and want to see it. Otherwise "none".',
+					'enum'        => array( 'none', 'call', 'whatsapp', 'email', 'directions', 'enquiry', 'floorplan', 'schedule_visit', 'video', 'virtual_tour', 'gallery' ),
+					'description' => 'A follow-up the app can render as a button/card. Use "call"/"whatsapp"/"email" when the user asks how to reach the agent or for their phone/email; "directions" when they ask about the location or how to get there; "enquiry" when they ask to send a general message/enquiry; "schedule_visit" when they want to book or schedule a viewing/tour/visit (pick a date & time); "floorplan" when they ask about a floor plan / a specific floor and want to see it; "video" when they ask about the property video and has_video is set; "virtual_tour" when they ask about the 3D / virtual tour and has_virtual_tour is set; "gallery" when they ask to see the photos/pictures/gallery. Otherwise "none".',
 				),
 				'action_message'        => array(
 					'type'        => 'string',
@@ -962,7 +1124,7 @@ function houziAiAskListing( $request ) {
 	$messages[] = array( 'role' => 'assistant', 'content' => $answer );
 	houzi_ai_save_conversation( $conversation_id, $messages );
 
-	$allowed_actions = array( 'none', 'call', 'whatsapp', 'email', 'directions', 'enquiry', 'floorplan' );
+	$allowed_actions = array( 'none', 'call', 'whatsapp', 'email', 'directions', 'enquiry', 'floorplan', 'schedule_visit', 'video', 'virtual_tour', 'gallery' );
 	$action          = isset( $args['action'] ) ? sanitize_text_field( $args['action'] ) : 'none';
 	if ( ! in_array( $action, $allowed_actions, true ) ) {
 		$action = 'none';
