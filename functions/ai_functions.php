@@ -503,6 +503,30 @@ function houziAiSearch( $request ) {
 	$conversation_id = isset( $_POST['conversation_id'] ) ? sanitize_text_field( $_POST['conversation_id'] ) : '';
 	$is_refinement   = wp_is_uuid( $conversation_id );
 
+	// The app's CURRENT filter state (after any local chip edits), sent with
+	// refinement turns. Without it a refinement is applied to the filters this
+	// conversation remembers — silently reverting the user's manual edits.
+	// Filters reuse the standard sanitizer (which also drops location keys);
+	// locations arrive as plain place names for the resolver to re-derive.
+	$current_filters   = array();
+	$current_locations = array();
+	if ( $is_refinement && ! empty( $_POST['current_filters'] ) ) {
+		$decoded = json_decode( wp_unslash( (string) $_POST['current_filters'] ), true );
+		if ( is_array( $decoded ) ) {
+			$current_filters = houzi_ai_sanitize_scalar_filters( $decoded );
+		}
+	}
+	if ( $is_refinement && ! empty( $_POST['current_locations'] ) ) {
+		$decoded = json_decode( wp_unslash( (string) $_POST['current_locations'] ), true );
+		if ( is_array( $decoded ) ) {
+			foreach ( array_slice( $decoded, 0, 10 ) as $location_name ) {
+				if ( is_string( $location_name ) && '' !== trim( $location_name ) ) {
+					$current_locations[] = sanitize_text_field( $location_name );
+				}
+			}
+		}
+	}
+
 	// Cache identical first-turn queries for 5 minutes (plan §7).
 	$cache_key = 'houzi_ai_search_' . md5( strtolower( trim( $query ) ) );
 	if ( ! $is_refinement ) {
@@ -589,8 +613,21 @@ function houziAiSearch( $request ) {
 		),
 	);
 
-	$messages   = houzi_ai_load_conversation( $conversation_id );
-	$messages[] = array( 'role' => 'user', 'content' => $query );
+	$messages = houzi_ai_load_conversation( $conversation_id );
+
+	// Fold the client's current state into the refinement turn as ONE user
+	// message (keeps provider role-alternation rules happy). The system prompt
+	// tells the model to treat this state as the authoritative base.
+	$user_content = $query;
+	if ( $is_refinement && ( ! empty( $current_filters ) || ! empty( $current_locations ) ) ) {
+		$user_content = 'CURRENT SEARCH STATE (authoritative — I may have edited it manually since your last reply): '
+			. wp_json_encode( array(
+				'filters'   => (object) $current_filters,
+				'locations' => $current_locations,
+			) )
+			. "\nApply this change to that state: " . $query;
+	}
+	$messages[] = array( 'role' => 'user', 'content' => $user_content );
 
 	$system = Houzi_AI_Prompt_Library::get( 'search' );
 	$result = Houzi_AI_Gateway::complete( 'search', $system, $messages, $tool );
