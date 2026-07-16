@@ -275,9 +275,10 @@ class RestApiAISettings {
 	public function features_callback() {
 		$features = array(
 			'search'      => 'AI Property Search (natural language)',
-			'describe'    => 'AI Description Writer',
+			// Hidden on the ai-feature-most-wanted branch (not shipped in this app):
+			// 'describe'    => 'AI Description Writer',
 			'ask_listing' => 'Ask About This Listing (buyer Q&amp;A)',
-			'crm'         => 'CRM Copilot (lead summary, match ranking, email drafts)',
+			// 'crm'         => 'CRM Copilot (lead summary, match ranking, email drafts)',
 			'suggestions' => 'Tailored for You (home taxonomy suggestions)',
 		);
 		$saved = isset( $this->houzi_ai_options['features_saved'] );
