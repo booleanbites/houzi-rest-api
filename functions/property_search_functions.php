@@ -311,6 +311,7 @@ function setupSearchQuery() {
     $bedrooms = isset($_POST['bedrooms']) ? ($_POST['bedrooms']) : '';
     $rooms = isset($_POST['rooms']) ? ($_POST['rooms']) : '';
     $bathrooms = isset($_POST['bathrooms']) ? ($_POST['bathrooms']) : '';
+    $floors = isset($_POST['floors']) ? intval($_POST['floors']) : 0;
     $beds_baths_criteria = isset($_POST['beds_baths_criteria']) ? ($_POST['beds_baths_criteria']) : '';
     $min_price = isset($_POST['min_price']) ? ($_POST['min_price']) : (isset($_POST['min-price']) ? ($_POST['min-price']) : '');
     $max_price = isset($_POST['max_price']) ? ($_POST['max_price']) : (isset($_POST['max-price']) ? ($_POST['max-price']) : '');
@@ -788,6 +789,18 @@ function setupSearchQuery() {
         );
     }
 
+    // floors / storeys logic. Houzez has no numeric floors field; the closest
+    // structured data is the "floor_plans" repeater (one entry per floor plan),
+    // stored serialized as `a:N:{...}`. Match on N via a start-anchored REGEXP,
+    // so "double story" (floors=2) matches listings with exactly 2 floor plans.
+    if( $floors > 0 ) {
+        $meta_query[] = array(
+            'key'     => 'floor_plans',
+            'value'   => '^a:' . intval( $floors ) . ':',
+            'compare' => 'REGEXP',
+        );
+    }
+
     // min and max price logic
     if( !empty( $min_price ) && $min_price != 'any' && !empty( $max_price ) && $max_price != 'any' ) {
         $min_price = doubleval( houzez_clean( $min_price ) );
@@ -1193,6 +1206,7 @@ function setupSearchQueryForTesting() {
     $bedrooms = isset($_POST['bedrooms']) ? ($_POST['bedrooms']) : '';
     $rooms = isset($_POST['rooms']) ? ($_POST['rooms']) : '';
     $bathrooms = isset($_POST['bathrooms']) ? ($_POST['bathrooms']) : '';
+    $floors = isset($_POST['floors']) ? intval($_POST['floors']) : 0;
     $beds_baths_criteria = isset($_POST['beds_baths_criteria']) ? ($_POST['beds_baths_criteria']) : '';
     $min_price = isset($_POST['min_price']) ? ($_POST['min_price']) : (isset($_POST['min-price']) ? ($_POST['min-price']) : '');
     $max_price = isset($_POST['max_price']) ? ($_POST['max_price']) : (isset($_POST['max-price']) ? ($_POST['max-price']) : '');
@@ -1531,6 +1545,18 @@ function setupSearchQueryForTesting() {
             'value'   => $bathrooms,
             'type'    => 'CHAR',
             'compare' => $search_criteria,
+        );
+    }
+
+    // floors / storeys logic. Houzez has no numeric floors field; the closest
+    // structured data is the "floor_plans" repeater (one entry per floor plan),
+    // stored serialized as `a:N:{...}`. Match on N via a start-anchored REGEXP,
+    // so "double story" (floors=2) matches listings with exactly 2 floor plans.
+    if( $floors > 0 ) {
+        $meta_query[] = array(
+            'key'     => 'floor_plans',
+            'value'   => '^a:' . intval( $floors ) . ':',
+            'compare' => 'REGEXP',
         );
     }
 

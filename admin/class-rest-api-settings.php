@@ -35,6 +35,7 @@ class RestApiSettings
 	private $iap;
 	private $notify;
 	private $contacts;
+	private $ai;
 
 	/**
 	 * Initialize the class and set its properties.
@@ -55,6 +56,7 @@ class RestApiSettings
 		$this->iap = new RestApiIAPProductIds($this->plugin_name,$this->version);
 		$this->notify = new RestApiNotify($this->plugin_name, $this->version);
 		$this->contacts = new RestApiFormsSettings($this->plugin_name, $this->version);
+		$this->ai = new RestApiAISettings($this->plugin_name, $this->version);
 	}
 
 	public function houzi_rest_api_add_plugin_page()
@@ -102,6 +104,7 @@ class RestApiSettings
 				<a href="?page=<?php echo $_GET['page']; ?>&tab=settings" class="nav-tab <?php echo $active_tab == 'settings' ? 'nav-tab-active' : ''; ?>">Settings</a>
 				<a href="?page=<?php echo $_GET['page']; ?>&tab=iap" class="nav-tab <?php echo $active_tab == 'iap' ? 'nav-tab-active' : ''; ?>">In-App Purchase</a>
 				<a href="?page=<?php echo $_GET['page']; ?>&tab=contacts" class="nav-tab <?php echo $active_tab == 'contacts' ? 'nav-tab-active' : ''; ?>">Contacts</a>
+				<a href="?page=<?php echo $_GET['page']; ?>&tab=ai" class="nav-tab <?php echo $active_tab == 'ai' ? 'nav-tab-active' : ''; ?>">AI</a>
 			<?php } ?>
 			
 
@@ -123,6 +126,8 @@ class RestApiSettings
 				$this->contacts->render_settings_page();
 			} else if ( $active_tab == 'notify' ) {
 				$this->notify->houzi_notify_tab();
+			} else if ( $active_tab == 'ai' ) {
+				$this->ai->ai_settings();
 			}
 
 			?>
