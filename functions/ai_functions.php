@@ -93,6 +93,35 @@ function houzi_ai_send_error( $error_code, $message, $status, $extra = array() )
 function houzi_ai_guard( $request, $feature, $require_login = false ) {
 	do_action( 'litespeed_control_set_nocache', 'nocache for ai endpoints' );
 
+	// 1) App-secret handshake — FAIL CLOSED. Unlike the rest of the API, AI is
+	// BYOK and every call spends the owner's provider budget, so we do NOT treat
+	// an unconfigured secret as "open": a site with no App Secret Key set simply
+	// cannot use AI. This check runs first so unauthenticated callers can't even
+	// probe whether AI is enabled/configured. (Same secret as create_nonce in
+	// security_utils.php.)
+	$saved_app_secret = function_exists( 'get_saved_app_secret' ) ? get_saved_app_secret() : '';
+	if ( '' === (string) $saved_app_secret ) {
+		houzi_ai_send_error( 'forbidden', 'AI is locked: set an App Secret Key in Houzi Rest Api settings to enable AI features.', 403 );
+		return false;
+	}
+	$app_secret = (string) $request->get_header( 'app-secret' );
+	if ( '' === $app_secret || ! hash_equals( (string) $saved_app_secret, $app_secret ) ) {
+		houzi_ai_send_error( 'forbidden', 'App secret missing or mismatched.', 403 );
+		return false;
+	}
+
+	// 2) Nonce — replay/abuse hygiene on top of the app secret. The app fetches
+	// it from /create-nonce (which itself enforces the app secret) using the
+	// 'houzi_ai_nonce' action, and sends it back as the `ai_security` param.
+	// Honors the plugin-wide nonce toggle used elsewhere in the API.
+	if ( ! function_exists( 'nonce_security_enabled' ) || nonce_security_enabled() ) {
+		$nonce = isset( $_POST['ai_security'] ) ? $_POST['ai_security'] : $request->get_param( 'ai_security' );
+		if ( empty( $nonce ) || ! wp_verify_nonce( $nonce, 'houzi_ai_nonce' ) ) {
+			houzi_ai_send_error( 'forbidden', 'Security nonce check failed. Please update the app.', 403 );
+			return false;
+		}
+	}
+
 	if ( ! Houzi_AI_Settings::is_enabled() || ! Houzi_AI_Settings::feature_enabled( $feature ) ) {
 		houzi_ai_send_error( 'ai_disabled', 'AI is not enabled for this feature.', 403 );
 		return false;
@@ -100,16 +129,6 @@ function houzi_ai_guard( $request, $feature, $require_login = false ) {
 	if ( '' === Houzi_AI_Settings::api_key() ) {
 		houzi_ai_send_error( 'no_api_key', 'No AI API key is configured.', 403 );
 		return false;
-	}
-
-	// Same app-secret handshake as create_nonce in security_utils.php.
-	$saved_app_secret = function_exists( 'get_saved_app_secret' ) ? get_saved_app_secret() : '';
-	if ( ! empty( $saved_app_secret ) ) {
-		$app_secret = $request->get_header( 'app-secret' );
-		if ( $app_secret != $saved_app_secret ) {
-			houzi_ai_send_error( 'forbidden', 'App secret mismatch.', 403 );
-			return false;
-		}
 	}
 
 	if ( $require_login && ! is_user_logged_in() ) {
