@@ -88,7 +88,7 @@ class Houzi_AI_Location_Resolver {
 		$exact = array();
 		foreach ( self::$taxonomies as $taxonomy ) {
 			foreach ( $index[ $taxonomy ] as $term ) {
-				if ( $term['normalized'] === $normalized || $term['slug'] === $normalized ) {
+				if ( $term['normalized'] === $normalized || $term['slug'] === $normalized || rawurldecode( $term['slug'] ) === rawurldecode( $normalized ) ) {
 					$exact[] = self::candidate( $taxonomy, $term );
 				}
 			}
@@ -104,7 +104,7 @@ class Houzi_AI_Location_Resolver {
 			list( $taxonomy, $slug ) = array_pad( explode( ':', $aliases[ $normalized ], 2 ), 2, '' );
 			if ( isset( $index[ $taxonomy ] ) ) {
 				foreach ( $index[ $taxonomy ] as $term ) {
-					if ( $term['slug'] === $slug ) {
+					if ( $term['slug'] === $slug || rawurldecode( $term['slug'] ) === rawurldecode( $slug ) ) {
 						return array( self::candidate( $taxonomy, $term ) );
 					}
 				}
@@ -129,7 +129,8 @@ class Houzi_AI_Location_Resolver {
 		}
 
 		// 5. Fuzzy — typos only: short distance on reasonably long phrases.
-		if ( strlen( $normalized ) >= 5 ) {
+		$char_len = function_exists( 'mb_strlen' ) ? mb_strlen( $normalized, 'UTF-8' ) : strlen( $normalized );
+		if ( $char_len >= 4 ) {
 			$fuzzy = array();
 			foreach ( self::$taxonomies as $taxonomy ) {
 				foreach ( $index[ $taxonomy ] as $term ) {
@@ -220,7 +221,7 @@ class Houzi_AI_Location_Resolver {
 	public static function normalize( $text ) {
 		$text = function_exists( 'mb_strtolower' ) ? mb_strtolower( $text, 'UTF-8' ) : strtolower( $text );
 		$text = str_replace( array( '.', ',', '-', '_', "'" ), ' ', $text );
-		$text = preg_replace( '/\s+/', ' ', $text );
+		$text = preg_replace( '/\s+/u', ' ', $text );
 		return trim( $text );
 	}
 
