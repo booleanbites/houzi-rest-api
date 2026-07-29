@@ -367,7 +367,7 @@ class RestApiAISettings {
 		<div class="houzi-alias-wrapper" style="max-width: 840px;">
 			<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
 				<span class="description">
-					Map search variations &amp; abbreviations to canonical taxonomy terms (e.g. <em>ny, nyc &rarr; City: new-york-city</em> or <em>کرانچی, کراچی &rarr; City: کراچی</em>).
+					Map search variations &amp; abbreviations to canonical taxonomy terms (e.g. <em>ny, nyc &rarr; City: new-york-city</em>).
 				</span>
 				<button type="button" class="button button-primary" id="houzi-open-add-alias-modal">
 					<span class="dashicons dashicons-plus-alt2" style="vertical-align: middle; margin-right: 4px; font-size: 16px; line-height: 1.3;"></span> Add Location Alias
@@ -414,7 +414,7 @@ class RestApiAISettings {
 						<select id="houzi-modal-term-select" class="widefat" style="max-width:100%;">
 							<!-- Populated based on selected taxonomy -->
 						</select>
-						<input type="text" id="houzi-modal-custom-slug" class="widefat" placeholder="Enter custom slug (e.g. کراچی or new-york-city)" style="margin-top: 6px; display: none;">
+						<input type="text" id="houzi-modal-custom-slug" class="widefat" placeholder="Enter custom slug (e.g. new-york-city)" style="margin-top: 6px; display: none;">
 					</div>
 
 					<div class="houzi-form-group" style="margin-bottom: 14px;">
@@ -423,7 +423,7 @@ class RestApiAISettings {
 							<!-- Tag chips rendered here -->
 						</div>
 						<div style="display: flex; gap: 6px; margin-top: 8px;">
-							<input type="text" id="houzi-modal-new-alias-input" class="regular-text" placeholder="Type alias (e.g. ny or کرانچی) and press Enter" style="flex: 1;">
+							<input type="text" id="houzi-modal-new-alias-input" class="regular-text" placeholder="Type alias (e.g. ny or nyc) and press Enter" style="flex: 1;">
 							<button type="button" id="houzi-modal-add-alias-tag-btn" class="button"><span class="dashicons dashicons-plus-alt" style="vertical-align:middle; margin-right:2px;"></span> Add</button>
 						</div>
 						<span class="description" style="font-size:12px; color:#646970;">You can add multiple aliases. Commas (,) separate multiple values.</span>
