@@ -287,6 +287,9 @@ function setupSearchQuery() {
     //$dummy_array = array();
 
     $custom_fields_values = isset($_POST['custom_fields_values']) ? $_POST['custom_fields_values'] : '';
+    if (empty($custom_fields_values) && isset($_POST['custom_fields'])) {
+        $custom_fields_values = $_POST['custom_fields'];
+    }
     
     // if(!empty($custom_fields_values)) {
     //     foreach ($custom_fields_values as $key => $value) {
@@ -1182,6 +1185,9 @@ function setupSearchQueryForTesting() {
     //$dummy_array = array();
 
     $custom_fields_values = isset($_POST['custom_fields_values']) ? $_POST['custom_fields_values'] : '';
+    if (empty($custom_fields_values) && isset($_POST['custom_fields'])) {
+        $custom_fields_values = $_POST['custom_fields'];
+    }
     
     // if(!empty($custom_fields_values)) {
     //     foreach ($custom_fields_values as $key => $value) {
