@@ -105,6 +105,7 @@ function hm_postAttachments(&$response)
     $file_url = wp_get_attachment_url($attachment_id);
     $file_size = size_format( filesize( get_attached_file( $attachment_id ) ), 2 );
     $response->data['attachments'][] = array(
+      'id' => $attachment_id,
       'url' => $file_url,
       'name' => $file_name,
       'size' => $file_size

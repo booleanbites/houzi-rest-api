@@ -86,6 +86,17 @@ add_action( 'rest_api_init', function () {
         'permission_callback' => '__return_true'
     ));
 
+    register_rest_route( 'houzez-mobile-api/v1', '/save-property-attachment', array(
+        'methods' => 'POST',
+        'callback' => 'uploadPropertyAttachmentWithAuth',
+        'permission_callback' => '__return_true'
+    ));
+    register_rest_route( 'houzez-mobile-api/v1', '/delete-property-attachment', array(
+        'methods' => 'POST',
+        'callback' => 'deleteDocumentForProperty',
+        'permission_callback' => '__return_true'
+    ));
+
     register_rest_route( 'houzez-mobile-api/v1', '/like-property', array(
         'methods' => 'POST',
         'callback' => 'likeProperty',
@@ -396,6 +407,46 @@ function uploadPropertyImageWithAuth(){
 
     require_once(ABSPATH . "wp-admin" . '/includes/image.php');
     houzez_property_img_upload();
+}
+
+function uploadPropertyAttachmentWithAuth(){
+    if(!isset( $_FILES['property_attachment_file']) ) {
+        $ajax_response = array( 'success' => false, 'reason' => 'Please provide property_attachment_file' );
+        wp_send_json($ajax_response, 400);
+        return;
+    }
+
+    if (!create_nonce_or_throw_error('verify_nonce', 'verify_gallery_nonce')) {
+        return;
+    }
+
+    require_once(ABSPATH . "wp-admin" . '/includes/image.php');
+    houzez_property_attachment_upload();
+}
+
+function deleteDocumentForProperty() {
+    if (! is_user_logged_in() ) {
+        $ajax_response = array( 'success' => false, 'reason' => 'Please provide user auth.' );
+        wp_send_json($ajax_response, 403);
+        return; 
+    }
+    if(! isset( $_POST['thumb_id'] ) ) {
+        $ajax_response = array( 'success' => false, 'reason' => 'Please provide thumb_id' );
+        wp_send_json($ajax_response, 400);
+        return;
+    }
+    if(! isset( $_POST['prop_id'] ) ) {
+        $ajax_response = array( 'success' => false, 'reason' => 'Please provide prop_id' );
+        wp_send_json($ajax_response, 400);
+        return;
+    }
+    do_action( 'litespeed_purge_post', $_POST['prop_id'] );
+
+    if (!create_nonce_or_throw_error('removeNonce', 'verify_gallery_nonce')) {
+        return;
+    }
+    
+    do_action('wp_ajax_houzez_remove_property_documents');
 }
 
 function deleteImageForProperty() {
