@@ -191,6 +191,7 @@ function addProperty(){
         do_action( 'wp_login', $user->user_login, $user );
     }
     $new_property['post_status']    = 'publish';
+    houzi_normalize_location_payload();
     $new_property                   = apply_filters( 'houzez_submit_listing', $new_property );
     houzez_update_property_from_draft( $new_property ); 
     wp_send_json(['prop_id' => $new_property ],200);
@@ -249,6 +250,158 @@ function is_exempt_from_verification($user_id) {
     return false;
 }
 
+/**
+ * Resolves a taxonomy term input (slug, name in Arabic/English, or ID) to its canonical slug.
+ *
+ * @param mixed  $value    The input term value (slug, localized name, or term ID).
+ * @param string $taxonomy The WordPress taxonomy name.
+ * @return string The canonical term slug, or the sanitized input if no term matched.
+ */
+function houzi_resolve_term_slug($value, $taxonomy) {
+    if (empty($value) || !taxonomy_exists($taxonomy)) {
+        return '';
+    }
+
+    // 1. If numeric ID passed (e.g. 123 or "123")
+    if (is_numeric($value)) {
+        $term = get_term_by('id', (int) $value, $taxonomy);
+        if ($term && !is_wp_error($term)) {
+            return $term->slug;
+        }
+    }
+
+    // 2. Direct slug match
+    $term = get_term_by('slug', $value, $taxonomy);
+    if ($term && !is_wp_error($term)) {
+        return $term->slug;
+    }
+
+    // 3. Sanitized slug match (e.g. urlencoded or special characters)
+    $sanitized = sanitize_title($value);
+    if ($sanitized !== $value) {
+        $term = get_term_by('slug', $sanitized, $taxonomy);
+        if ($term && !is_wp_error($term)) {
+            return $term->slug;
+        }
+    }
+
+    // 4. Exact name match (e.g. Arabic "عجمان" or "العامرة", English "Ajman")
+    $term = get_term_by('name', $value, $taxonomy);
+    if ($term && !is_wp_error($term)) {
+        return $term->slug;
+    }
+
+    // 5. Trimmed / case-insensitive search across all terms in this taxonomy
+    $all_terms = get_terms([
+        'taxonomy'   => $taxonomy,
+        'hide_empty' => false,
+    ]);
+    if (!is_wp_error($all_terms) && !empty($all_terms)) {
+        $clean_target = mb_strtolower(trim($value));
+        foreach ($all_terms as $t) {
+            if (mb_strtolower(trim($t->name)) === $clean_target || mb_strtolower(trim($t->slug)) === $clean_target) {
+                return $t->slug;
+            }
+        }
+    }
+
+    return sanitize_text_field($value);
+}
+
+/**
+ * Normalizes location terms in $_POST to canonical slugs before Houzez processes property submission or update.
+ */
+function houzi_normalize_location_payload() {
+    $prop_id = 0;
+    if (!empty($_POST['prop_id'])) {
+        $prop_id = intval($_POST['prop_id']);
+    } elseif (!empty($_POST['property_id'])) {
+        $prop_id = intval($_POST['property_id']);
+    } elseif (!empty($_POST['id'])) {
+        $prop_id = intval($_POST['id']);
+    }
+
+    // 1. Support explicit slug keys if sent by newer app versions
+    if (!empty($_POST['locality_slug'])) {
+        $_POST['locality'] = sanitize_text_field($_POST['locality_slug']);
+    }
+    if (!empty($_POST['neighborhood_slug'])) {
+        $_POST['neighborhood'] = sanitize_text_field($_POST['neighborhood_slug']);
+    }
+    if (!empty($_POST['state_slug'])) {
+        $_POST['administrative_area_level_1'] = sanitize_text_field($_POST['state_slug']);
+    }
+    if (!empty($_POST['country_slug'])) {
+        $_POST['country'] = sanitize_text_field($_POST['country_slug']);
+    }
+
+    // 2. Resolve City
+    $city = !empty($_POST['property_city']) ? $_POST['property_city'] : (!empty($_POST['locality']) ? $_POST['locality'] : '');
+    if (!empty($city)) {
+        $city_slug = houzi_resolve_term_slug($city, 'property_city');
+        if (!empty($city_slug)) {
+            $_POST['locality']      = $city_slug;
+            $_POST['property_city'] = $city_slug;
+        }
+    } elseif ($prop_id > 0) {
+        $existing = wp_get_object_terms($prop_id, 'property_city');
+        if (!empty($existing) && !is_wp_error($existing)) {
+            $_POST['locality']      = $existing[0]->slug;
+            $_POST['property_city'] = $existing[0]->slug;
+        }
+    }
+
+    // 3. Resolve Area
+    $area = !empty($_POST['property_area']) ? $_POST['property_area'] : (!empty($_POST['neighborhood']) ? $_POST['neighborhood'] : '');
+    if (!empty($area)) {
+        $area_slug = houzi_resolve_term_slug($area, 'property_area');
+        if (!empty($area_slug)) {
+            $_POST['neighborhood']  = $area_slug;
+            $_POST['property_area'] = $area_slug;
+        }
+    } elseif ($prop_id > 0) {
+        $existing = wp_get_object_terms($prop_id, 'property_area');
+        if (!empty($existing) && !is_wp_error($existing)) {
+            $_POST['neighborhood']  = $existing[0]->slug;
+            $_POST['property_area'] = $existing[0]->slug;
+        }
+    }
+
+    // 4. Preserve existing Area -> City relationship if City is still empty
+    if (empty($_POST['locality']) && !empty($_POST['property_area'])) {
+        $area_term = get_term_by('slug', $_POST['property_area'], 'property_area');
+        if ($area_term && !is_wp_error($area_term)) {
+            $term_meta = get_option('_houzez_property_area_' . $area_term->term_id);
+            if (!empty($term_meta['parent_city'])) {
+                $_POST['locality']      = $term_meta['parent_city'];
+                $_POST['property_city'] = $term_meta['parent_city'];
+            } else {
+                unset($_POST['locality']);
+                unset($_POST['property_city']);
+            }
+        } else {
+            unset($_POST['locality']);
+            unset($_POST['property_city']);
+        }
+    }
+
+    // 5. Resolve State & Country
+    $state = !empty($_POST['property_state']) ? $_POST['property_state'] : (!empty($_POST['administrative_area_level_1']) ? $_POST['administrative_area_level_1'] : '');
+    if (!empty($state)) {
+        $state_slug = houzi_resolve_term_slug($state, 'property_state');
+        if (!empty($state_slug)) {
+            $_POST['administrative_area_level_1'] = $state_slug;
+            $_POST['property_state']              = $state_slug;
+        }
+    }
+    if (!empty($_POST['country'])) {
+        $country_slug = houzi_resolve_term_slug($_POST['country'], 'property_country');
+        if (!empty($country_slug)) {
+            $_POST['country'] = $country_slug;
+        }
+    }
+}
+
 function addPropertyWithAuth() {
     $new_property['post_status']    = 'publish';
     
@@ -284,6 +437,9 @@ function addPropertyWithAuth() {
     if (isset($_POST['fave_property_disclaimer']) && !empty($_POST['fave_property_disclaimer'])) {
         $_POST['property_disclaimer'] = $_POST['fave_property_disclaimer'];
     }
+
+    // Normalize location inputs to canonical slugs
+    houzi_normalize_location_payload();
 
     $new_property = apply_filters( 'houzez_submit_listing', $new_property );
     houzez_update_property_from_draft( $new_property );
