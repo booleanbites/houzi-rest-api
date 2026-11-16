@@ -163,16 +163,109 @@ add_filter( 'rest_houzez_agent_query', function( $args, $request ) {
 
 // ------
 
+if (!function_exists('houzi_get_url_from_image_field')) {
+  function houzi_get_url_from_image_field($field) {
+    if (empty($field)) {
+      return '';
+    }
+    if (is_string($field)) {
+      if (is_serialized($field)) {
+        $unserialized = @unserialize($field);
+        if (!empty($unserialized)) {
+          return houzi_get_url_from_image_field($unserialized);
+        }
+      }
+      if (strpos(trim($field), '{') === 0) {
+        $decoded = json_decode($field, true);
+        if (!empty($decoded) && is_array($decoded)) {
+          return houzi_get_url_from_image_field($decoded);
+        }
+      }
+      if (is_numeric($field)) {
+        $url = wp_get_attachment_url((int) $field);
+        return !empty($url) ? $url : '';
+      }
+      return $field;
+    }
+    if (is_numeric($field)) {
+      $url = wp_get_attachment_url((int) $field);
+      return !empty($url) ? $url : '';
+    }
+    if (is_array($field)) {
+      if (!empty($field['url'])) {
+        return $field['url'];
+      }
+      if (!empty($field['source_url'])) {
+        return $field['source_url'];
+      }
+      if (!empty($field['full'])) {
+        return $field['full'];
+      }
+      if (!empty($field['id'])) {
+        $url = wp_get_attachment_url($field['id']);
+        if (!empty($url)) {
+          return $url;
+        }
+      }
+      if (!empty($field[0])) {
+        return houzi_get_url_from_image_field($field[0]);
+      }
+    }
+    return '';
+  }
+}
+
 add_filter('rest_prepare_houzez_agent', 'prepareAgentData', 10, 3);
 
 function prepareAgentData($response, $post, $request)
 {
-  $params = $request->get_params();
-  $agent_id_from_url = $params["id"] ?? "";
-  $should_append_extra_data = !empty( $agent_id_from_url);
-  $thumb_id = $response->data['agent_meta']['_thumbnail_id'] ?? null;
-  $imgID = !empty ($thumb_id) ? $thumb_id[0] : null;
-  $response->data['thumbnail'] = wp_get_attachment_url($imgID);
+  $post_id = $post->ID;
+  $thumbnail_url = '';
+
+  // 1. Try standard WordPress featured image via post ID
+  $thumbnail_url = get_the_post_thumbnail_url($post_id, 'full');
+
+  // 2. Try featured_media ID from REST response or get_post_thumbnail_id
+  if (empty($thumbnail_url)) {
+    $thumb_id = !empty($response->data['featured_media'])
+      ? $response->data['featured_media']
+      : get_post_thumbnail_id($post_id);
+
+    if (!empty($thumb_id)) {
+      $url = wp_get_attachment_url($thumb_id);
+      if (!empty($url)) {
+        $thumbnail_url = $url;
+      }
+    }
+  }
+
+  // 3. Fallback: Houzez custom agent image meta (handles string, array/map, or attachment ID)
+  if (empty($thumbnail_url)) {
+    $custom_pic = get_post_meta($post_id, 'fave_author_custom_picture', true);
+    if (empty($custom_pic)) {
+      $custom_pic = get_post_meta($post_id, 'fave_agent_profile_img', true);
+    }
+    if (empty($custom_pic)) {
+      $custom_pic = get_post_meta($post_id, 'fave_agent_logo', true);
+    }
+    $thumbnail_url = houzi_get_url_from_image_field($custom_pic);
+  }
+
+  // 4. Fallback: Check linked WordPress User meta if available
+  if (empty($thumbnail_url)) {
+    $user_meta_id = get_post_meta($post_id, 'houzez_user_meta_id', true);
+    if (!empty($user_meta_id)) {
+      $user_pic = get_user_meta($user_meta_id, 'fave_author_custom_picture', true);
+      if (empty($user_pic)) {
+        $user_pic = get_user_meta($user_meta_id, 'fave_agent_profile_img', true);
+      }
+      $thumbnail_url = houzi_get_url_from_image_field($user_pic);
+    }
+  }
+
+  // Ensure thumbnail is always a string URL or empty string, never boolean false
+  $response->data['thumbnail'] = !empty($thumbnail_url) ? $thumbnail_url : '';
+
   return $response;
 }
 
@@ -180,15 +273,55 @@ add_filter('rest_prepare_houzez_agency', 'prepareAgencyData', 10, 3);
 
 function prepareAgencyData($response, $post, $request)
 {
-  // $params = $request->get_params();
-  // $agency_id_from_url = $params["id"];
-  // $should_append_extra_data = !empty( $agency_id_from_url);
+  $post_id = $post->ID;
+  $thumbnail_url = '';
 
-  // $imgID = $response->data['agency_meta']['_thumbnail_id'][0];
-  $thumb_id = $response->data['agency_meta']['_thumbnail_id'] ?? null;
-  $imgID = !empty ($thumb_id) ? $thumb_id[0] : null;
-  
-  $response->data['thumbnail'] = wp_get_attachment_url($imgID);
+  // 1. Try standard WordPress featured image via post ID
+  $thumbnail_url = get_the_post_thumbnail_url($post_id, 'full');
+
+  // 2. Try featured_media ID or get_post_thumbnail_id
+  if (empty($thumbnail_url)) {
+    $thumb_id = !empty($response->data['featured_media'])
+      ? $response->data['featured_media']
+      : get_post_thumbnail_id($post_id);
+
+    if (!empty($thumb_id)) {
+      $url = wp_get_attachment_url($thumb_id);
+      if (!empty($url)) {
+        $thumbnail_url = $url;
+      }
+    }
+  }
+
+  // 3. Fallback: Houzez agency logo meta (fave_agency_logo, fave_agency_profile_img, etc.)
+  if (empty($thumbnail_url)) {
+    $agency_logo = get_post_meta($post_id, 'fave_agency_logo', true);
+    if (empty($agency_logo)) {
+      $agency_logo = get_post_meta($post_id, 'fave_agency_profile_img', true);
+    }
+    if (empty($agency_logo)) {
+      $agency_logo = get_post_meta($post_id, 'fave_author_custom_picture', true);
+    }
+    $thumbnail_url = houzi_get_url_from_image_field($agency_logo);
+  }
+
+  // 4. Fallback: Linked user meta if agency is associated with a WordPress user
+  if (empty($thumbnail_url)) {
+    $user_id = get_post_meta($post_id, 'houzez_user_meta_id', true);
+    if (empty($user_id)) {
+      $user_id = get_post_meta($post_id, 'fave_agency_user', true);
+    }
+    if (!empty($user_id)) {
+      $user_pic = get_user_meta($user_id, 'fave_author_custom_picture', true);
+      if (empty($user_pic)) {
+        $user_pic = get_user_meta($user_id, 'fave_agency_logo', true);
+      }
+      $thumbnail_url = houzi_get_url_from_image_field($user_pic);
+    }
+  }
+
+  // Ensure thumbnail is always a string URL or empty string, never boolean false
+  $response->data['thumbnail'] = !empty($thumbnail_url) ? $thumbnail_url : '';
 
   return $response;
 }
@@ -534,6 +667,8 @@ function allAgencyAgents($request) {
       $data = $agent->data;
       unset($data->user_pass);
       $data->agent_meta = get_user_meta( $agent->ID);
+      $user_pic = $data->agent_meta['fave_author_custom_picture'][0] ?? '';
+      $data->thumbnail = houzi_get_url_from_image_field($user_pic);
       array_push($results, $data);
     }
   }
