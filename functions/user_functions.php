@@ -528,9 +528,14 @@ function tryPhoneLogin()
         }
       }
       
-      doJWTAuthWithSecret($user->user_login, $user->data->user_pass);
-      // We logged in, return from here.
-      return;
+      if ($user && wp_check_password($user_id_social, $user->data->user_pass, $user->ID)) {
+        doJWTAuth($user->user_login, $user_id_social);
+        return;
+      } else {
+        $ajax_response = array('success' => false, 'reason' => esc_html__("Couldn't verify the user", 'houzi'));
+        wp_send_json($ajax_response, 403);
+        return;
+      }
     }
   }
 
@@ -568,6 +573,25 @@ function socialSignOn()
 
   $source = $_POST['source'];
   $user_id_social = $_POST['user_id'];
+  $access_token = isset($_POST['access_token']) ? trim($_POST['access_token']) : '';
+  $is_strict_enabled = houzi_is_strict_social_verification_enabled();
+
+  if ($is_strict_enabled && empty($access_token) && strtolower($source) != 'phone') {
+    $ajax_response = array('success' => false, 'reason' => esc_html__('Authentication token required. Please update your app.', 'houzi'));
+    wp_send_json($ajax_response, 403);
+    return;
+  }
+
+  $is_token_verified = false;
+  if (!empty($access_token)) {
+    $claimed_email = $_POST['email'] ?? '';
+    $is_token_verified = houzi_verify_social_token($source, $access_token, $claimed_email, $user_id_social);
+    if (!$is_token_verified) {
+      $ajax_response = array('success' => false, 'reason' => esc_html__('Social login token verification failed.', 'houzi'));
+      wp_send_json($ajax_response, 403);
+      return;
+    }
+  }
 
   // If source is apple, check if any user exists with the user_id
   if (strtolower($source) == 'apple') {
@@ -600,9 +624,17 @@ function socialSignOn()
         update_user_meta($user->ID, 'houzez_account_approved', $approval_status);
       }
       
-      // User login will definitely exist on apple user
-      doJWTAuthWithSecret($user->user_login, $user->data->user_pass);
-      return;
+      if ($user && wp_check_password($user_id_social, $user->data->user_pass, $user->ID)) {
+        doJWTAuth($user->user_login, $user_id_social);
+        return;
+      } elseif ($is_token_verified) {
+        houzi_issue_jwt_for_user($user);
+        return;
+      } else {
+        $ajax_response = array('success' => false, 'reason' => esc_html__('Could not verify social login credentials. Please update your app.', 'houzi'));
+        wp_send_json($ajax_response, 403);
+        return;
+      }
     }
   }
 
@@ -648,8 +680,14 @@ function socialSignOn()
         update_user_meta($user->ID, 'houzez_account_approved', $approval_status);
       }
       
-      doJWTAuthWithSecret($username, $user->data->user_pass);
-      return;
+      if ($user && wp_check_password($user_id_social, $user->data->user_pass, $user->ID)) {
+        doJWTAuth($username, $user_id_social);
+        return;
+      } else {
+        $ajax_response = array('success' => false, 'reason' => esc_html__("Couldn't verify the user", 'houzi'));
+        wp_send_json($ajax_response, 403);
+        return;
+      }
     }
   }
 
@@ -676,7 +714,7 @@ function socialSignOn()
     }
 
     // If there does exist a user with this email, update its apple social id for future logins
-    if (strtolower($source) == 'apple') {
+    if (strtolower($source) == 'apple' && $is_token_verified) {
       update_user_meta($user->ID, "user_id_social", $user_id_social);
     }
 
@@ -684,8 +722,16 @@ function socialSignOn()
       // In existing houzez, for social login, $user_id_social is the password
       doJWTAuth($email, $user_id_social);
       return;
+    } elseif ($is_token_verified) {
+      houzi_issue_jwt_for_user($user);
+      return;
     } else {
-      doJWTAuthWithSecret($email, $user->data->user_pass);
+      $ajax_response = array(
+        'success' => false,
+        'reason' => esc_html__('Unable to verify social login. Please update your app or sign in using your account password.', 'houzi')
+      );
+      wp_send_json($ajax_response, 403);
+      return;
     }
 
     return;
@@ -730,7 +776,7 @@ function socialSignOn()
     }
 
     // If there does exist a user with this email/phonenum, update its social id
-    if (strtolower($source) == 'apple' || strtolower($source) == 'phone') {
+    if ((strtolower($source) == 'apple' || strtolower($source) == 'phone') && $is_token_verified) {
       update_user_meta($user->ID, "user_id_social", $user_id_social);
     }
 
@@ -738,8 +784,15 @@ function socialSignOn()
     if ($user && wp_check_password($user_id_social, $user->data->user_pass, $user->ID)) {
       doJWTAuth($username, $user_id_social);
       return;
+    } elseif ($is_token_verified) {
+      houzi_issue_jwt_for_user($user);
+      return;
     } else {
-      doJWTAuthWithSecret($username, $user->data->user_pass);
+      $ajax_response = array(
+        'success' => false,
+        'reason' => esc_html__('Unable to verify social login. Please update your app or sign in using your account password.', 'houzi')
+      );
+      wp_send_json($ajax_response, 403);
       return;
     }
   }
@@ -790,31 +843,148 @@ function socialSignOn()
     doJWTAuth($username, $user_id_social);
   }
 }
-function checkPassWithSecret($user_id, $candidate_password, $hashedpass)
+function houzi_is_strict_social_verification_enabled()
 {
-  //we want to check password with hashed password.
-  //For that we append a secrte, to check only when the secret has been appended
-  //with the password.
-  //so when the password contains our secret, this means, we're trying to 
-  //authenticate with hashed password.
-  //in that case, only compare password with hashed wordpress password.
-  //looking for better approach
-  $secret = '<6Bk-l1hPHr*?}V?v6~!-[cxvmjm4@9emdY+jezhH5z;5{rZiUFo|$W8X6llE_Hm';
-
-  return wp_check_password($secret . $candidate_password, $hashedpass, $user_id);
+  $options = get_option('houzi_rest_api_options');
+  return isset($options['strict_social_token_verification']) && $options['strict_social_token_verification'] === 'enabled';
 }
-function doJWTAuthWithSecret($username, $password)
-{
-  //we want to authenticate user with hashed password.
-  //For that we append a secrte, to check only when the secret has been appended
-  //with the password.
-  //so when the password contains our secret, this means, we're trying to 
-  //authenticate with hashed password.
-  //in that case, only compare password with hashed wordpress password.
-  //looking for better approach
-  $secret = '<6Bk-l1hPHr*?}V?v6~!-[cxvmjm4@9emdY+jezhH5z;5{rZiUFo|$W8X6llE_Hm';
 
-  doJWTAuth($username, $secret . $password);
+function houzi_verify_social_token($source, $access_token, $claimed_email, $claimed_user_id = '')
+{
+  if (empty($access_token)) {
+    return false;
+  }
+
+  switch (strtolower($source)) {
+    case 'google':
+      $response = wp_remote_get(
+        'https://oauth2.googleapis.com/tokeninfo?id_token=' . urlencode($access_token),
+        array('timeout' => 10)
+      );
+      if (is_wp_error($response) || wp_remote_retrieve_response_code($response) !== 200) {
+        return false;
+      }
+      $body = json_decode(wp_remote_retrieve_body($response), true);
+      if (empty($body) || empty($body['email'])) {
+        return false;
+      }
+      return strtolower($body['email']) === strtolower($claimed_email);
+
+    case 'facebook':
+      $response = wp_remote_get(
+        'https://graph.facebook.com/me?fields=id,email&access_token=' . urlencode($access_token),
+        array('timeout' => 10)
+      );
+      if (is_wp_error($response) || wp_remote_retrieve_response_code($response) !== 200) {
+        return false;
+      }
+      $body = json_decode(wp_remote_retrieve_body($response), true);
+      if (empty($body)) {
+        return false;
+      }
+      if (!empty($claimed_user_id) && !empty($body['id']) && $body['id'] === $claimed_user_id) {
+        return true;
+      }
+      if (!empty($claimed_email) && !empty($body['email']) && strtolower($body['email']) === strtolower($claimed_email)) {
+        return true;
+      }
+      return false;
+
+    case 'apple':
+      // Apple identityToken is a JWT: header.payload.signature
+      $parts = explode('.', $access_token);
+      if (count($parts) < 2) {
+        return false;
+      }
+      $payload_raw = base64_decode(str_replace(['-', '_'], ['+', '/'], $parts[1]));
+      if (!$payload_raw) {
+        return false;
+      }
+      $payload = json_decode($payload_raw, true);
+      if (empty($payload)) {
+        return false;
+      }
+      // Check Apple issuer and expiration
+      if (empty($payload['iss']) || $payload['iss'] !== 'https://appleid.apple.com') {
+        return false;
+      }
+      if (empty($payload['exp']) || $payload['exp'] < time()) {
+        return false;
+      }
+      // Verify subject matches Apple user_id
+      if (!empty($claimed_user_id) && !empty($payload['sub']) && $payload['sub'] !== $claimed_user_id) {
+        return false;
+      }
+      // If email is present in token, verify it matches
+      if (!empty($claimed_email) && !empty($payload['email']) && strtolower($payload['email']) !== strtolower($claimed_email)) {
+        return false;
+      }
+      return true;
+
+    default:
+      return false;
+  }
+}
+
+function houzi_issue_jwt_for_user($user)
+{
+  wp_set_current_user($user->ID);
+
+  $issued_at  = time();
+  $not_before = apply_filters('jwt_auth_not_before', $issued_at, $issued_at);
+  $expire     = apply_filters('jwt_auth_expire', $issued_at + (DAY_IN_SECONDS * 7), $issued_at);
+
+  $token_data = array(
+    'iss'  => get_bloginfo('url'),
+    'iat'  => $issued_at,
+    'nbf'  => $not_before,
+    'exp'  => $expire,
+    'data' => array(
+      'user' => array(
+        'id' => $user->ID,
+      ),
+    ),
+  );
+
+  $token_data = apply_filters('jwt_auth_token_before_sign', $token_data, $user);
+
+  $secret_key = defined('JWT_AUTH_SECRET_KEY') ? JWT_AUTH_SECRET_KEY : '';
+  if (empty($secret_key)) {
+    $ajax_response = array('success' => false, 'reason' => 'JWT_AUTH_SECRET_KEY is not defined in wp-config.php');
+    wp_send_json($ajax_response, 403);
+    return;
+  }
+
+  $algorithm = apply_filters('jwt_auth_algorithm', 'HS256');
+  $jwt_class = null;
+  if (class_exists('\Firebase\JWT\JWT')) {
+    $jwt_class = '\Firebase\JWT\JWT';
+  } elseif (class_exists('JWT')) {
+    $jwt_class = 'JWT';
+  }
+
+  if ($jwt_class) {
+    $token = $jwt_class::encode($token_data, $secret_key, $algorithm);
+  } else {
+    // Standard HS256 JWT encoding fallback
+    $header = json_encode(array('typ' => 'JWT', 'alg' => $algorithm));
+    $base64UrlHeader = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($header));
+    $base64UrlPayload = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode(json_encode($token_data)));
+    $signature = hash_hmac('sha256', $base64UrlHeader . "." . $base64UrlPayload, $secret_key, true);
+    $base64UrlSignature = str_replace(['+', '/', '='], ['-', '_', ''], base64_encode($signature));
+    $token = $base64UrlHeader . "." . $base64UrlPayload . "." . $base64UrlSignature;
+  }
+
+  $data = array(
+    'token'             => $token,
+    'user_email'        => $user->data->user_email,
+    'user_nicename'     => $user->data->user_nicename,
+    'user_display_name' => $user->data->display_name,
+  );
+
+  $data = apply_filters('jwt_auth_token_before_dispatch', $data, $user);
+  wp_send_json($data, 200);
+  die;
 }
 function doJWTAuth($username, $password)
 {
@@ -1344,52 +1514,7 @@ function editProfilePhoto()
 
 
 
-// Used when doing social login.
-add_filter('check_password', 'check_with_hashed_password', 10, 4);
 
-/** 
- *      we want to authenticate user with hashed password, 
- *      For that we append a secrte, to check only when the secret has been appended
- *      with the password.
- *      so when the password contains our secret, this means, we're trying to 
- *      authenticate with hashed password.
- *      in that case, only compare password (already hashed) with wordpress hashed password.
- *      looking for better approach
- * 
- * Hooks into check_password filter, mostly copied from md5 upgrade function with pluggable.php/wp_check_password
- *
- * @param string $check
- * @param string $password
- * @param string $hash
- * @param string $user_id
- * @return results of sha1 hash comparison, or $check if $password is not a SHA1 hash
- */
-
-function check_with_hashed_password($check, $password, $hash, $user_id)
-{
-  $secret = '<6Bk-l1hPHr*?}V?v6~!-[cxvmjm4@9emdY+jezhH5z;5{rZiUFo|$W8X6llE_Hm';
-
-  //check if password contains our secret.
-  if (strpos($password, $secret) !== FALSE) {
-    //remove our secret from password.
-    $password = str_replace($secret, "", $password);
-
-    //compare wordpress provided hash with (already hashed) password.
-    $check = ($hash == $password);
-
-    if ($check && $user_id) {
-      // Allow login
-      return true;
-    } else {
-
-      //provided hash doesn't meet wordpress hash pass.
-      return false;
-    }
-  }
-  //echo 'is not hash';
-  //not appended with our hash, so bailing.
-  return $check;
-}
 
 /**
  * Check if provided string is a SHA1 hash

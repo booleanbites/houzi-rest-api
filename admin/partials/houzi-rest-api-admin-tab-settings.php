@@ -89,9 +89,9 @@ class RestApiAdminSettings {
 			'houzi_rest_api_setting_section' // section
 		);
 		add_settings_field(
-			'nonce_security_disabled', // id
-			'NONCE Security', // title
-			array( $this, 'nonce_security_check_box_callback' ), // callback
+			'strict_social_token_verification', // id
+			'Strict Social Verification', // title
+			array( $this, 'strict_social_token_verification_callback' ), // callback
 			'houzi-rest-api-admin', // page
 			'houzi_rest_api_setting_section' // section
 		);
@@ -137,8 +137,8 @@ class RestApiAdminSettings {
 		if ( isset( $input['onesingnal_app_id_0'] ) ) {
 			$sanitary_values['onesingnal_app_id_0'] = sanitize_text_field( $input['onesingnal_app_id_0'] );
 		}
-		if ( isset( $input['nonce_security_disabled'] ) ) {
-			$sanitary_values['nonce_security_disabled'] = sanitize_text_field( $input['nonce_security_disabled'] );
+		if ( isset( $input['strict_social_token_verification'] ) ) {
+			$sanitary_values['strict_social_token_verification'] = sanitize_text_field( $input['strict_social_token_verification'] );
 		}
 		if ( isset( $input['app_secret_key'] ) ) {
 			$sanitary_values['app_secret_key'] = sanitize_text_field( $input['app_secret_key'] );
@@ -156,13 +156,19 @@ class RestApiAdminSettings {
 	public function houzi_rest_api_section_info() {
 		
 	}
-	public function nonce_security_check_box_callback() {
+	public function strict_social_token_verification_callback() {
+		$checked = ( isset( $this->houzi_rest_api_options['strict_social_token_verification'] ) && $this->houzi_rest_api_options['strict_social_token_verification'] === 'enabled' ) ? 'checked' : '';
 		printf(
-			'<input type="checkbox" name="houzi_rest_api_options[nonce_security_disabled]" id="nonce_security_disabled" value="nonce_security_disabled" %s>
-			<label for="nonce_security_disabled">
-				<br>Disable NONCE Security for important api functions.<br>
-			</label>',
-			( isset( $this->houzi_rest_api_options['nonce_security_disabled'] ) && $this->houzi_rest_api_options['nonce_security_disabled'] === 'nonce_security_disabled' ) ? 'checked' : ''
+			'<input type="checkbox" name="houzi_rest_api_options[strict_social_token_verification]" id="strict_social_token_verification" value="enabled" %s>
+			<label for="strict_social_token_verification">
+				<strong>Enforce strict server-side token verification for social logins</strong>
+			</label>
+			<p class="description" style="margin-top:6px; max-width:650px;">
+				<strong>What is this?</strong> When users log in using Google, Apple, or Facebook, the provider generates a cryptographically signed auth token on the device.<br>
+				<strong>Why enforce it?</strong> When enabled, the server validates this token directly with the provider (Google, Apple, or Facebook) before granting access. This guarantees that requests cannot be spoofed by knowing only an email address.<br>
+				<strong style="color:#d63638;">Note:</strong> Only enable this after your mobile app has been updated to the latest version. Older app versions that do not transmit authentication tokens will be prevented from using social login.
+			</p>',
+			$checked
 		);
 	}
 	public function app_secret_field_callback() {
